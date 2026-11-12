@@ -5,8 +5,7 @@ import {
   FundValuationMetrics,
   PortfolioSummaryMetrics,
   calculateCipReinvestment,
-  applyCipUnitsToHolding,
-  simulateSipWithCipSettlement,
+  simulateSipInstallment,
 } from "@/lib/calculations";
 import { PortfolioHistoryItem } from "./PortfolioHistoryChart";
 import {
@@ -18,9 +17,8 @@ import {
   Coins,
   RefreshCw,
   SlidersHorizontal,
-  Wallet,
-  ArrowRight,
-  Info,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
 export type ModalTab = "cip" | "sip" | "baseline";
@@ -37,7 +35,7 @@ interface UpdateHoldingsDialogProps {
       totalInvested: number;
       averageBuyPrice: number;
       monthlySipTarget: number;
-    }>
+    }>,
   ) => Promise<void>;
   onDataUpdated?: (data: {
     summary: PortfolioSummaryMetrics;
@@ -63,7 +61,7 @@ function formatBdt(amount: number, decimals = 2): string {
 
 export default function UpdateHoldingsDialog({
   isOpen,
-  initialTab = "cip",
+  initialTab = "baseline",
   initialFocusFundId,
   funds,
   onClose,
@@ -73,93 +71,77 @@ export default function UpdateHoldingsDialog({
   const dialogRef = useRef<HTMLDialogElement | null>(null);
   const titleId = useId();
 
-  // Active modal tab: "cip" (CIP Dividend), "sip" (Monthly SIP), "baseline" (Holdings baseline)
-  const [activeTab, setActiveTab] = useState<ModalTab>(initialTab);
+  // Selected filter pill: "all" or specific fund ID
+  const [activeFundFilter, setActiveFundFilter] = useState<string>("all");
 
-  // Selected AMC fund for CIP or SIP actions
-  const [selectedFundId, setSelectedFundId] = useState<string>(
-    initialFocusFundId || funds[0]?.id || "shanta-amanah"
-  );
+  // Inline expanded forms: fundId -> "sip" | "cip" | null
+  const [expandedAction, setExpandedAction] = useState<Record<string, "sip" | "cip" | null>>({});
+
+  // Inline SIP state per fund
+  const [sipCashInputs, setSipCashInputs] = useState<Record<string, string>>({});
+  const [sipNavInputs, setSipNavInputs] = useState<Record<string, string>>({});
+
+  // Inline CIP state per fund
+  const [cipDividendInputs, setCipDividendInputs] = useState<Record<string, string>>({});
+  const [cipNavInputs, setCipNavInputs] = useState<Record<string, string>>({});
+
+  // Baseline Draft holdings
+  const [drafts, setDrafts] = useState<Record<string, DraftHolding>>({});
 
   // Status & loading
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submittingActionFundId, setSubmittingActionFundId] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [actionSuccessMessage, setActionSuccessMessage] = useState<string | null>(null);
 
-  // -------------------------------------------------------------
-  // TAB 1: CIP DIVIDEND STATE (Integer Units & Retained Cash)
-  // -------------------------------------------------------------
-  const [cipDividendAmount, setCipDividendAmount] = useState<string>("");
-  const [cipNav, setCipNav] = useState<string>("");
-  const [isManualUnits, setIsManualUnits] = useState(false);
-  const [manualUnits, setManualUnits] = useState<string>("");
-  const [manualCashRemainder, setManualCashRemainder] = useState<string>("");
-
-  // -------------------------------------------------------------
-  // TAB 2: MONTHLY SIP STATE (with CIP Cash Settlement)
-  // -------------------------------------------------------------
-  const [sipAmount, setSipAmount] = useState<string>("");
-  const [sipExecutionNav, setSipExecutionNav] = useState<string>("");
-  const [settlementMethod, setSettlementMethod] = useState<
-    "ADD_TO_INVESTMENT" | "DEDUCT_FROM_PAYMENT"
-  >("ADD_TO_INVESTMENT");
-
-  // -------------------------------------------------------------
-  // TAB 3: BASELINE HOLDINGS STATE
-  // -------------------------------------------------------------
-  const [drafts, setDrafts] = useState<Record<string, DraftHolding>>({});
-
-  // Sync draft and form values whenever modal opens or active fund changes
+  // Sync draft and form values whenever modal opens
   useEffect(() => {
     if (isOpen && funds.length > 0) {
-      const fund =
-        funds.find((f) => f.id === (initialFocusFundId || selectedFundId)) ||
-        funds[0];
-      const targetFundId = fund.id;
-      setSelectedFundId(targetFundId);
-      setActiveTab(initialTab);
-      setSubmitError(null);
-      setSuccessMessage(null);
+      const initial: Record<string, DraftHolding> = {};
+      const initialSipCash: Record<string, string> = {};
+      const initialSipNav: Record<string, string> = {};
+      const initialCipDiv: Record<string, string> = {};
+      const initialCipNav: Record<string, string> = {};
+      const initialExpanded: Record<string, "sip" | "cip" | null> = {};
 
-      // Initialize CIP fields
-      setCipDividendAmount("");
-      setCipNav(String(fund.effectiveNav || 10.596));
-      setIsManualUnits(false);
-      setManualUnits("");
-      setManualCashRemainder("");
-
-      // Initialize SIP fields
-      setSipAmount(String(fund.monthlySipTarget || 8000));
-      setSipExecutionNav(String(fund.buyPrice || fund.effectiveNav || 10.596));
-      setSettlementMethod("ADD_TO_INVESTMENT");
-
-      // Initialize Baseline drafts
-      const initialDrafts: Record<string, DraftHolding> = {};
       for (const f of funds) {
-        initialDrafts[f.id] = {
+        initial[f.id] = {
           totalInvested: String(f.totalInvested),
           averageBuyPrice: String(f.averageBuyPrice),
           monthlySipTarget: String(f.monthlySipTarget || 8000),
         };
+        initialSipCash[f.id] = String(f.monthlySipTarget || 8000);
+        initialSipNav[f.id] = String(f.effectiveNav || f.averageBuyPrice || 10);
+        initialCipDiv[f.id] = "";
+        initialCipNav[f.id] = String(f.effectiveNav || f.averageBuyPrice || 10);
+
+        // If opened with specific action
+        if (initialFocusFundId === f.id && (initialTab === "sip" || initialTab === "cip")) {
+          initialExpanded[f.id] = initialTab;
+        } else {
+          initialExpanded[f.id] = null;
+        }
       }
-      setDrafts(initialDrafts);
-    }
-  }, [isOpen, initialTab, initialFocusFundId, funds]);
 
-  // Sync Nav and SIP defaults when selectedFundId changes
-  const handleSelectFund = (fundId: string) => {
-    setSelectedFundId(fundId);
-    setSubmitError(null);
-    setSuccessMessage(null);
-    const fund = funds.find((f) => f.id === fundId);
-    if (fund) {
-      setCipNav(String(fund.effectiveNav || 10.596));
-      setSipAmount(String(fund.monthlySipTarget || 8000));
-      setSipExecutionNav(String(fund.buyPrice || fund.effectiveNav || 10.596));
-    }
-  };
+      setDrafts(initial);
+      setSipCashInputs(initialSipCash);
+      setSipNavInputs(initialSipNav);
+      setCipDividendInputs(initialCipDiv);
+      setCipNavInputs(initialCipNav);
+      setExpandedAction(initialExpanded);
 
-  // Manage native <dialog> lifecycle
+      if (initialFocusFundId && funds.some((f) => f.id === initialFocusFundId)) {
+        setActiveFundFilter(initialFocusFundId);
+      } else {
+        setActiveFundFilter("all");
+      }
+
+      setSubmitError(null);
+      setActionSuccessMessage(null);
+    }
+  }, [isOpen, funds, initialFocusFundId, initialTab]);
+
+  // Manage native <dialog> showModal() and close() lifecycle
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
@@ -171,6 +153,7 @@ export default function UpdateHoldingsDialog({
     }
   }, [isOpen]);
 
+  // Light-dismiss fallback & close listener
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
@@ -206,148 +189,105 @@ export default function UpdateHoldingsDialog({
     };
   }, [onClose]);
 
-  const currentFund =
-    funds.find((f) => f.id === selectedFundId) || funds[0] || null;
-
-  // -------------------------------------------------------------
-  // CIP COMPUTATIONS (Strictly Integer Units & Exact Cash Remainder)
-  // -------------------------------------------------------------
-  const existingCashBuffer = currentFund?.fractionalCashBalance || 0;
-  const numDividend = Number(cipDividendAmount) || 0;
-  const numCipNav = Number(cipNav) > 0 ? Number(cipNav) : currentFund?.effectiveNav || 10;
-
-  let computedUnitsAllotted = 0;
-  let computedReinvestedAmount = 0;
-  let computedCashRemainder = 0;
-
-  if (isManualUnits) {
-    computedUnitsAllotted = Math.floor(Math.max(0, Number(manualUnits) || 0));
-    computedReinvestedAmount = Number((computedUnitsAllotted * numCipNav).toFixed(2));
-    computedCashRemainder = Math.max(0, Number(manualCashRemainder) || 0);
-  } else if (numDividend > 0) {
-    const calc = calculateCipReinvestment(numDividend, numCipNav, existingCashBuffer);
-    computedUnitsAllotted = calc.unitsAllotted;
-    computedReinvestedAmount = calc.reinvestedAmount;
-    computedCashRemainder = calc.cashRemainder;
-  }
-
-  // Preview of holding after CIP
-  const cipHoldingPreview = currentFund
-    ? applyCipUnitsToHolding(
-        currentFund.totalInvested,
-        currentFund.averageBuyPrice,
-        computedUnitsAllotted,
-        numCipNav
-      )
-    : null;
-
-  // -------------------------------------------------------------
-  // SIP WITH CIP SETTLEMENT COMPUTATIONS
-  // -------------------------------------------------------------
-  const numSip = Number(sipAmount) || 8000;
-  const numSipNav = Number(sipExecutionNav) > 0 ? Number(sipExecutionNav) : currentFund?.effectiveNav || 10;
-  const sipSettlementPreview = currentFund
-    ? simulateSipWithCipSettlement(
-        currentFund.totalInvested,
-        currentFund.averageBuyPrice,
-        numSip,
-        numSipNav,
-        existingCashBuffer,
-        settlementMethod
-      )
-    : null;
-
-  // -------------------------------------------------------------
-  // SUBMIT HANDLERS
-  // -------------------------------------------------------------
-
-  // 1. Submit CIP Dividend
-  const handleSubmitCip = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!currentFund) return;
-    setSubmitError(null);
-    setSuccessMessage(null);
-
-    if (computedUnitsAllotted <= 0) {
-      setSubmitError(
-        "Please enter a dividend amount or whole units value greater than 0."
-      );
-      return;
-    }
-
-    if (!Number.isInteger(computedUnitsAllotted)) {
-      setSubmitError("CIP units allotted MUST be a whole integer, not a decimal!");
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const res = await fetch("/api/cip", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fundId: currentFund.id,
-          dividendAmount: numDividend || computedReinvestedAmount + computedCashRemainder,
-          cipNav: numCipNav,
-          unitsAllotted: computedUnitsAllotted,
-          cashRemainder: computedCashRemainder,
-          notes: `CIP Dividend Reinvestment: +${computedUnitsAllotted} integer units. ৳${computedCashRemainder.toFixed(2)} cash remainder retained for next SIP.`,
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to add CIP dividend");
+  const validateField = (
+    fundId: string,
+    field: "totalInvested" | "averageBuyPrice",
+    value: string,
+  ) => {
+    const num = Number(value);
+    if (field === "totalInvested") {
+      if (value.trim() === "" || Number.isNaN(num) || num < 0) {
+        return "Enter a valid non-negative BDT amount (e.g., 44000).";
       }
-
-      setSuccessMessage(
-        `✓ Added ${computedUnitsAllotted} CIP units to ${currentFund.name}! ৳${computedCashRemainder.toFixed(2)} cash remainder is held to settle on your next SIP.`
-      );
-      if (onDataUpdated) {
-        onDataUpdated({
-          summary: data.summary,
-          funds: data.funds,
-          history: data.history,
-        });
+    } else {
+      if (value.trim() === "" || Number.isNaN(num) || num <= 0) {
+        return "Enter a valid Average Buy Price greater than 0 (e.g., 10.74).";
       }
-      setTimeout(() => {
-        dialogRef.current?.close("cip_saved");
-      }, 1500);
-    } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setIsSubmitting(false);
     }
+    return undefined;
   };
 
-  // 2. Submit SIP Installment & Settle Cash
-  const handleSubmitSipSettlement = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!currentFund) return;
-    setSubmitError(null);
-    setSuccessMessage(null);
+  const handleInputChange = (
+    fundId: string,
+    field: "totalInvested" | "averageBuyPrice" | "monthlySipTarget",
+    value: string,
+  ) => {
+    setDrafts((prev) => {
+      const current = prev[fundId] || {
+        totalInvested: "0",
+        averageBuyPrice: "10",
+        monthlySipTarget: "8000",
+      };
+      const next: DraftHolding = {
+        ...current,
+        [field]: value,
+      };
+      if (field === "totalInvested" && current.investedError) {
+        if (!validateField(fundId, "totalInvested", value)) {
+          next.investedError = undefined;
+        }
+      }
+      if (field === "averageBuyPrice" && current.avgBuyError) {
+        if (!validateField(fundId, "averageBuyPrice", value)) {
+          next.avgBuyError = undefined;
+        }
+      }
+      return { ...prev, [fundId]: next };
+    });
+  };
 
-    setIsSubmitting(true);
+  const handleBlur = (
+    fundId: string,
+    field: "totalInvested" | "averageBuyPrice",
+  ) => {
+    const current = drafts[fundId];
+    if (!current) return;
+    const error = validateField(fundId, field, current[field]);
+    setDrafts((prev) => ({
+      ...prev,
+      [fundId]: {
+        ...prev[fundId],
+        [field === "totalInvested" ? "investedError" : "avgBuyError"]: error,
+      },
+    }));
+  };
+
+  // Toggle inline SIP or CIP drawer inside fund card
+  const toggleInlineAction = (fundId: string, action: "sip" | "cip") => {
+    setExpandedAction((prev) => ({
+      ...prev,
+      [fundId]: prev[fundId] === action ? null : action,
+    }));
+    setSubmitError(null);
+    setActionSuccessMessage(null);
+  };
+
+  // Execute inline Monthly SIP with auto cash settlement
+  const handleExecuteSip = async (fund: FundValuationMetrics) => {
     try {
+      setSubmittingActionFundId(fund.id);
+      setSubmitError(null);
+      setActionSuccessMessage(null);
+
+      const cash = Number(sipCashInputs[fund.id]) || fund.monthlySipTarget || 8000;
+      const nav = Number(sipNavInputs[fund.id]) || fund.effectiveNav || fund.averageBuyPrice || 10;
+
       const res = await fetch("/api/cip", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          fundId: currentFund.id,
-          freshSipCash: numSip,
-          executionNav: numSipNav,
-          settlementMethod,
+          fundId: fund.id,
+          freshSipCash: cash,
+          executionNav: nav,
+          settlementMethod: "ADD_TO_INVESTMENT",
         }),
       });
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || "Failed to execute SIP installment");
+        throw new Error(data.error || "Failed to record monthly SIP.");
       }
 
-      setSuccessMessage(
-        `✓ Monthly SIP executed! Settled ৳${existingCashBuffer.toFixed(2)} previous CIP cash balance.`
-      );
       if (onDataUpdated) {
         onDataUpdated({
           summary: data.summary,
@@ -355,706 +295,708 @@ export default function UpdateHoldingsDialog({
           history: data.history,
         });
       }
-      setTimeout(() => {
-        dialogRef.current?.close("sip_settled");
-      }, 1500);
+
+      setActionSuccessMessage(
+        `Recorded SIP for ${fund.shortName}: +${data.settlement?.addedUnits ?? 0} integer units allotted. Cash balance updated.`,
+      );
+      setExpandedAction((prev) => ({ ...prev, [fund.id]: null }));
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : String(err));
     } finally {
-      setIsSubmitting(false);
+      setSubmittingActionFundId(null);
     }
   };
 
-  // 3. Submit Baseline Holdings
-  const handleSubmitBaseline = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitError(null);
-    setSuccessMessage(null);
+  // Execute inline CIP Dividend Reinvestment into integer units + cash remainder
+  const handleExecuteCip = async (fund: FundValuationMetrics) => {
+    try {
+      setSubmittingActionFundId(fund.id);
+      setSubmitError(null);
+      setActionSuccessMessage(null);
 
-    const payload: Array<{
-      fundId: string;
-      totalInvested: number;
-      averageBuyPrice: number;
-      monthlySipTarget: number;
-    }> = [];
+      const dividend = Number(cipDividendInputs[fund.id]);
+      const nav = Number(cipNavInputs[fund.id]) || fund.effectiveNav || fund.averageBuyPrice || 10;
+
+      if (!dividend || dividend <= 0) {
+        throw new Error("Please enter a valid dividend amount in BDT.");
+      }
+
+      const res = await fetch("/api/cip", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fundId: fund.id,
+          dividendAmount: dividend,
+          cipNav: nav,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to add CIP dividend.");
+      }
+
+      if (onDataUpdated) {
+        onDataUpdated({
+          summary: data.summary,
+          funds: data.funds,
+          history: data.history,
+        });
+      }
+
+      setActionSuccessMessage(
+        `Added CIP Dividend for ${fund.shortName}: +${data.unitsAllotted} integer units. Remaining ৳${data.cashRemainder} cash held for next SIP.`,
+      );
+      setExpandedAction((prev) => ({ ...prev, [fund.id]: null }));
+      setCipDividendInputs((prev) => ({ ...prev, [fund.id]: "" }));
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setSubmittingActionFundId(null);
+    }
+  };
+
+  // Save Baseline Holdings Form
+  const handleSubmitBaseline = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setSubmitError(null);
+
+    // Validate all fields
+    let hasError = false;
+    const validatedDrafts = { ...drafts };
 
     for (const f of funds) {
-      const d = drafts[f.id];
-      if (!d) continue;
-      const inv = Number(d.totalInvested);
-      const avg = Number(d.averageBuyPrice);
-      const sip = Number(d.monthlySipTarget) || 8000;
-      if (Number.isNaN(inv) || inv < 0 || Number.isNaN(avg) || avg <= 0) {
-        setSubmitError(`Please check numbers for ${f.name}`);
-        return;
-      }
-      payload.push({
-        fundId: f.id,
-        totalInvested: inv,
-        averageBuyPrice: avg,
-        monthlySipTarget: sip,
-      });
+      const d = drafts[f.id] || {
+        totalInvested: "0",
+        averageBuyPrice: "10",
+        monthlySipTarget: "8000",
+      };
+      const invErr = validateField(f.id, "totalInvested", d.totalInvested);
+      const avgErr = validateField(f.id, "averageBuyPrice", d.averageBuyPrice);
+
+      validatedDrafts[f.id] = {
+        ...d,
+        investedError: invErr,
+        avgBuyError: avgErr,
+      };
+
+      if (invErr || avgErr) hasError = true;
     }
 
-    setIsSubmitting(true);
+    setDrafts(validatedDrafts);
+    if (hasError) {
+      setSubmitError("Please correct the invalid fields marked in red.");
+      return;
+    }
+
     try {
-      await onSaveHoldings(payload);
-      setSuccessMessage("✓ Baseline holdings updated successfully!");
-      setTimeout(() => {
-        dialogRef.current?.close("baseline_saved");
-      }, 1000);
+      setIsSubmitting(true);
+      const updates = funds.map((f) => {
+        const d = drafts[f.id];
+        return {
+          fundId: f.id,
+          totalInvested: Number(d.totalInvested),
+          averageBuyPrice: Number(d.averageBuyPrice),
+          monthlySipTarget: Number(d.monthlySipTarget || 8000),
+        };
+      });
+
+      await onSaveHoldings(updates);
+      dialogRef.current?.close("saved");
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : String(err));
+      setSubmitError(
+        err instanceof Error ? err.message : "Failed to save baseline holdings.",
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const filteredFunds =
+    activeFundFilter === "all"
+      ? funds
+      : funds.filter((f) => f.id === activeFundFilter);
 
   return (
     <dialog
       ref={dialogRef}
       aria-labelledby={titleId}
-      {...({
-        closedby: "any",
-      } as React.DialogHTMLAttributes<HTMLDialogElement>)}
-      className="theme-surface m-auto max-sm:mb-0 max-sm:mt-auto w-full sm:w-[calc(100%-2rem)] max-w-2xl rounded-t-3xl sm:rounded-2xl border p-0 shadow-2xl max-h-[92vh] overflow-hidden"
+      className="theme-elevated modal-native-backdrop w-full max-w-2xl rounded-2xl border theme-border p-0 shadow-2xl backdrop:bg-slate-950/70"
     >
-      {/* Mobile Handle */}
-      <div className="sm:hidden flex justify-center pt-2.5 pb-1 theme-elevated">
-        <span className="h-1.5 w-12 rounded-full bg-slate-400/50" />
-      </div>
-
-      {/* Header */}
-      <div className="theme-elevated flex items-center justify-between border-b px-4 py-3 sm:px-6">
-        <div>
-          <h2
-            id={titleId}
-            className="text-base sm:text-lg font-bold theme-text-primary"
+      <form onSubmit={handleSubmitBaseline} className="flex flex-col max-h-[90dvh]">
+        {/* Modal Header */}
+        <div className="flex items-center justify-between border-b theme-border px-4 py-3.5 sm:px-6">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-500 shrink-0">
+              <SlidersHorizontal className="h-5 w-5" aria-hidden="true" />
+            </div>
+            <div className="min-w-0">
+              <h2
+                id={titleId}
+                className="text-base sm:text-lg font-extrabold tracking-tight theme-text-primary truncate"
+              >
+                Edit Holdings &amp; Investments
+              </h2>
+              <p className="text-xs theme-text-secondary truncate">
+                Integer units · Cash buffers · SIP &amp; CIP dividend actions
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => dialogRef.current?.close("dismiss")}
+            aria-label="Close dialog"
+            className="theme-text-muted hover:theme-text-primary rounded-xl p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center transition"
           >
-            Manage Portfolio, SIP &amp; CIP Dividends
-          </h2>
-          <p className="text-xs theme-text-secondary mt-0.5">
-            Add CIP integer units, settle cash remainders, or record monthly SIPs.
-          </p>
+            <X className="h-5 w-5" aria-hidden="true" />
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={() => dialogRef.current?.close("close_btn")}
-          className="theme-surface rounded-xl border p-2 theme-text-muted hover:opacity-80 transition"
-          aria-label="Close modal"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      </div>
 
-      {/* 3 Main Tabs */}
-      <div className="grid grid-cols-3 border-b theme-border bg-slate-500/5 p-1 text-xs font-bold">
-        <button
-          type="button"
-          onClick={() => {
-            setActiveTab("cip");
-            setSubmitError(null);
-            setSuccessMessage(null);
-          }}
-          className={`flex items-center justify-center gap-1.5 py-2.5 rounded-xl transition ${
-            activeTab === "cip"
-              ? "btn-primary shadow-sm"
-              : "theme-text-secondary hover:theme-text-primary"
-          }`}
-        >
-          <Coins className="h-4 w-4 shrink-0" />
-          <span>+ Add CIP Dividend</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setActiveTab("sip");
-            setSubmitError(null);
-            setSuccessMessage(null);
-          }}
-          className={`flex items-center justify-center gap-1.5 py-2.5 rounded-xl transition ${
-            activeTab === "sip"
-              ? "btn-primary shadow-sm"
-              : "theme-text-secondary hover:theme-text-primary"
-          }`}
-        >
-          <RefreshCw className="h-4 w-4 shrink-0" />
-          <span>+ Record Monthly SIP</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setActiveTab("baseline");
-            setSubmitError(null);
-            setSuccessMessage(null);
-          }}
-          className={`flex items-center justify-center gap-1.5 py-2.5 rounded-xl transition ${
-            activeTab === "baseline"
-              ? "btn-primary shadow-sm"
-              : "theme-text-secondary hover:theme-text-primary"
-          }`}
-        >
-          <SlidersHorizontal className="h-4 w-4 shrink-0" />
-          <span>Edit Holdings</span>
-        </button>
-      </div>
+        {/* Global Notifications */}
+        {actionSuccessMessage && (
+          <div className="mx-4 mt-3 sm:mx-6 rounded-xl border p-3 text-xs status-gain-badge flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 shrink-0 status-gain-text" />
+            <span>{actionSuccessMessage}</span>
+          </div>
+        )}
+        {submitError && (
+          <div className="mx-4 mt-3 sm:mx-6 rounded-xl border p-3 text-xs status-loss-badge flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 shrink-0 status-loss-text" />
+            <span>{submitError}</span>
+          </div>
+        )}
 
-      {/* AMC Selector (For CIP and SIP tabs) */}
-      {activeTab !== "baseline" && (
-        <div className="px-4 sm:px-6 pt-3.5 pb-2 border-b theme-border theme-elevated">
-          <label className="block text-xs font-bold uppercase tracking-wider theme-text-secondary mb-1.5">
-            Select AMC / Mutual Fund
-          </label>
-          <div className="grid grid-cols-3 gap-2">
+        {/* Fund Selector Filter Pills */}
+        <div className="border-b theme-border px-4 py-2 sm:px-6">
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-thin py-1 no-scrollbar">
+            <button
+              type="button"
+              onClick={() => setActiveFundFilter("all")}
+              className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition shrink-0 whitespace-nowrap min-h-[36px] ${
+                activeFundFilter === "all"
+                  ? "btn-primary shadow-sm"
+                  : "theme-surface theme-text-secondary hover:theme-text-primary border theme-border"
+              }`}
+            >
+              All Funds ({funds.length})
+            </button>
             {funds.map((f) => (
               <button
                 key={f.id}
                 type="button"
-                onClick={() => handleSelectFund(f.id)}
-                className={`py-2 px-2.5 rounded-xl text-left text-xs font-bold border transition ${
-                  selectedFundId === f.id
-                    ? "border-emerald-500 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 shadow-sm"
-                    : "theme-surface theme-border theme-text-secondary hover:theme-text-primary"
+                onClick={() => setActiveFundFilter(f.id)}
+                className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition shrink-0 whitespace-nowrap min-h-[36px] ${
+                  activeFundFilter === f.id
+                    ? "btn-primary shadow-sm"
+                    : "theme-surface theme-text-secondary hover:theme-text-primary border theme-border"
                 }`}
               >
-                <div className="truncate">{f.shortName || f.name}</div>
-                {f.fractionalCashBalance > 0 && (
-                  <div className="text-[10px] text-amber-600 dark:text-amber-400 mt-0.5 truncate">
-                    ৳{f.fractionalCashBalance.toFixed(2)} cash buffer
-                  </div>
-                )}
+                {f.shortName}
               </button>
             ))}
           </div>
         </div>
-      )}
 
-      {/* Notifications */}
-      {submitError && (
-        <div className="m-4 status-loss-badge flex items-center gap-2 rounded-xl p-3 text-xs font-medium">
-          <AlertCircle className="h-4 w-4 shrink-0 status-loss-text" />
-          <span>{submitError}</span>
-        </div>
-      )}
-      {successMessage && (
-        <div className="m-4 status-gain-badge flex items-center gap-2 rounded-xl p-3 text-xs font-medium">
-          <CheckCircle2 className="h-4 w-4 shrink-0 status-gain-text" />
-          <span>{successMessage}</span>
-        </div>
-      )}
-
-      {/* ==================================================================== */}
-      {/* TAB 1: ADD CIP DIVIDEND (INTEGER UNITS & CASH REMAINDER)              */}
-      {/* ==================================================================== */}
-      {activeTab === "cip" && currentFund && (
-        <form onSubmit={handleSubmitCip} className="p-4 sm:p-6 space-y-4 overflow-y-auto max-h-[62vh]">
-          {/* AMC Banner */}
-          <div className="theme-elevated flex items-center justify-between rounded-xl border p-3 text-xs">
-            <div>
-              <span className="theme-text-muted block text-[11px]">Selected Mutual Fund</span>
-              <strong className="theme-text-primary text-sm font-extrabold">{currentFund.name}</strong>
-            </div>
-            <div className="text-right">
-              <span className="theme-text-muted block text-[11px]">Existing Units Held</span>
-              <strong className="font-mono text-sm font-bold status-info-text">
-                {currentFund.totalUnitsHeld.toFixed(4)}
-              </strong>
-            </div>
-          </div>
-
-          {/* Existing Cash Buffer Notice */}
-          {existingCashBuffer > 0 && (
-            <div className="status-info-badge flex items-start gap-2.5 rounded-xl p-3 text-xs">
-              <Info className="h-4 w-4 shrink-0 status-info-text mt-0.5" />
-              <div>
-                <strong className="block font-bold">
-                  Existing CIP Cash Remainder: ৳{existingCashBuffer.toFixed(2)}
-                </strong>
-                <span className="text-[11px] opacity-90">
-                  This previously unsettled cash balance will automatically combine with the new dividend payout to allot maximum whole units.
-                </span>
-              </div>
-            </div>
-          )}
-
-          {/* Input Mode Switch */}
-          <div className="flex items-center justify-between text-xs pt-1">
-            <span className="font-bold theme-text-primary">Dividend Entry Method</span>
-            <label className="flex items-center gap-1.5 cursor-pointer theme-text-secondary">
-              <input
-                type="checkbox"
-                checked={isManualUnits}
-                onChange={(e) => setIsManualUnits(e.target.checked)}
-                className="rounded border-slate-400"
-              />
-              <span>Enter Allotted Units Directly</span>
-            </label>
-          </div>
-
-          {!isManualUnits ? (
-            /* Auto-Calculate from Total Dividend Amount */
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-bold theme-text-secondary mb-1">
-                  Gross Dividend Payout (BDT)
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-3 text-xs font-mono font-bold theme-text-muted">৳</span>
-                  <input
-                    type="number"
-                    step="any"
-                    min="0"
-                    placeholder="e.g. 2500"
-                    value={cipDividendAmount}
-                    onChange={(e) => setCipDividendAmount(e.target.value)}
-                    required
-                    className="form-control-input w-full rounded-xl pl-8 pr-3 py-2.5 text-sm font-mono"
-                  />
-                </div>
-                <p className="text-[11px] theme-text-muted mt-1">Total dividend amount declared by AMC</p>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold theme-text-secondary mb-1">
-                  CIP Reinvestment NAV (BDT)
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-3 text-xs font-mono font-bold theme-text-muted">৳</span>
-                  <input
-                    type="number"
-                    step="0.001"
-                    min="0.001"
-                    value={cipNav}
-                    onChange={(e) => setCipNav(e.target.value)}
-                    required
-                    className="form-control-input w-full rounded-xl pl-8 pr-3 py-2.5 text-sm font-mono"
-                  />
-                </div>
-                <p className="text-[11px] theme-text-muted mt-1">Issue NAV for dividend reinvestment</p>
-              </div>
-            </div>
-          ) : (
-            /* Manual Integer Units & Cash Input */
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <label className="block text-xs font-bold theme-text-secondary mb-1">
-                  Allotted Whole Units (Integer)
-                </label>
-                <input
-                  type="number"
-                  step="1"
-                  min="1"
-                  placeholder="e.g. 188"
-                  value={manualUnits}
-                  onChange={(e) => setManualUnits(e.target.value)}
-                  required
-                  className="form-control-input w-full rounded-xl px-3 py-2.5 text-sm font-mono font-bold"
-                />
-                <p className="text-[11px] theme-text-muted mt-1">Strictly integer units (no decimals)</p>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold theme-text-secondary mb-1">
-                  Reinvestment NAV (BDT)
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-3 text-xs font-mono font-bold theme-text-muted">৳</span>
-                  <input
-                    type="number"
-                    step="0.001"
-                    value={cipNav}
-                    onChange={(e) => setCipNav(e.target.value)}
-                    required
-                    className="form-control-input w-full rounded-xl pl-8 pr-3 py-2.5 text-sm font-mono"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold theme-text-secondary mb-1">
-                  Retained Cash Remainder (BDT)
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-3 text-xs font-mono font-bold theme-text-muted">৳</span>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="e.g. 7.95"
-                    value={manualCashRemainder}
-                    onChange={(e) => setManualCashRemainder(e.target.value)}
-                    className="form-control-input w-full rounded-xl pl-8 pr-3 py-2.5 text-sm font-mono"
-                  />
-                </div>
-                <p className="text-[11px] theme-text-muted mt-1">Settles on next SIP</p>
-              </div>
-            </div>
-          )}
-
-          {/* Live Calculation Feedback Card */}
-          <div className="theme-elevated rounded-xl border p-4 space-y-3">
-            <div className="flex items-center justify-between text-xs border-b theme-border pb-2">
-              <span className="font-bold theme-text-primary flex items-center gap-1.5">
-                <Calculator className="h-4 w-4 status-gain-text" />
-                <span>CIP Reinvestment Breakdown</span>
-              </span>
-              <span className="status-gain-badge px-2 py-0.5 rounded-full text-[10px] font-bold">
-                Integer Units Mandatory
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
-              <div>
-                <span className="text-[11px] theme-text-muted block">Allotted Whole Units</span>
-                <strong className="font-mono text-base font-black status-gain-text">
-                  +{computedUnitsAllotted} units
-                </strong>
-                <span className="block text-[10px] theme-text-muted mt-0.5">Integer only</span>
-              </div>
-
-              <div>
-                <span className="text-[11px] theme-text-muted block">Reinvested Capital</span>
-                <strong className="font-mono text-sm font-bold theme-text-primary">
-                  ৳{formatBdt(computedReinvestedAmount, 2)}
-                </strong>
-                <span className="block text-[10px] theme-text-muted mt-0.5">{computedUnitsAllotted} × ৳{numCipNav}</span>
-              </div>
-
-              <div className="col-span-2 sm:col-span-1 border-t sm:border-t-0 pt-2 sm:pt-0 theme-border">
-                <span className="text-[11px] text-amber-600 dark:text-amber-400 font-bold block">
-                  Remaining Cash Balance
-                </span>
-                <strong className="font-mono text-base font-black text-amber-600 dark:text-amber-400">
-                  ৳{formatBdt(computedCashRemainder, 2)}
-                </strong>
-                <span className="block text-[10px] theme-text-muted mt-0.5">
-                  Settles on next SIP
-                </span>
-              </div>
-            </div>
-
-            {/* Holding Impact Row */}
-            {cipHoldingPreview && computedUnitsAllotted > 0 && (
-              <div className="theme-surface rounded-lg border p-2.5 text-xs theme-text-secondary flex items-center justify-between">
-                <span>
-                  New Units: <strong className="font-mono font-bold theme-text-primary">{cipHoldingPreview.newTotalUnits.toFixed(4)}</strong>
-                </span>
-                <span>→</span>
-                <span>
-                  New Avg Cost: <strong className="font-mono font-bold theme-text-primary">৳{cipHoldingPreview.newAverageBuyPrice.toFixed(4)}</strong>
-                </span>
-              </div>
-            )}
-          </div>
-
-          <div className="flex justify-end gap-2 pt-2">
-            <button
-              type="button"
-              onClick={() => dialogRef.current?.close("cancel")}
-              className="theme-surface min-h-[44px] rounded-xl border px-4 py-2 text-xs font-bold theme-text-primary hover:opacity-80"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting || computedUnitsAllotted <= 0}
-              className="btn-primary min-h-[44px] rounded-xl px-5 py-2 text-xs font-bold shadow-md disabled:opacity-50 flex items-center gap-1.5"
-            >
-              <CheckCircle2 className="h-4 w-4" />
-              <span>
-                {isSubmitting
-                  ? "Adding CIP Units..."
-                  : `Confirm +${computedUnitsAllotted} Units (Keep ৳${computedCashRemainder.toFixed(2)} Cash)`}
-              </span>
-            </button>
-          </div>
-        </form>
-      )}
-
-      {/* ==================================================================== */}
-      {/* TAB 2: RECORD MONTHLY SIP (WITH CIP CASH SETTLEMENT)                 */}
-      {/* ==================================================================== */}
-      {activeTab === "sip" && currentFund && (
-        <form onSubmit={handleSubmitSipSettlement} className="p-4 sm:p-6 space-y-4 overflow-y-auto max-h-[62vh]">
-          {/* AMC Banner */}
-          <div className="theme-elevated flex items-center justify-between rounded-xl border p-3 text-xs">
-            <div>
-              <span className="theme-text-muted block text-[11px]">Selected Mutual Fund</span>
-              <strong className="theme-text-primary text-sm font-extrabold">{currentFund.name}</strong>
-            </div>
-            <div className="text-right">
-              <span className="theme-text-muted block text-[11px]">Current Units</span>
-              <strong className="font-mono text-sm font-bold status-info-text">
-                {currentFund.totalUnitsHeld.toFixed(4)}
-              </strong>
-            </div>
-          </div>
-
-          {/* CIP Cash Remainder Detected Alert */}
-          {existingCashBuffer > 0 ? (
-            <div className="status-warn-badge rounded-xl border p-3.5 space-y-2 text-xs">
-              <div className="flex items-center gap-2">
-                <Coins className="h-4 w-4 status-warn-text" />
-                <span className="font-extrabold status-warn-text">
-                  ৳{existingCashBuffer.toFixed(2)} Unsettled CIP Cash Remainder Detected!
-                </span>
-              </div>
-              <p className="text-[11px] opacity-90 leading-relaxed">
-                This fractional cash balance from your previous CIP dividend will be settled with this monthly SIP installment.
-              </p>
-
-              {/* Settlement Choice Radios */}
-              <div className="space-y-2 pt-1 border-t border-amber-500/30">
-                <label className="flex items-start gap-2.5 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="settlementMethod"
-                    value="ADD_TO_INVESTMENT"
-                    checked={settlementMethod === "ADD_TO_INVESTMENT"}
-                    onChange={() => setSettlementMethod("ADD_TO_INVESTMENT")}
-                    className="mt-0.5"
-                  />
-                  <div>
-                    <strong className="block font-bold">
-                      Add cash remainder to investment purchase (Recommended)
-                    </strong>
-                    <span className="text-[11px] opacity-80 block">
-                      Invest fresh ৳{formatBdt(numSip, 0)} + ৳{existingCashBuffer.toFixed(2)} cash buffer = <strong>৳{formatBdt(numSip + existingCashBuffer, 2)}</strong> total invested in units.
-                    </span>
-                  </div>
-                </label>
-
-                <label className="flex items-start gap-2.5 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="settlementMethod"
-                    value="DEDUCT_FROM_PAYMENT"
-                    checked={settlementMethod === "DEDUCT_FROM_PAYMENT"}
-                    onChange={() => setSettlementMethod("DEDUCT_FROM_PAYMENT")}
-                    className="mt-0.5"
-                  />
-                  <div>
-                    <strong className="block font-bold">
-                      Deduct cash remainder from bank payment
-                    </strong>
-                    <span className="text-[11px] opacity-80 block">
-                      Total ৳{formatBdt(numSip, 0)} invested in units. You only transfer <strong>৳{formatBdt(Math.max(0, numSip - existingCashBuffer), 2)}</strong> from your bank account.
-                    </span>
-                  </div>
-                </label>
-              </div>
-            </div>
-          ) : (
-            <div className="status-info-badge flex items-center gap-2 rounded-xl p-3 text-xs">
-              <CheckCircle2 className="h-4 w-4 status-info-text shrink-0" />
-              <span>No unsettled CIP cash remainder for this AMC. Clean regular monthly SIP installment.</span>
-            </div>
-          )}
-
-          {/* SIP Inputs */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-bold theme-text-secondary mb-1">
-                Monthly SIP Installment Amount (BDT)
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-3 text-xs font-mono font-bold theme-text-muted">৳</span>
-                <input
-                  type="number"
-                  step="any"
-                  min="1"
-                  value={sipAmount}
-                  onChange={(e) => setSipAmount(e.target.value)}
-                  required
-                  className="form-control-input w-full rounded-xl pl-8 pr-3 py-2.5 text-sm font-mono font-bold"
-                />
-              </div>
-              <p className="text-[11px] theme-text-muted mt-1">Monthly target: ৳{currentFund.monthlySipTarget}</p>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold theme-text-secondary mb-1">
-                Execution NAV / Buy Price (BDT)
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-3 text-xs font-mono font-bold theme-text-muted">৳</span>
-                <input
-                  type="number"
-                  step="0.001"
-                  min="0.001"
-                  value={sipExecutionNav}
-                  onChange={(e) => setSipExecutionNav(e.target.value)}
-                  required
-                  className="form-control-input w-full rounded-xl pl-8 pr-3 py-2.5 text-sm font-mono"
-                />
-              </div>
-              <p className="text-[11px] theme-text-muted mt-1">Current NAV: ৳{currentFund.effectiveNav.toFixed(3)}</p>
-            </div>
-          </div>
-
-          {/* Simulation Preview */}
-          {sipSettlementPreview && (
-            <div className="theme-elevated rounded-xl border p-3.5 space-y-2 text-xs">
-              <span className="font-bold theme-text-primary block">Execution Summary Preview</span>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <span className="text-[11px] theme-text-muted block">Effective Units Purchased</span>
-                  <strong className="font-mono font-bold status-gain-text">
-                    +{sipSettlementPreview.addedUnits.toFixed(4)} units
-                  </strong>
-                </div>
-                <div className="text-right">
-                  <span className="text-[11px] theme-text-muted block">CIP Cash Settled</span>
-                  <strong className="font-mono font-bold status-info-text">
-                    ৳{existingCashBuffer.toFixed(2)} → ৳0.00
-                  </strong>
-                </div>
-                <div>
-                  <span className="text-[11px] theme-text-muted block">New Total Invested</span>
-                  <strong className="font-mono font-bold theme-text-primary">
-                    ৳{formatBdt(sipSettlementPreview.newTotalInvested, 2)}
-                  </strong>
-                </div>
-                <div className="text-right">
-                  <span className="text-[11px] theme-text-muted block">New Average Buy Price</span>
-                  <strong className="font-mono font-bold theme-text-primary">
-                    ৳{sipSettlementPreview.newAverageBuyPrice.toFixed(4)}
-                  </strong>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="flex justify-end gap-2 pt-2">
-            <button
-              type="button"
-              onClick={() => dialogRef.current?.close("cancel")}
-              className="theme-surface min-h-[44px] rounded-xl border px-4 py-2 text-xs font-bold theme-text-primary hover:opacity-80"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="btn-primary min-h-[44px] rounded-xl px-5 py-2 text-xs font-bold shadow-md disabled:opacity-50 flex items-center gap-1.5"
-            >
-              <CheckCircle2 className="h-4 w-4" />
-              <span>
-                {isSubmitting
-                  ? "Recording SIP..."
-                  : existingCashBuffer > 0
-                  ? `Execute SIP & Settle ৳${existingCashBuffer.toFixed(2)} Cash`
-                  : `Record ৳${formatBdt(numSip, 0)} Monthly SIP`}
-              </span>
-            </button>
-          </div>
-        </form>
-      )}
-
-      {/* ==================================================================== */}
-      {/* TAB 3: EDIT BASELINE HOLDINGS                                        */}
-      {/* ==================================================================== */}
-      {activeTab === "baseline" && (
-        <form onSubmit={handleSubmitBaseline} className="p-4 sm:p-6 space-y-4 overflow-y-auto max-h-[62vh]">
-          <div className="space-y-4">
-            {funds.map((f) => {
-              const d = drafts[f.id] || {
-                totalInvested: String(f.totalInvested),
-                averageBuyPrice: String(f.averageBuyPrice),
-                monthlySipTarget: String(f.monthlySipTarget || 8000),
+        {/* Scrollable Content Body */}
+        <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 space-y-5">
+          <div className="space-y-5">
+            {filteredFunds.map((fund) => {
+              const d = drafts[fund.id] || {
+                totalInvested: String(fund.totalInvested),
+                averageBuyPrice: String(fund.averageBuyPrice),
+                monthlySipTarget: String(fund.monthlySipTarget || 8000),
               };
-              const inv = Number(d.totalInvested) || 0;
-              const avg = Number(d.averageBuyPrice) || 10;
-              const calcUnits = inv > 0 && avg > 0 ? inv / avg : 0;
+
+              const numInvested = Math.max(0, Number(d.totalInvested) || 0);
+              const numAvgBuy = Number(d.averageBuyPrice) > 0 ? Number(d.averageBuyPrice) : 10;
+              const previewUnits = Math.floor(numInvested / numAvgBuy);
+              const previewUnitsCost = Number((previewUnits * numAvgBuy).toFixed(2));
+              const previewCashRemainder = Math.max(0, Number((numInvested - previewUnitsCost).toFixed(2)));
+              const previewMarketVal = previewUnits * fund.effectiveNav;
+
+              const isSipExpanded = expandedAction[fund.id] === "sip";
+              const isCipExpanded = expandedAction[fund.id] === "cip";
+              const isFundActionLoading = submittingActionFundId === fund.id;
+
+              // Compute inline SIP preview
+              const sipCashVal = Number(sipCashInputs[fund.id]) || fund.monthlySipTarget || 8000;
+              const sipNavVal = Number(sipNavInputs[fund.id]) || fund.effectiveNav || fund.averageBuyPrice || 10;
+              const sipSim = simulateSipInstallment(
+                fund.totalInvested,
+                fund.averageBuyPrice,
+                sipCashVal,
+                sipNavVal,
+                fund.totalUnitsHeld,
+                fund.fractionalCashBalance
+              );
+
+              // Compute inline CIP preview
+              const cipDivVal = Number(cipDividendInputs[fund.id]) || 0;
+              const cipNavVal = Number(cipNavInputs[fund.id]) || fund.effectiveNav || fund.averageBuyPrice || 10;
+              const cipCalc = calculateCipReinvestment(
+                cipDivVal,
+                cipNavVal,
+                fund.fractionalCashBalance
+              );
 
               return (
-                <div key={f.id} className="theme-elevated rounded-xl border p-3.5 space-y-3">
-                  <div className="flex items-center justify-between border-b theme-border pb-2">
-                    <strong className="text-sm font-bold theme-text-primary">{f.name}</strong>
-                    <span className="font-mono text-xs theme-text-secondary">
-                      Calculated Units: <strong className="status-info-text">{calcUnits.toFixed(4)}</strong>
-                    </span>
+                <fieldset
+                  key={fund.id}
+                  className="theme-elevated rounded-2xl border theme-border p-4 sm:p-5 space-y-4 shadow-sm"
+                >
+                  {/* Fund Header Banner */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b theme-border pb-3">
+                    <div className="min-w-0">
+                      <legend className="text-sm sm:text-base font-extrabold theme-text-primary">
+                        {fund.name}
+                      </legend>
+                      <p className="text-[11px] theme-text-muted mt-0.5">
+                        {fund.fundManager} · NAV Date: {fund.navEffectiveDate || "Latest Day"}
+                      </p>
+                    </div>
+                    <div className="inline-flex items-center gap-1.5 rounded-lg border theme-border px-2.5 py-1 text-xs font-mono font-bold status-gain-badge">
+                      <span>Latest NAV:</span>
+                      <strong>৳{fund.effectiveNav.toFixed(3)}</strong>
+                    </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div>
-                      <label className="block text-[11px] font-bold theme-text-secondary mb-1">
+                  {/* Integer Units & Cash Buffer Info Banner */}
+                  <div className="theme-surface rounded-xl border theme-border p-3 space-y-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs theme-text-secondary">Current Holdings:</span>
+                        <strong className="font-mono text-xs sm:text-sm font-bold status-info-text">
+                          {Math.floor(fund.totalUnitsHeld).toLocaleString("en-BD")} units
+                        </strong>
+                        <span className="text-[10px] theme-text-muted">(Plain Integer)</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-xs">
+                        <Coins className="h-3.5 w-3.5 status-warn-text" />
+                        <span className="theme-text-secondary">Cash Buffer:</span>
+                        <strong className="font-mono font-bold status-warn-text">
+                          ৳{formatBdt(fund.fractionalCashBalance, 2)}
+                        </strong>
+                      </div>
+                    </div>
+                    <p className="text-[11px] theme-text-muted leading-relaxed">
+                      Under Bangladesh AMC rules, mutual fund units are strictly whole integers. The decimal remainder (৳{formatBdt(fund.fractionalCashBalance, 2)}) is held in cash and automatically rolls forward to settle with whole units on your next monthly SIP.
+                    </p>
+                  </div>
+
+                  {/* 2 Quick Action Buttons inside this fund card */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => toggleInlineAction(fund.id, "sip")}
+                      className={`inline-flex items-center justify-between rounded-xl border px-3.5 py-2.5 text-xs font-bold transition min-h-[44px] ${
+                        isSipExpanded
+                          ? "btn-primary shadow-sm"
+                          : "theme-surface theme-text-primary hover:border-emerald-500/50"
+                      }`}
+                    >
+                      <span className="inline-flex items-center gap-1.5">
+                        <RefreshCw className="h-4 w-4 shrink-0" />
+                        <span>+ Record Monthly SIP (৳{formatBdt(fund.monthlySipTarget || 8000, 0)})</span>
+                      </span>
+                      {isSipExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => toggleInlineAction(fund.id, "cip")}
+                      className={`inline-flex items-center justify-between rounded-xl border px-3.5 py-2.5 text-xs font-bold transition min-h-[44px] ${
+                        isCipExpanded
+                          ? "status-gain-badge border-emerald-500/50 shadow-sm"
+                          : "theme-surface theme-text-primary hover:border-emerald-500/50"
+                      }`}
+                    >
+                      <span className="inline-flex items-center gap-1.5">
+                        <Coins className="h-4 w-4 status-gain-text shrink-0" />
+                        <span>+ Add CIP Dividend</span>
+                      </span>
+                      {isCipExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </button>
+                  </div>
+
+                  {/* INLINE SIP EXPANDABLE DRAWER */}
+                  {isSipExpanded && (
+                    <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3.5 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-bold theme-text-primary flex items-center gap-1.5">
+                          <RefreshCw className="h-3.5 w-3.5 text-emerald-500" />
+                          <span>Record Monthly SIP Installment</span>
+                        </h4>
+                        <span className="text-[11px] status-warn-text font-semibold">
+                          Combines ৳{formatBdt(fund.fractionalCashBalance, 2)} cash buffer
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[11px] font-semibold theme-text-secondary">
+                            Fresh Monthly SIP Cash (BDT)
+                          </label>
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            value={sipCashInputs[fund.id] ?? ""}
+                            onChange={(e) =>
+                              setSipCashInputs((prev) => ({
+                                ...prev,
+                                [fund.id]: e.target.value,
+                              }))
+                            }
+                            placeholder="8000"
+                            className="form-control-input rounded-xl border px-3 py-2 font-mono font-semibold text-xs"
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[11px] font-semibold theme-text-secondary">
+                            Execution NAV (BDT)
+                          </label>
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            value={sipNavInputs[fund.id] ?? ""}
+                            onChange={(e) =>
+                              setSipNavInputs((prev) => ({
+                                ...prev,
+                                [fund.id]: e.target.value,
+                              }))
+                            }
+                            placeholder="10.596"
+                            className="form-control-input rounded-xl border px-3 py-2 font-mono font-semibold text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Live SIP Settlement Preview */}
+                      <div className="theme-surface rounded-xl border theme-border p-2.5 text-[11px] space-y-1">
+                        <div className="flex items-center justify-between text-xs font-bold theme-text-primary">
+                          <span>Total Cash Available:</span>
+                          <span className="font-mono">
+                            ৳{formatBdt(sipCashVal + fund.fractionalCashBalance, 2)} (৳{formatBdt(sipCashVal, 0)} + ৳{formatBdt(fund.fractionalCashBalance, 2)} buffer)
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between theme-text-secondary">
+                          <span>New Plain Integer Units:</span>
+                          <span className="font-mono font-bold status-gain-text">
+                            +{sipSim.addedUnits} units @ ৳{sipNavVal.toFixed(3)}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between theme-text-secondary">
+                          <span>Remaining Cash (rolls to next SIP):</span>
+                          <span className="font-mono font-bold status-warn-text">
+                            ৳{formatBdt(sipSim.remainingCashBalance, 2)}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between theme-text-muted pt-1 border-t theme-border text-[10px]">
+                          <span>New Total Holdings:</span>
+                          <span className="font-mono font-bold theme-text-primary">
+                            {sipSim.newTotalUnits} units · Avg ৳{sipSim.newAverageBuyPrice.toFixed(4)}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => toggleInlineAction(fund.id, "sip")}
+                          className="theme-surface rounded-lg border px-3 py-1.5 text-xs font-semibold theme-text-primary"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          disabled={isFundActionLoading}
+                          onClick={() => handleExecuteSip(fund)}
+                          className="btn-primary rounded-lg px-4 py-1.5 text-xs font-bold shadow-sm inline-flex items-center gap-1.5"
+                        >
+                          {isFundActionLoading ? "Recording SIP..." : "Record SIP & Settle Cash"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* INLINE CIP DIVIDEND EXPANDABLE DRAWER */}
+                  {isCipExpanded && (
+                    <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3.5 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-bold theme-text-primary flex items-center gap-1.5">
+                          <Coins className="h-3.5 w-3.5 text-emerald-500" />
+                          <span>Add CIP Dividend Reinvestment</span>
+                        </h4>
+                        <span className="text-[11px] status-warn-text font-semibold">
+                          Includes ৳{formatBdt(fund.fractionalCashBalance, 2)} buffer
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[11px] font-semibold theme-text-secondary">
+                            CIP Dividend Cash Value (BDT)
+                          </label>
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            value={cipDividendInputs[fund.id] ?? ""}
+                            onChange={(e) =>
+                              setCipDividendInputs((prev) => ({
+                                ...prev,
+                                [fund.id]: e.target.value,
+                              }))
+                            }
+                            placeholder="e.g. 2000"
+                            className="form-control-input rounded-xl border px-3 py-2 font-mono font-semibold text-xs"
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[11px] font-semibold theme-text-secondary">
+                            Execution CIP NAV (BDT)
+                          </label>
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            value={cipNavInputs[fund.id] ?? ""}
+                            onChange={(e) =>
+                              setCipNavInputs((prev) => ({
+                                ...prev,
+                                [fund.id]: e.target.value,
+                              }))
+                            }
+                            placeholder="10.74"
+                            className="form-control-input rounded-xl border px-3 py-2 font-mono font-semibold text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Live CIP Preview */}
+                      <div className="theme-surface rounded-xl border theme-border p-2.5 text-[11px] space-y-1">
+                        <div className="flex items-center justify-between text-xs font-bold theme-text-primary">
+                          <span>Total Reinvestment Funds:</span>
+                          <span className="font-mono">
+                            ৳{formatBdt(cipCalc.totalAvailable, 2)}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between theme-text-secondary">
+                          <span>Allotted Plain Integer Units:</span>
+                          <span className="font-mono font-bold status-gain-text">
+                            +{cipCalc.unitsAllotted} units @ ৳{cipNavVal.toFixed(3)}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between theme-text-secondary">
+                          <span>New Cash Balance (to next SIP):</span>
+                          <span className="font-mono font-bold status-warn-text">
+                            ৳{formatBdt(cipCalc.cashRemainder, 2)}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between theme-text-muted pt-1 border-t theme-border text-[10px]">
+                          <span>Post-CIP Total Holdings:</span>
+                          <span className="font-mono font-bold theme-text-primary">
+                            {Math.floor(fund.totalUnitsHeld) + cipCalc.unitsAllotted} units
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => toggleInlineAction(fund.id, "cip")}
+                          className="theme-surface rounded-lg border px-3 py-1.5 text-xs font-semibold theme-text-primary"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          disabled={isFundActionLoading || !cipDivVal || cipDivVal <= 0}
+                          onClick={() => handleExecuteCip(fund)}
+                          className="btn-primary rounded-lg px-4 py-1.5 text-xs font-bold shadow-sm inline-flex items-center gap-1.5 disabled:opacity-50"
+                        >
+                          {isFundActionLoading ? "Adding CIP Units..." : "Credit CIP Integer Units"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 3 Baseline Inputs (The Clean UI the user loved!) */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                    {/* Total Invested (BDT) */}
+                    <div className="flex flex-col gap-1">
+                      <label
+                        htmlFor={`invested-${fund.id}`}
+                        className="text-xs font-semibold theme-text-primary"
+                      >
                         Total Invested (BDT)
                       </label>
                       <input
-                        type="number"
-                        step="any"
+                        id={`invested-${fund.id}`}
+                        name={`invested-${fund.id}`}
+                        type="text"
+                        inputMode="decimal"
+                        aria-invalid={Boolean(d.investedError)}
+                        aria-describedby={
+                          d.investedError
+                            ? `invested-err-${fund.id}`
+                            : `invested-help-${fund.id}`
+                        }
                         value={d.totalInvested}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setDrafts((prev) => ({
-                            ...prev,
-                            [f.id]: { ...d, totalInvested: val },
-                          }));
-                        }}
-                        className="form-control-input w-full rounded-xl px-3 py-2 text-xs font-mono"
+                        onChange={(e) =>
+                          handleInputChange(
+                            fund.id,
+                            "totalInvested",
+                            e.target.value,
+                          )
+                        }
+                        onBlur={() => handleBlur(fund.id, "totalInvested")}
+                        className="form-control-input rounded-xl border px-3.5 py-2.5 font-mono font-semibold text-xs sm:text-sm"
                       />
+                      {d.investedError ? (
+                        <span
+                          id={`invested-err-${fund.id}`}
+                          className="text-xs font-medium status-loss-text"
+                        >
+                          {d.investedError}
+                        </span>
+                      ) : (
+                        <span
+                          id={`invested-help-${fund.id}`}
+                          className="text-xs theme-text-muted"
+                        >
+                          Cumulative capital deposited
+                        </span>
+                      )}
                     </div>
-                    <div>
-                      <label className="block text-[11px] font-bold theme-text-secondary mb-1">
+
+                    {/* Average Buy Price (BDT) */}
+                    <div className="flex flex-col gap-1">
+                      <label
+                        htmlFor={`avgbuy-${fund.id}`}
+                        className="text-xs font-semibold theme-text-primary"
+                      >
                         Average Buy Price (BDT)
                       </label>
                       <input
-                        type="number"
-                        step="0.001"
+                        id={`avgbuy-${fund.id}`}
+                        name={`avgbuy-${fund.id}`}
+                        type="text"
+                        inputMode="decimal"
+                        aria-invalid={Boolean(d.avgBuyError)}
+                        aria-describedby={
+                          d.avgBuyError
+                            ? `avgbuy-err-${fund.id}`
+                            : `avgbuy-help-${fund.id}`
+                        }
                         value={d.averageBuyPrice}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setDrafts((prev) => ({
-                            ...prev,
-                            [f.id]: { ...d, averageBuyPrice: val },
-                          }));
-                        }}
-                        className="form-control-input w-full rounded-xl px-3 py-2 text-xs font-mono"
+                        onChange={(e) =>
+                          handleInputChange(
+                            fund.id,
+                            "averageBuyPrice",
+                            e.target.value,
+                          )
+                        }
+                        onBlur={() => handleBlur(fund.id, "averageBuyPrice")}
+                        className="form-control-input rounded-xl border px-3.5 py-2.5 font-mono font-semibold text-xs sm:text-sm"
                       />
+                      {d.avgBuyError ? (
+                        <span
+                          id={`avgbuy-err-${fund.id}`}
+                          className="text-xs font-medium status-loss-text"
+                        >
+                          {d.avgBuyError}
+                        </span>
+                      ) : (
+                        <span
+                          id={`avgbuy-help-${fund.id}`}
+                          className="text-xs theme-text-muted"
+                        >
+                          Weighted purchase price
+                        </span>
+                      )}
                     </div>
-                    <div>
-                      <label className="block text-[11px] font-bold theme-text-secondary mb-1">
+
+                    {/* Monthly SIP Installment Target (BDT) */}
+                    <div className="flex flex-col gap-1">
+                      <label
+                        htmlFor={`sip-${fund.id}`}
+                        className="text-xs font-semibold theme-text-primary"
+                      >
                         Monthly SIP Target (BDT)
                       </label>
                       <input
-                        type="number"
-                        step="100"
+                        id={`sip-${fund.id}`}
+                        name={`sip-${fund.id}`}
+                        type="text"
+                        inputMode="decimal"
                         value={d.monthlySipTarget}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setDrafts((prev) => ({
-                            ...prev,
-                            [f.id]: { ...d, monthlySipTarget: val },
-                          }));
-                        }}
-                        className="form-control-input w-full rounded-xl px-3 py-2 text-xs font-mono"
+                        onChange={(e) =>
+                          handleInputChange(
+                            fund.id,
+                            "monthlySipTarget",
+                            e.target.value,
+                          )
+                        }
+                        className="form-control-input rounded-xl border px-3.5 py-2.5 font-mono font-semibold text-xs sm:text-sm"
                       />
+                      <span className="text-xs theme-text-muted">
+                        Default ~8,000 BDT/month
+                      </span>
                     </div>
                   </div>
-                </div>
+
+                  {/* Live Formula Preview Bar */}
+                  <div className="theme-surface mt-2 flex flex-wrap items-center justify-between gap-2 rounded-xl px-3.5 py-2.5 text-xs border theme-border">
+                    <div className="flex items-center gap-1.5 theme-text-secondary">
+                      <Calculator
+                        className="h-4 w-4 status-info-text shrink-0"
+                        aria-hidden="true"
+                      />
+                      <span>
+                        Integer Units:{" "}
+                        <strong className="font-mono font-bold theme-text-primary">
+                          {previewUnits.toLocaleString("en-BD")}
+                        </strong>{" "}
+                        units
+                        {previewCashRemainder > 0 && (
+                          <span className="status-warn-text ml-1 font-semibold">
+                            (৳{formatBdt(previewCashRemainder, 2)} cash remainder)
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                    <div className="theme-text-secondary">
+                      Est. Market Value:{" "}
+                      <strong className="font-mono font-bold status-gain-text">
+                        ৳{formatBdt(previewMarketVal, 2)}
+                      </strong>
+                    </div>
+                  </div>
+                </fieldset>
               );
             })}
           </div>
+        </div>
 
-          <div className="flex justify-end gap-2 pt-2">
-            <button
-              type="button"
-              onClick={() => dialogRef.current?.close("cancel")}
-              className="theme-surface min-h-[44px] rounded-xl border px-4 py-2 text-xs font-bold theme-text-primary hover:opacity-80"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="btn-primary min-h-[44px] rounded-xl px-5 py-2 text-xs font-bold shadow-md disabled:opacity-50"
-            >
-              {isSubmitting ? "Saving..." : "Save Baseline Holdings"}
-            </button>
-          </div>
-        </form>
-      )}
+        {/* Modal Bottom Action Bar */}
+        <div className="theme-elevated flex items-center justify-end gap-3 border-t theme-border px-4 py-3.5 sm:px-6 pb-safe-bottom">
+          <button
+            type="button"
+            onClick={() => dialogRef.current?.close("cancel")}
+            className="theme-surface min-h-[44px] rounded-xl border px-4 py-2.5 text-xs sm:text-sm font-semibold theme-text-primary hover:opacity-90 transition"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="btn-primary inline-flex flex-1 sm:flex-initial justify-center min-h-[44px] items-center gap-2 rounded-xl px-5 py-2.5 text-xs sm:text-sm font-bold disabled:opacity-60 transition shadow-md"
+          >
+            <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span>
+              {isSubmitting ? "Saving Holdings..." : "Save Baseline Holdings"}
+            </span>
+          </button>
+        </div>
+      </form>
     </dialog>
   );
 }

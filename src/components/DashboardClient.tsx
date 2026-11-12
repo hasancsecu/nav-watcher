@@ -668,12 +668,9 @@ export default function DashboardClient({
                       Total Units Held
                     </span>
                     <strong className="font-mono text-sm font-bold theme-text-primary">
-                      {funds
-                        .reduce((acc, f) => acc + f.totalUnitsHeld, 0)
-                        .toLocaleString("en-BD", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}{" "}
+                      {Math.floor(
+                        funds.reduce((acc, f) => acc + f.totalUnitsHeld, 0)
+                      ).toLocaleString("en-BD")}{" "}
                       units
                     </strong>
                     {summary.totalCipUnits > 0 && (
@@ -849,8 +846,13 @@ export default function DashboardClient({
                             Total Units Held
                           </span>
                           <strong className="font-mono font-bold status-info-text">
-                            {fund.totalUnitsHeld.toFixed(4)}
+                            {Math.floor(fund.totalUnitsHeld).toLocaleString("en-BD")} units
                           </strong>
+                          {fund.fractionalCashBalance > 0 && (
+                            <span className="block text-[10px] status-warn-text font-medium mt-0.5">
+                              +৳{formatBdt(fund.fractionalCashBalance, 2)} cash buffer
+                            </span>
+                          )}
                         </div>
                         <div>
                           <span className="text-[11px] theme-text-muted block">
@@ -950,12 +952,12 @@ export default function DashboardClient({
                 <div>
                   <h2
                     id="fund-breakdown-heading"
-                    className="text-base sm:text-lg font-extrabold tracking-tight theme-text-primary"
+                    className="text-sm sm:text-lg font-extrabold tracking-tight theme-text-primary"
                   >
                     Detailed SIP Valuation &amp; Formula Breakdown
                   </h2>
                   <p className="text-xs sm:text-sm theme-text-secondary mt-0.5 leading-relaxed">
-                    Units = Invested ÷ Avg Buy Price · Market Value = Units × Latest NAV · Return (%) = (Gain/Loss ÷ Invested) × 100
+                    Units = ⌊Invested ÷ Avg Price⌋ · Market Value = Units × Latest NAV · Unallotted remainder stays in cash
                   </p>
                 </div>
 
@@ -1052,10 +1054,10 @@ export default function DashboardClient({
                             Calculated Units Held
                           </span>
                           <span className="font-mono text-sm font-bold status-info-text">
-                            {fund.totalUnitsHeld.toFixed(4)}
+                            {Math.floor(fund.totalUnitsHeld).toLocaleString("en-BD")} units
                           </span>
                           <span className="block text-[9px] theme-text-muted mt-0.5">
-                            Invested ÷ Avg Price
+                            Whole Integer Units
                           </span>
                         </div>
                         <div className="theme-surface rounded-lg border p-2.5">
@@ -1136,7 +1138,7 @@ export default function DashboardClient({
                           Avg Buy Price
                         </th>
                         <th scope="col" className="py-3 px-3.5 font-bold text-right">
-                          Units Held
+                          Units (Integer)
                         </th>
                         <th scope="col" className="py-3 px-3.5 font-bold text-right">
                           Invested (BDT)
@@ -1186,7 +1188,12 @@ export default function DashboardClient({
                               ৳{fund.averageBuyPrice.toFixed(4)}
                             </td>
                             <td className="py-3 px-3.5 font-mono text-right font-bold status-info-text whitespace-nowrap">
-                              {fund.totalUnitsHeld.toFixed(4)}
+                              <div>{Math.floor(fund.totalUnitsHeld).toLocaleString("en-BD")}</div>
+                              {fund.fractionalCashBalance > 0 && (
+                                <div className="text-[10px] status-warn-text font-normal">
+                                  +৳{formatBdt(fund.fractionalCashBalance, 2)} cash
+                                </div>
+                              )}
                             </td>
                             <td className="py-3 px-3.5 font-mono text-right font-semibold theme-text-primary whitespace-nowrap">
                               ৳{formatBdt(fund.totalInvested, 2)}

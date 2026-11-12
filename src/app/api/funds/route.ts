@@ -51,11 +51,18 @@ export async function PUT(req: NextRequest) {
         );
       }
 
+      // Strict Bangladesh AMC rule: plain integer units only
+      const integerUnits = Math.floor(invested / avgBuy);
+      const costOfUnits = Number((integerUnits * avgBuy).toFixed(2));
+      const cashRemainder = Math.max(0, Number((invested - costOfUnits).toFixed(2)));
+
       await prisma.fund.update({
         where: { id: item.fundId },
         data: {
           totalInvested: Number(invested.toFixed(2)),
           averageBuyPrice: Number(avgBuy.toFixed(4)),
+          totalUnits: integerUnits,
+          fractionalCashBalance: cashRemainder,
           ...(sipTarget !== undefined && !Number.isNaN(sipTarget) && sipTarget >= 0
             ? { monthlySipTarget: Number(sipTarget.toFixed(2)) }
             : {}),

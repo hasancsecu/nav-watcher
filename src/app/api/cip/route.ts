@@ -47,7 +47,7 @@ export async function GET() {
     console.error("[API /api/cip GET] Error:", error);
     return NextResponse.json(
       { error: "Failed to fetch CIP transactions", details: String(error) },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
     if (!fundId) {
       return NextResponse.json(
         { error: "Missing required field: fundId" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -82,11 +82,14 @@ export async function POST(req: NextRequest) {
     if (!fund) {
       return NextResponse.json(
         { error: `Fund with id '${fundId}' not found.` },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
-    const safeNav = Number(cipNav) > 0 ? Number(cipNav) : fund.latestNav || fund.averageBuyPrice || 10;
+    const safeNav =
+      Number(cipNav) > 0
+        ? Number(cipNav)
+        : fund.latestNav || fund.averageBuyPrice || 10;
     const safeDiv = Math.max(0, Number(dividendAmount) || 0);
 
     // If unitsAllotted or cashRemainder are passed explicitly, use them; otherwise auto-calculate
@@ -100,9 +103,10 @@ export async function POST(req: NextRequest) {
       if (!Number.isInteger(parsedUnits) || parsedUnits < 0) {
         return NextResponse.json(
           {
-            error: "CIP units allotted must be a non-negative whole integer (e.g. 150, not 150.5).",
+            error:
+              "CIP units allotted must be a non-negative whole integer (e.g. 150, not 150.5).",
           },
-          { status: 400 }
+          { status: 400 },
         );
       }
       unitsAllotted = parsedUnits;
@@ -112,18 +116,23 @@ export async function POST(req: NextRequest) {
           ? Number(Math.max(0, Number(rawCashRemainder)).toFixed(2))
           : Number(Math.max(0, safeDiv - reinvestedAmount).toFixed(2));
     } else {
-      const calc = calculateCipReinvestment(safeDiv, safeNav, fund.fractionalCashBalance);
+      const calc = calculateCipReinvestment(
+        safeDiv,
+        safeNav,
+        fund.fractionalCashBalance,
+      );
       unitsAllotted = calc.unitsAllotted;
       reinvestedAmount = calc.reinvestedAmount;
       cashRemainder = calc.cashRemainder;
     }
 
-    // Apply CIP units to fund holdings
+    // Apply CIP units to fund holdings (plain integer units)
     const updatedHolding = applyCipUnitsToHolding(
       fund.totalInvested,
       fund.averageBuyPrice,
       unitsAllotted,
-      safeNav
+      safeNav,
+      fund.totalUnits
     );
 
     // Update fund in database
@@ -132,6 +141,7 @@ export async function POST(req: NextRequest) {
       data: {
         totalInvested: updatedHolding.newTotalInvested,
         averageBuyPrice: updatedHolding.newAverageBuyPrice,
+        totalUnits: updatedHolding.newTotalUnits,
         fractionalCashBalance: cashRemainder,
         totalCipUnits: { increment: unitsAllotted },
       },
@@ -147,7 +157,9 @@ export async function POST(req: NextRequest) {
         reinvestedAmount,
         cashRemainder,
         isSettled: false,
-        notes: notes || `CIP Dividend: +${unitsAllotted} integer units allotted @ ৳${safeNav.toFixed(3)}. ৳${cashRemainder.toFixed(2)} cash remainder held for next SIP settlement.`,
+        notes:
+          notes ||
+          `CIP Dividend: +${unitsAllotted} integer units allotted @ ৳${safeNav.toFixed(3)}. ৳${cashRemainder.toFixed(2)} cash remainder held for next SIP settlement.`,
       },
     });
 
@@ -155,7 +167,10 @@ export async function POST(req: NextRequest) {
 
     const [funds, history] = await Promise.all([
       prisma.fund.findMany({ orderBy: { id: "asc" } }),
-      prisma.portfolioHistory.findMany({ orderBy: { dateKey: "asc" }, take: 45 }),
+      prisma.portfolioHistory.findMany({
+        orderBy: { dateKey: "asc" },
+        take: 45,
+      }),
     ]);
 
     const { summary, fundsWithMetrics } = computePortfolioSummary(funds);
@@ -174,7 +189,7 @@ export async function POST(req: NextRequest) {
     console.error("[API /api/cip POST] Error:", error);
     return NextResponse.json(
       { error: "Failed to record CIP dividend", details: String(error) },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -198,7 +213,7 @@ export async function PUT(req: NextRequest) {
     if (!fundId) {
       return NextResponse.json(
         { error: "Missing required field: fundId" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -206,12 +221,18 @@ export async function PUT(req: NextRequest) {
     if (!fund) {
       return NextResponse.json(
         { error: `Fund with id '${fundId}' not found.` },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
-    const safeSip = Math.max(0, Number(freshSipCash) || fund.monthlySipTarget || 8000);
-    const safeNav = Number(executionNav) > 0 ? Number(executionNav) : fund.buyPrice || fund.latestNav || fund.averageBuyPrice || 10;
+    const safeSip = Math.max(
+      0,
+      Number(freshSipCash) || fund.monthlySipTarget || 8000,
+    );
+    const safeNav =
+      Number(executionNav) > 0
+        ? Number(executionNav)
+        : fund.buyPrice || fund.latestNav || fund.averageBuyPrice || 10;
     const unsettledCash = Math.max(0, Number(fund.fractionalCashBalance) || 0);
 
     const simulation = simulateSipWithCipSettlement(
@@ -220,16 +241,20 @@ export async function PUT(req: NextRequest) {
       safeSip,
       safeNav,
       unsettledCash,
-      settlementMethod === "DEDUCT_FROM_PAYMENT" ? "DEDUCT_FROM_PAYMENT" : "ADD_TO_INVESTMENT"
+      settlementMethod === "DEDUCT_FROM_PAYMENT"
+        ? "DEDUCT_FROM_PAYMENT"
+        : "ADD_TO_INVESTMENT",
+      fund.totalUnits
     );
 
-    // Update fund holdings and reset fractional cash balance to 0 (fully settled)
+    // Update fund holdings with integer units and retain any new decimal remainder as cash buffer
     await prisma.fund.update({
       where: { id: fundId },
       data: {
         totalInvested: simulation.newTotalInvested,
         averageBuyPrice: simulation.newAverageBuyPrice,
-        fractionalCashBalance: 0,
+        totalUnits: simulation.newTotalUnits,
+        fractionalCashBalance: simulation.remainingCashBalance,
       },
     });
 
@@ -247,7 +272,10 @@ export async function PUT(req: NextRequest) {
 
     const [funds, history] = await Promise.all([
       prisma.fund.findMany({ orderBy: { id: "asc" } }),
-      prisma.portfolioHistory.findMany({ orderBy: { dateKey: "asc" }, take: 45 }),
+      prisma.portfolioHistory.findMany({
+        orderBy: { dateKey: "asc" },
+        take: 45,
+      }),
     ]);
 
     const { summary, fundsWithMetrics } = computePortfolioSummary(funds);
@@ -267,8 +295,11 @@ export async function PUT(req: NextRequest) {
   } catch (error) {
     console.error("[API /api/cip PUT] Error:", error);
     return NextResponse.json(
-      { error: "Failed to settle CIP cash balance with SIP", details: String(error) },
-      { status: 500 }
+      {
+        error: "Failed to settle CIP cash balance with SIP",
+        details: String(error),
+      },
+      { status: 500 },
     );
   }
 }

@@ -15,10 +15,11 @@ model Fund {
   fundManager           String
   primaryUrl            String
   fallbackUrl           String
+  totalUnits            Int              @default(0)   // Plain INTEGER units held (never decimal)
   totalInvested         Float            @default(8000)
   averageBuyPrice       Float            @default(10.0)
   monthlySipTarget      Float            @default(8000)
-  fractionalCashBalance Float            @default(0.0) // CIP cash remainder pending next SIP settlement
+  fractionalCashBalance Float            @default(0.0) // Fractional cash balance to settle on next SIP
   totalCipUnits         Int              @default(0)   // Total integer units received via CIP
   latestNav             Float?
   buyPrice              Float?
