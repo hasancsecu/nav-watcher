@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Fund {
+  id               String        @id
+  slug             String        @unique
+  name             String
+  shortName        String
+  fundManager      String
+  primaryUrl       String
+  fallbackUrl      String
+  totalInvested    Float         @default(8000)
+  averageBuyPrice  Float         @default(10.0)
+  monthlySipTarget Float         @default(8000)
+  latestNav        Float?
+  buyPrice         Float?
+  sellPrice        Float?
+  navEffectiveDate String?
+  lastScrapedAt    DateTime?
+  lastScrapeSource String?
+  lastScrapeStatus String?
+  lastScrapeError  String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  snapshots        NavSnapshot[]
+  scrapeLogs       ScrapeLog[]
+}
+
+model NavSnapshot {
+  id          String   @id @default(cuid())
+  fundId      String
+  fund        Fund     @relation(fields: [fundId], references: [id], onDelete: Cascade)
+  dateKey     String   // YYYY-MM-DD
+  displayDate String   // e.g. "11 Nov 2026"
+  nav         Float
+  buyPrice    Float?
+  sellPrice   Float?
+  source      String   @default("PRIMARY")
+  scrapedAt   DateTime @default(now())
+
+  @@unique([fundId, dateKey])
+  @@index([dateKey])
+}
+
+model PortfolioHistory {
+  id                 String   @id @default(cuid())
+  dateKey            String   @unique // YYYY-MM-DD
+  displayDate        String
+  totalInvested      Float
+  currentMarketValue Float
+  absoluteGainLoss   Float
+  returnPct          Float
+  shantaNav          Float?
+  idlcNav            Float?
+  edgeNav            Float?
+  recordedAt         DateTime @default(now())
+
+  @@index([dateKey])
+}
+
+model ScrapeLog {
+  id            String   @id @default(cuid())
+  fundId        String?
+  fund          Fund?    @relation(fields: [fundId], references: [id], onDelete: SetNull)
+  trigger       String   // "MANUAL", "CRON", "STARTUP"
+  sourceUsed    String   // "PRIMARY", "FALLBACK", "FAILED"
+  urlAttempted  String
+  status        String   // "SUCCESS", "FALLBACK_SUCCESS", "ERROR"
+  extractedNav  Float?
+  effectiveDate String?
+  durationMs    Int?
+  message       String?
+  createdAt     DateTime @default(now())
+}
+
