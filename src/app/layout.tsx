@@ -77,6 +77,13 @@ export default function RootLayout({
       <head>
         {/* MANDATORY: Declare support for both light and dark themes & prevent FOUC */}
         <meta name="color-scheme" content="light dark" />
+        <link
+          rel="preload"
+          href="/fonts/RedHatText-Regular.woff2"
+          as="font"
+          type="font/woff2"
+          crossOrigin="anonymous"
+        />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"

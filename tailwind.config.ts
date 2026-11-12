@@ -11,9 +11,7 @@ const config: Config = {
     extend: {
       fontFamily: {
         sans: [
-          "var(--font-red-hat-text)",
-          "Red Hat Text",
-          "Inter",
+          "'Red Hat Text'",
           "-apple-system",
           "BlinkMacSystemFont",
           "Segoe UI",
@@ -21,11 +19,12 @@ const config: Config = {
           "sans-serif",
         ],
         mono: [
-          "JetBrains Mono",
-          "ui-monospace",
-          "SFMono-Regular",
-          "Menlo",
-          "monospace",
+          "'Red Hat Text'",
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "Segoe UI",
+          "Roboto",
+          "sans-serif",
         ],
       },
     },

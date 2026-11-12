@@ -42,6 +42,24 @@ export default async function HomePage() {
     }),
   ]);
 
+  const userFundIds = userFunds.map((uf) => uf.fundId);
+  const rawSnapshots =
+    userFundIds.length > 0
+      ? await prisma.navSnapshot.findMany({
+          where: { fundId: { in: userFundIds } },
+          orderBy: { dateKey: "asc" },
+          take: 120,
+        })
+      : [];
+
+  const snapshots = rawSnapshots.map((s) => ({
+    id: s.id,
+    fundId: s.fundId,
+    dateKey: s.dateKey,
+    displayDate: s.displayDate,
+    nav: s.nav,
+  }));
+
   let totalInvested = 0;
   let currentMarketValue = 0;
   let totalMonthlySip = 0;
@@ -138,6 +156,7 @@ export default async function HomePage() {
       initialUser={user}
       initialSummary={summary}
       initialFunds={fundsWithMetrics}
+      initialSnapshots={snapshots}
       initialHistory={[]}
       initialLogs={serializedLogs}
       initialScheduler={scheduler}

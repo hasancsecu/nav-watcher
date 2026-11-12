@@ -16,6 +16,9 @@ import AddInvestmentModal from "./AddInvestmentModal";
 import EditInvestmentModal, { EditableInvestment } from "./EditInvestmentModal";
 import ConfirmDialog from "./ConfirmDialog";
 import FundComparisonSection from "./FundComparisonSection";
+import HistoricalInvestmentComparisonChart, {
+  SnapshotItem,
+} from "./HistoricalInvestmentComparisonChart";
 import { ToastProvider, useToast } from "./Toast";
 import {
   RefreshCw,
@@ -83,6 +86,7 @@ interface DashboardClientProps {
   initialUser?: UserProfile | null;
   initialSummary: PortfolioSummaryMetrics | null;
   initialFunds: any[];
+  initialSnapshots?: SnapshotItem[];
   initialHistory: PortfolioHistoryItem[];
   initialLogs: ScrapeLogItem[];
   initialScheduler: SchedulerInfo;
@@ -172,6 +176,7 @@ function DashboardClientContent({
   initialUser,
   initialSummary,
   initialFunds,
+  initialSnapshots,
   initialHistory,
   initialLogs,
   initialScheduler,
@@ -195,6 +200,7 @@ function DashboardClientContent({
     }
   );
   const [funds, setFunds] = useState<any[]>(initialFunds || []);
+  const [snapshots, setSnapshots] = useState<SnapshotItem[]>(initialSnapshots || []);
   const [history, setHistory] = useState<PortfolioHistoryItem[]>(initialHistory || []);
   const [logs, setLogs] = useState<ScrapeLogItem[]>(initialLogs || []);
   const [scheduler] = useState<SchedulerInfo>(initialScheduler);
@@ -820,7 +826,7 @@ function DashboardClientContent({
                   className="rounded-xl bg-[#33c6e4] hover:bg-[#2eb4cf] text-slate-950 px-3.5 py-2 text-xs font-bold transition shadow-sm inline-flex items-center gap-1.5"
                 >
                   <Calendar className="h-4 w-4" />
-                  <span>+ Record Monthly SIP</span>
+                  <span>Record Monthly SIP</span>
                 </button>
 
                 <button
@@ -918,6 +924,14 @@ function DashboardClientContent({
                 </div>
               </div>
             </section>
+
+            {/* Historical Investment & Performance Comparison Chart */}
+            {funds.length > 0 && (
+              <HistoricalInvestmentComparisonChart
+                funds={funds}
+                snapshots={snapshots}
+              />
+            )}
 
             {/* Invested Funds Comparison Section */}
             {funds.length > 0 && (
@@ -1177,27 +1191,19 @@ function DashboardClientContent({
                 {funds.map((fund) => {
                   const isGain = fund.absoluteGainLoss >= 0;
                   return (
-                    <article key={fund.id} className="theme-elevated rounded-xl border p-3.5 space-y-3">
-                      <div className="flex items-center justify-between gap-2 border-b theme-border pb-2.5">
-                        <div>
-                          <h4 className="text-sm font-extrabold theme-text-primary truncate">
+                    <article key={fund.id} className="theme-elevated rounded-2xl border theme-border p-4 space-y-3 overflow-hidden shadow-sm">
+                      <div className="flex items-start justify-between gap-2 border-b theme-border pb-2.5 min-w-0">
+                        <div className="min-w-0 flex-1">
+                          <h4 className="text-sm font-extrabold theme-text-primary truncate" title={fund.name}>
                             {fund.name}
                           </h4>
-                          <p className="text-[11px] theme-text-muted">
-                            NAV Date: {fund.navEffectiveDate || "Latest Day"}
+                          <p className="text-[11px] theme-text-muted mt-0.5 truncate">
+                            NAV Date: {fund.navEffectiveDate || "Latest Day"} · {fund.fundManager}
                           </p>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setPreselectedFundIdForInv(fund.id);
-                            setIsAddInvestmentModalOpen(true);
-                          }}
-                          className="rounded-xl bg-[#33c6e4] hover:bg-[#2eb4cf] text-slate-950 px-3.5 py-1.5 text-xs font-bold transition shadow-sm inline-flex items-center gap-1 shrink-0"
-                        >
-                          <Calendar className="h-3 w-3" />
-                          <span>Add Investment</span>
-                        </button>
+                        <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-md bg-[#33c6e4]/15 text-[#155360] dark:text-[#33c6e4] shrink-0 whitespace-nowrap">
+                          {fund.category}
+                        </span>
                       </div>
 
                       <div className="grid grid-cols-2 gap-2 text-xs">
@@ -1258,6 +1264,30 @@ function DashboardClientContent({
                             {fund.returnPct.toFixed(2)}%)
                           </span>
                         </div>
+                      </div>
+
+                      {/* Card Action Buttons at bottom - 100% contained, zero horizontal overflow */}
+                      <div className="pt-2.5 border-t theme-border flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPreselectedFundIdForInv(fund.id);
+                            setIsAddInvestmentModalOpen(true);
+                          }}
+                          className="flex-1 rounded-xl bg-[#33c6e4] hover:bg-[#2eb4cf] text-slate-950 py-2.5 px-3 text-xs font-bold transition shadow-sm inline-flex items-center justify-center gap-1.5"
+                        >
+                          <Calendar className="h-3.5 w-3.5" />
+                          <span>Add Investment</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteFund(fund.id, fund.name)}
+                          title="Remove fund from portfolio"
+                          className="rounded-xl border border-rose-200 dark:border-rose-900/60 p-2.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition shrink-0"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
                       </div>
                     </article>
                   );
