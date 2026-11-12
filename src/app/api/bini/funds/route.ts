@@ -36,7 +36,7 @@ export async function GET() {
     console.error("[API /api/bini/funds GET] Error:", error);
     return NextResponse.json(
       { error: "Failed to fetch funds catalog", details: String(error) },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

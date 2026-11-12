@@ -6,7 +6,7 @@ import { prisma } from "./prisma";
 const JWT_SECRET = new TextEncoder().encode(
   process.env.AUTH_SECRET ||
     process.env.JWT_SECRET ||
-    "nav-watcher-bini-secure-session-secret-key-2026"
+    "nav-watcher-bini-secure-session-secret-key-2026",
 );
 
 export const SESSION_COOKIE_NAME = "nav_session";
@@ -22,11 +22,16 @@ export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, salt);
 }
 
-export async function verifyPassword(password: string, hash: string): Promise<boolean> {
+export async function verifyPassword(
+  password: string,
+  hash: string,
+): Promise<boolean> {
   return bcrypt.compare(password, hash);
 }
 
-export async function createSessionToken(payload: UserSessionPayload): Promise<string> {
+export async function createSessionToken(
+  payload: UserSessionPayload,
+): Promise<string> {
   return new SignJWT({ ...payload })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
@@ -34,7 +39,9 @@ export async function createSessionToken(payload: UserSessionPayload): Promise<s
     .sign(JWT_SECRET);
 }
 
-export async function verifySessionToken(token: string): Promise<UserSessionPayload | null> {
+export async function verifySessionToken(
+  token: string,
+): Promise<UserSessionPayload | null> {
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);
     if (!payload.userId || !payload.email) return null;

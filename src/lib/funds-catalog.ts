@@ -9,24 +9,20 @@ export interface MasterFundItem {
   fundManager: string;
   category: string;
   biniUrl: string;
-  primaryUrl?: string;
+  primaryUrl?: string | null;
+  fallbackUrl?: string | null;
   defaultNav: number;
 }
 
 export const MASTER_BINI_FUNDS: MasterFundItem[] = biniCatalogJson;
 
 /**
- * Ensures the global Master Fund directory is populated in the database
- * so users can search, browse, and add funds from bini.com.bd.
+ * Ensures the global Master Fund directory is populated in the database.
+ * Updates primaryUrl and fallbackUrl for all funds so official AMC scraping works first.
  * DOES NOT create any seed data for user portfolios (fresh start for users).
  */
 export async function ensureMasterCatalogSeeded(): Promise<void> {
   try {
-    const count = await prisma.fund.count();
-    if (count >= MASTER_BINI_FUNDS.length) {
-      return;
-    }
-
     for (const fund of MASTER_BINI_FUNDS) {
       await prisma.fund.upsert({
         where: { id: fund.id },
@@ -37,6 +33,8 @@ export async function ensureMasterCatalogSeeded(): Promise<void> {
           fundManager: fund.fundManager,
           category: fund.category,
           biniUrl: fund.biniUrl,
+          primaryUrl: fund.primaryUrl || null,
+          fallbackUrl: fund.fallbackUrl || fund.biniUrl,
           defaultNav: fund.defaultNav,
         },
         create: {
@@ -47,11 +45,13 @@ export async function ensureMasterCatalogSeeded(): Promise<void> {
           fundManager: fund.fundManager,
           category: fund.category,
           biniUrl: fund.biniUrl,
+          primaryUrl: fund.primaryUrl || null,
+          fallbackUrl: fund.fallbackUrl || fund.biniUrl,
           defaultNav: fund.defaultNav,
           latestNav: fund.defaultNav,
           buyPrice: fund.defaultNav,
           sellPrice: fund.defaultNav,
-          navEffectiveDate: "11 Nov 2026",
+          navEffectiveDate: "12 Nov 2026",
           lastScrapeStatus: "INITIAL",
         },
       });

@@ -354,56 +354,116 @@ export function parseShantaPrimaryHtml(html: string): ParsedFundNavResult {
   };
 }
 
+function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 /**
- * 2. Parser for IDLC Shariah Fund Primary URL:
- * https://idlc.com/aml/shariah_fund.php
+ * 2. Parser for IDLC Mutual Funds Primary URL:
+ * https://idlc.com/aml/funds.php or https://idlc.com/aml/nav.php
  */
-export function parseIdlcPrimaryHtml(html: string): ParsedFundNavResult {
+export function parseIdlcPrimaryHtml(html: string, fundName?: string): ParsedFundNavResult {
   const $ = cheerio.load(html);
   let nav: number | null = null;
+  let buyPrice: number | null = null;
+  let sellPrice: number | null = null;
   let effectiveDateRaw = "";
 
-  // Strategy 1: Locate "LATEST NAV" heading and inspect adjacent elements
-  $("h4").each((_, el) => {
-    const text = $(el).text().replace(/\s+/g, " ").trim().toUpperCase();
-    if (text.includes("LATEST NAV")) {
-      const parent = $(el).parent();
-      const parentText = parent.text();
-      const dateMatch = parentText.match(/NAV\s+as\s+on\s+([A-Za-z]+\s+\d{1,2},?\s+\d{4})/i);
-      if (dateMatch?.[1]) {
-        effectiveDateRaw = dateMatch[1].trim();
+  const rawLower = (fundName || "").toLowerCase();
+  let keyword = "";
+  if (rawLower.includes("shariah")) keyword = "shariah";
+  else if (rawLower.includes("growth")) keyword = "growth";
+  else if (rawLower.includes("balance")) keyword = "balance";
+  else if (rawLower.includes("income")) keyword = "income";
+  else {
+    keyword = (fundName || "")
+      .replace(/IDLC|Asset|Management|Limited|Fund/gi, "")
+      .trim()
+      .toLowerCase();
+  }
+
+  // Strategy 1: Table on nav.php
+  $("table tr").each((_, row) => {
+    const rowText = $(row).text().toLowerCase();
+    if (keyword && rowText.includes(keyword)) {
+      const cells = $(row).find("td");
+      if (cells.length >= 4) {
+        effectiveDateRaw = $(cells[1]).text().trim();
+        const costNav = parseNumericNav($(cells[2]).text());
+        const fairNav = parseNumericNav($(cells[3]).text());
+        const bPrice = cells.length >= 5 ? parseNumericNav($(cells[4]).text()) : fairNav;
+        const sPrice = cells.length >= 6 ? parseNumericNav($(cells[5]).text()) : fairNav;
+
+        nav = fairNav || costNav;
+        buyPrice = bPrice || nav;
+        sellPrice = sPrice || nav;
       }
-      // Look for the green h4 or next h4 containing the numeric NAV
-      const nextH4s = $(el).nextAll("h4");
-      nextH4s.each((__, h4El) => {
-        const candidate = parseNumericNav($(h4El).text());
-        if (candidate && !nav) {
-          nav = candidate;
-        }
-      });
     }
   });
 
-  // Strategy 2: Regex fallback across the HTML around "LATEST NAV"
-  if (!nav) {
-    const blockMatch = html.match(
-      /LATEST\s+NAV[\s\S]{0,500}?NAV\s+as\s+on\s+([A-Za-z]+\s+\d{1,2},?\s+\d{4})[\s\S]{0,400}?>\s*(\d+\.\d+)\s*</i
+  // Strategy 2: Carousal on funds.php
+  if (!nav && keyword) {
+    $(".product").each((_, prod) => {
+      const title = $(prod).find(".carousal-container-1-heading").text().toLowerCase();
+      if (title.includes(keyword)) {
+        const navSpan = $(prod).find("h4:contains('Latest NAV') span").text();
+        const candidate = parseNumericNav(navSpan);
+        if (candidate) {
+          nav = candidate;
+          buyPrice = candidate;
+          sellPrice = candidate;
+        }
+      }
+    });
+  }
+
+  // Strategy 3: Regex match on nav.php or funds.php
+  if (!nav && keyword) {
+    const tableRegex = new RegExp(
+      `<td[^>]*>[^<]*?${escapeRegex(keyword)}[^<]*?<\\/td>\\s*<td[^>]*>([^<]+)<\\/td>\\s*<td[^>]*>[^<]+<\\/td>\\s*<td[^>]*>([0-9.]+)<\\/td>`,
+      "i"
     );
-    if (blockMatch) {
-      effectiveDateRaw = blockMatch[1].trim();
-      nav = parseNumericNav(blockMatch[2]);
+    const m = html.match(tableRegex);
+    if (m) {
+      effectiveDateRaw = m[1].trim();
+      nav = parseNumericNav(m[2]);
+      buyPrice = nav;
+      sellPrice = nav;
     }
   }
 
+  // Strategy 4: Locate "LATEST NAV" heading (single fund page)
   if (!nav) {
-    throw new Error("Could not extract numeric NAV from IDLC primary page DOM");
+    $("h4").each((_, el) => {
+      const text = $(el).text().replace(/\s+/g, " ").trim().toUpperCase();
+      if (text.includes("LATEST NAV")) {
+        const parentText = $(el).parent().text();
+        const dateMatch = parentText.match(/NAV\s+as\s+on\s+([A-Za-z]+\s+\d{1,2},?\s+\d{4})/i);
+        if (dateMatch?.[1]) {
+          effectiveDateRaw = dateMatch[1].trim();
+        }
+        const nextH4s = $(el).nextAll("h4");
+        nextH4s.each((__, h4El) => {
+          const candidate = parseNumericNav($(h4El).text());
+          if (candidate && !nav) {
+            nav = candidate;
+            buyPrice = candidate;
+            sellPrice = candidate;
+          }
+        });
+      }
+    });
+  }
+
+  if (!nav) {
+    throw new Error(`Could not extract numeric NAV for IDLC fund: ${fundName || "unknown"}`);
   }
 
   const normalized = normalizeDateString(effectiveDateRaw);
   return {
     nav,
-    buyPrice: nav,
-    sellPrice: nav,
+    buyPrice: buyPrice ?? nav,
+    sellPrice: sellPrice ?? nav,
     effectiveDateRaw: effectiveDateRaw || normalized.displayDate,
     dateKey: normalized.dateKey,
     displayDate: normalized.displayDate,
@@ -412,18 +472,18 @@ export function parseIdlcPrimaryHtml(html: string): ParsedFundNavResult {
         dateKey: normalized.dateKey,
         displayDate: normalized.displayDate,
         nav,
-        buyPrice: nav,
-        sellPrice: nav,
+        buyPrice: buyPrice ?? nav,
+        sellPrice: sellPrice ?? nav,
       },
     ],
   };
 }
 
 /**
- * 3. Parser for Edge Al-Amin Shariah Consumer Fund Primary URL:
- * https://www.edgeamc.com/edge-alamin-shariah-consumer-fund
+ * 3. Parser for EDGE AMC Mutual Funds Primary URL:
+ * https://www.edgeamc.com/mutual-fund or https://www.edgeamc.com/nav
  */
-export function parseEdgePrimaryHtml(html: string): ParsedFundNavResult {
+export function parseEdgePrimaryHtml(html: string, fundName?: string): ParsedFundNavResult {
   const $ = cheerio.load(html);
   let nav: number | null = null;
   let buyPrice: number | null = null;
@@ -431,41 +491,108 @@ export function parseEdgePrimaryHtml(html: string): ParsedFundNavResult {
   let effectiveDateRaw = "";
   const historicalPoints: HistoricalNavPoint[] = [];
 
-  // Strategy 1: Performance table #dataTable (has Date, Nav/Unit, Investor Sell Price, Investor Buy Price)
-  $("#dataTable tbody tr").each((idx, row) => {
-    if (idx >= 30) return;
-    const cells = $(row).find("td");
-    if (cells.length >= 4) {
-      const dText = $(cells[0]).text().trim();
-      const rowNav = parseNumericNav($(cells[1]).text());
-      const rowSell = parseNumericNav($(cells[2]).text());
-      const rowBuy = parseNumericNav($(cells[3]).text());
+  // Extract date from header: <h6>As on 12 November 2026</h6>
+  const dateMatch = html.match(/<h6>\s*As\s+on\s+([^<]+)<\/h6>/i);
+  if (dateMatch?.[1]) {
+    effectiveDateRaw = dateMatch[1].trim();
+  }
 
-      if (dText && rowNav) {
-        const norm = normalizeDateString(dText);
-        historicalPoints.push({
-          dateKey: norm.dateKey,
-          displayDate: norm.displayDate,
-          nav: rowNav,
-          sellPrice: rowSell ?? rowNav,
-          buyPrice: rowBuy ?? rowNav,
-        });
-
-        if (idx === 0) {
-          nav = rowNav;
-          sellPrice = rowSell ?? rowNav;
-          buyPrice = rowBuy ?? rowNav;
-          effectiveDateRaw = dText;
+  // Strategy 1: Find fund item card in /nav or /mutual-fund
+  if (fundName) {
+    const cleanName = fundName.replace(/Limited|Fund/gi, "").trim();
+    // Card with <h4>Fund Name</h4> ... <h5>16.76</h5>
+    $(".plan_funt_item").each((_, el) => {
+      const cardTitle = $(el).find("h4").text().trim();
+      if (
+        cardTitle &&
+        (cardTitle.toLowerCase().includes(cleanName.toLowerCase()) ||
+          cleanName.toLowerCase().includes(cardTitle.toLowerCase()))
+      ) {
+        const val = parseNumericNav($(el).find("h5").text());
+        if (val) {
+          nav = val;
+          buyPrice = val;
+          sellPrice = val;
         }
       }
-    }
-  });
+    });
 
-  // Strategy 2: Top summary card ".plan_funt_item"
+    // Strategy 2: If /mutual-fund table has columns
+    if (!nav) {
+      const tableHeaders: string[] = [];
+      $("table tr").first().find("th, td").each((_, c) => {
+        tableHeaders.push($(c).text().trim().toLowerCase());
+      });
+      $("table tr").each((_, r) => {
+        const rowText = $(r).text();
+        if (/Net Asset Value/i.test(rowText)) {
+          $(r).find("td").each((colIdx, cell) => {
+            const h = tableHeaders[colIdx] || "";
+            if (h && cleanName && h.includes(cleanName.toLowerCase())) {
+              const val = parseNumericNav($(cell).text());
+              if (val) {
+                nav = val;
+                buyPrice = val;
+                sellPrice = val;
+              }
+            }
+          });
+        }
+      });
+    }
+
+    // Strategy 3: Regex match for fund card in HTML
+    if (!nav) {
+      const cardRegex = new RegExp(
+        `<h4>[^<]*?${escapeRegex(cleanName)}[^<]*?<\\/h4>[\\s\\S]{0,350}?<h5>\\s*([0-9.]+)\\s*<\\/h5>`,
+        "i"
+      );
+      const m = html.match(cardRegex);
+      if (m?.[1]) {
+        nav = parseNumericNav(m[1]);
+        buyPrice = nav;
+        sellPrice = nav;
+      }
+    }
+  }
+
+  // Strategy 4: Performance table #dataTable (single fund page)
+  if (!nav) {
+    $("#dataTable tbody tr").each((idx, row) => {
+      if (idx >= 30) return;
+      const cells = $(row).find("td");
+      if (cells.length >= 4) {
+        const dText = $(cells[0]).text().trim();
+        const rowNav = parseNumericNav($(cells[1]).text());
+        const rowSell = parseNumericNav($(cells[2]).text());
+        const rowBuy = parseNumericNav($(cells[3]).text());
+
+        if (dText && rowNav) {
+          const norm = normalizeDateString(dText);
+          historicalPoints.push({
+            dateKey: norm.dateKey,
+            displayDate: norm.displayDate,
+            nav: rowNav,
+            sellPrice: rowSell ?? rowNav,
+            buyPrice: rowBuy ?? rowNav,
+          });
+
+          if (idx === 0) {
+            nav = rowNav;
+            sellPrice = rowSell ?? rowNav;
+            buyPrice = rowBuy ?? rowNav;
+            if (!effectiveDateRaw) effectiveDateRaw = dText;
+          }
+        }
+      }
+    });
+  }
+
+  // Strategy 5: Generic .plan_funt_item NAV card
   if (!nav) {
     $(".plan_funt_item").each((_, el) => {
       const title = $(el).find(".plan_funt_item_tt h4").text().trim().toUpperCase();
-      if (title === "NAV") {
+      if (title === "NAV" || title.includes("NAV")) {
         const candidate = parseNumericNav($(el).find(".plan_funt_item_vl h5").text());
         if (candidate) {
           nav = candidate;
@@ -477,7 +604,7 @@ export function parseEdgePrimaryHtml(html: string): ParsedFundNavResult {
   }
 
   if (!nav) {
-    throw new Error("Could not extract numeric NAV from Edge AMC primary page DOM");
+    throw new Error(`Could not extract numeric NAV for Edge fund: ${fundName || "unknown"}`);
   }
 
   const normalized = normalizeDateString(effectiveDateRaw);
@@ -490,6 +617,79 @@ export function parseEdgePrimaryHtml(html: string): ParsedFundNavResult {
     displayDate: normalized.displayDate,
     historicalPoints,
   };
+}
+
+/**
+ * 4. Parser for VIPB Asset Management Mutual Funds Primary URL:
+ * https://vipbamc.com/fund/[slug]
+ */
+export function parseVipbPrimaryHtml(html: string, _fundName?: string): ParsedFundNavResult {
+  const mNav =
+    html.match(/\\?"nav\\?":\s*\\?"([0-9.]+)\\?"/i) ||
+    html.match(/"nav":\s*"([0-9.]+)"/i);
+  const mBuy =
+    html.match(/\\?"currentSellPrice\\?":\s*\\?"([0-9.]+)\\?"/i) ||
+    html.match(/"currentSellPrice":\s*"([0-9.]+)"/i);
+  const mSell =
+    html.match(/\\?"currentRepurchasePrice\\?":\s*\\?"([0-9.]+)\\?"/i) ||
+    html.match(/"currentRepurchasePrice":\s*"([0-9.]+)"/i);
+  const mDate =
+    html.match(/\\?"updatedAt\\?":\s*\\?"([^"\\]+)\\?"/i) ||
+    html.match(/"updatedAt":\s*"([^"]+)"/i);
+
+  const nav = mNav ? parseNumericNav(mNav[1]) : null;
+  const buyPrice = mBuy ? parseNumericNav(mBuy[1]) : nav;
+  const sellPrice = mSell ? parseNumericNav(mSell[1]) : nav;
+
+  if (!nav) {
+    throw new Error("Could not extract NAV from VIPB AMC payload");
+  }
+
+  const effectiveDateRaw = mDate ? mDate[1] : "";
+  const normalized = normalizeDateString(effectiveDateRaw);
+
+  return {
+    nav,
+    buyPrice: buyPrice ?? nav,
+    sellPrice: sellPrice ?? nav,
+    effectiveDateRaw: effectiveDateRaw || normalized.displayDate,
+    dateKey: normalized.dateKey,
+    displayDate: normalized.displayDate,
+    historicalPoints: [
+      {
+        dateKey: normalized.dateKey,
+        displayDate: normalized.displayDate,
+        nav,
+        buyPrice: buyPrice ?? nav,
+        sellPrice: sellPrice ?? nav,
+      },
+    ],
+  };
+}
+
+/**
+ * Dispatches primary page parsing based on AMC provider URL domain.
+ */
+export function parsePrimaryByFund(
+  fund: { id: string; name: string; primaryUrl?: string | null },
+  html: string
+): ParsedFundNavResult {
+  const url = (fund.primaryUrl || "").toLowerCase();
+
+  if (url.includes("vipbamc.com")) {
+    return parseVipbPrimaryHtml(html, fund.name);
+  }
+  if (url.includes("edgeamc.com")) {
+    return parseEdgePrimaryHtml(html, fund.name);
+  }
+  if (url.includes("idlc.com")) {
+    return parseIdlcPrimaryHtml(html, fund.name);
+  }
+  if (url.includes("shanta-aml.com")) {
+    return parseShantaPrimaryHtml(html);
+  }
+
+  throw new Error(`No primary parser registered for URL: ${fund.primaryUrl}`);
 }
 
 /**
@@ -565,22 +765,9 @@ export function parseBiniFallbackHtml(html: string): ParsedFundNavResult {
   };
 }
 
-function parsePrimaryByFundId(fundId: string, html: string): ParsedFundNavResult {
-  switch (fundId) {
-    case "shanta-amanah":
-      return parseShantaPrimaryHtml(html);
-    case "idlc-shariah":
-      return parseIdlcPrimaryHtml(html);
-    case "edge-alamin":
-      return parseEdgePrimaryHtml(html);
-    default:
-      throw new Error(`Unknown fundId: ${fundId}`);
-  }
-}
-
 /**
- * Scrapes a single fund with automatic fallback to its specific bini.com.bd URL
- * if the primary URL fails to load or cannot be scraped.
+ * Scrapes a single fund with automatic fallback to its specific secondary link (bini.com.bd)
+ * if the primary AMC official URL fails to load or cannot be scraped.
  */
 export async function scrapeSingleFund(
   fund: {
@@ -597,14 +784,14 @@ export async function scrapeSingleFund(
 ): Promise<FundSyncResult> {
   const startTime = Date.now();
   const trigger = options?.trigger || "MANUAL";
-  const biniUrl = fund.biniUrl || fund.fallbackUrl;
+  const fallbackUrl = fund.fallbackUrl || fund.biniUrl;
   let primaryErrorMsg = "";
 
-  // Step 1: Try Primary URL first if defined
+  // Step 1: Scrape official primary AMC page first
   if (fund.primaryUrl && !options?.forceFallback) {
     try {
       const html = await fetchHtml(fund.primaryUrl);
-      const parsed = parsePrimaryByFundId(fund.id, html);
+      const parsed = parsePrimaryByFund(fund, html);
       const durationMs = Date.now() - startTime;
 
       await persistScrapedFundData(fund.id, parsed, "PRIMARY", "SUCCESS");
@@ -618,7 +805,7 @@ export async function scrapeSingleFund(
           extractedNav: parsed.nav,
           effectiveDate: parsed.displayDate,
           durationMs,
-          message: `Scraped primary AMC page (${parsed.displayDate}: ${parsed.nav} BDT)`,
+          message: `Scraped official AMC page (${parsed.displayDate}: ${parsed.nav} BDT)`,
         },
       });
 
@@ -638,41 +825,41 @@ export async function scrapeSingleFund(
       primaryErrorMsg =
         primaryErr instanceof Error ? primaryErr.message : String(primaryErr);
       console.warn(
-        `[NAV Scraper] Primary URL failed for ${fund.name} (${fund.primaryUrl}): ${primaryErrorMsg}. Trying bini.com.bd URL: ${biniUrl}`
+        `[NAV Scraper] Primary AMC URL failed for ${fund.name} (${fund.primaryUrl}): ${primaryErrorMsg}. Trying secondary link: ${fallbackUrl}`
       );
     }
   } else {
-    primaryErrorMsg = "Primary skipped or not configured";
+    primaryErrorMsg = "Primary AMC URL skipped or not configured";
   }
 
-  // Step 2: Scrape live NAV and date from bini.com.bd
-  if (biniUrl) {
+  // Step 2: Scrape secondary/fallback link (bini.com.bd)
+  if (fallbackUrl) {
     try {
-      const fallbackHtml = await fetchHtml(biniUrl);
+      const fallbackHtml = await fetchHtml(fallbackUrl);
       const parsed = parseBiniFallbackHtml(fallbackHtml);
       const durationMs = Date.now() - startTime;
 
-      await persistScrapedFundData(fund.id, parsed, "BINI", "SUCCESS");
+      await persistScrapedFundData(fund.id, parsed, "FALLBACK", "FALLBACK_SUCCESS");
       await prisma.scrapeLog.create({
         data: {
           fundId: fund.id,
           trigger,
-          sourceUsed: "BINI",
-          urlAttempted: biniUrl,
-          status: "SUCCESS",
+          sourceUsed: "FALLBACK",
+          urlAttempted: fallbackUrl,
+          status: "FALLBACK_SUCCESS",
           extractedNav: parsed.nav,
           effectiveDate: parsed.displayDate,
           durationMs,
-          message: `Scraped live NAV & date from bini.com.bd (${parsed.displayDate}: ${parsed.nav} BDT)`,
+          message: `Scraped secondary link (${parsed.displayDate}: ${parsed.nav} BDT) after primary: ${primaryErrorMsg}`,
         },
       });
 
       return {
         fundId: fund.id,
         fundName: fund.name,
-        status: "SUCCESS",
-        sourceUsed: "BINI",
-        urlUsed: biniUrl,
+        status: "FALLBACK_SUCCESS",
+        sourceUsed: "FALLBACK",
+        urlUsed: fallbackUrl,
         nav: parsed.nav,
         buyPrice: parsed.buyPrice,
         sellPrice: parsed.sellPrice,
@@ -700,7 +887,7 @@ export async function scrapeSingleFund(
           fundId: fund.id,
           trigger,
           sourceUsed: "FAILED",
-          urlAttempted: `${fund.primaryUrl || "none"} -> ${biniUrl}`,
+          urlAttempted: `${fund.primaryUrl || "none"} -> ${fallbackUrl}`,
           status: "ERROR",
           durationMs,
           message: combinedError,
@@ -712,7 +899,7 @@ export async function scrapeSingleFund(
         fundName: fund.name,
         status: "ERROR",
         sourceUsed: "FAILED",
-        urlUsed: biniUrl,
+        urlUsed: fallbackUrl,
         nav: null,
         buyPrice: null,
         sellPrice: null,

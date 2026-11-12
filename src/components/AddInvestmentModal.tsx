@@ -68,12 +68,16 @@ export default function AddInvestmentModal({
   const monthOptions = useMemo(() => generateMonthOptions(), []);
 
   const [selectedUserFundId, setSelectedUserFundId] = useState<string>(
-    preselectedUserFundId || funds[0]?.id || ""
+    preselectedUserFundId || funds[0]?.id || "",
   );
-  const [selectedMonth, setSelectedMonth] = useState<string>(monthOptions[0] || "November 2026");
+  const [selectedMonth, setSelectedMonth] = useState<string>(
+    monthOptions[0] || "November 2026",
+  );
   const [cashAmount, setCashAmount] = useState<string>("8000");
   const [executionNav, setExecutionNav] = useState<string>("");
-  const [investmentType, setInvestmentType] = useState<"SIP" | "LUMPSUM" | "CIP">("SIP");
+  const [investmentType, setInvestmentType] = useState<
+    "SIP" | "LUMPSUM" | "CIP"
+  >("SIP");
   const [notes, setNotes] = useState<string>("");
 
   const [isLoading, setIsLoading] = useState(false);
@@ -82,19 +86,13 @@ export default function AddInvestmentModal({
 
   // Active fund
   const activeFund = useMemo(() => {
-    return (
-      funds.find((f) => f.id === selectedUserFundId) ||
-      funds[0] ||
-      null
-    );
+    return funds.find((f) => f.id === selectedUserFundId) || funds[0] || null;
   }, [funds, selectedUserFundId]);
 
   useEffect(() => {
     if (isOpen) {
       const fund =
-        funds.find((f) => f.id === preselectedUserFundId) ||
-        funds[0] ||
-        null;
+        funds.find((f) => f.id === preselectedUserFundId) || funds[0] || null;
 
       if (fund) {
         setSelectedUserFundId(fund.id);
@@ -143,17 +141,25 @@ export default function AddInvestmentModal({
 
   // LIVE INTEGER UNIT CALCULATION
   const numCash = Math.max(0, Number(cashAmount) || 0);
-  const numNav = Number(executionNav) > 0 ? Number(executionNav) : activeFund?.effectiveNav || 10;
+  const numNav =
+    Number(executionNav) > 0
+      ? Number(executionNav)
+      : activeFund?.effectiveNav || 10;
   const previousCashBuffer = activeFund?.fractionalCashBalance || 0;
   const totalAvailableCash = Number((numCash + previousCashBuffer).toFixed(2));
 
   // Strictly INTEGER units:
   const previewUnitsAllotted = Math.floor(totalAvailableCash / numNav);
   const previewUnitsCost = Number((previewUnitsAllotted * numNav).toFixed(2));
-  const previewCashRemainder = Number(Math.max(0, totalAvailableCash - previewUnitsCost).toFixed(2));
+  const previewCashRemainder = Number(
+    Math.max(0, totalAvailableCash - previewUnitsCost).toFixed(2),
+  );
 
-  const previewNewTotalUnits = (activeFund?.totalUnitsHeld || 0) + previewUnitsAllotted;
-  const previewNewTotalInvested = Number(((activeFund?.totalInvested || 0) + previewUnitsCost).toFixed(2));
+  const previewNewTotalUnits =
+    (activeFund?.totalUnitsHeld || 0) + previewUnitsAllotted;
+  const previewNewTotalInvested = Number(
+    ((activeFund?.totalInvested || 0) + previewUnitsCost).toFixed(2),
+  );
   const previewNewAvgBuy =
     previewNewTotalUnits > 0
       ? Number((previewNewTotalInvested / previewNewTotalUnits).toFixed(4))
@@ -213,7 +219,10 @@ export default function AddInvestmentModal({
                 <Calendar className="h-5 w-5" />
               </div>
               <div>
-                <h2 id={titleId} className="text-base sm:text-lg font-bold theme-text-primary">
+                <h2
+                  id={titleId}
+                  className="text-base sm:text-lg font-bold theme-text-primary"
+                >
                   Add Investment
                 </h2>
                 <p className="text-xs theme-text-secondary">
@@ -278,7 +287,12 @@ export default function AddInvestmentModal({
             >
               {monthOptions.map((m, idx) => (
                 <option key={m} value={m}>
-                  {m} {idx === 0 ? "(Current Month)" : idx === 1 ? "(Previous Month)" : ""}
+                  {m}{" "}
+                  {idx === 0
+                    ? "(Current Month)"
+                    : idx === 1
+                      ? "(Previous Month)"
+                      : ""}
                 </option>
               ))}
             </select>
@@ -367,7 +381,8 @@ export default function AddInvestmentModal({
                 ৳{formatBdt(totalAvailableCash, 2)}{" "}
                 {previousCashBuffer > 0 && (
                   <span className="text-[11px] font-normal text-slate-600 dark:text-slate-400">
-                    (৳{formatBdt(numCash, 0)} + ৳{formatBdt(previousCashBuffer, 2)} prev buffer)
+                    (৳{formatBdt(numCash, 0)} + ৳
+                    {formatBdt(previousCashBuffer, 2)} prev buffer)
                   </span>
                 )}
               </span>
@@ -399,7 +414,14 @@ export default function AddInvestmentModal({
             </div>
 
             <div className="pt-1 text-[11px] text-slate-600 dark:text-slate-300">
-              Post-investment holdings: <strong className="font-mono font-bold text-slate-900 dark:text-white">{previewNewTotalUnits.toLocaleString("en-BD")} units</strong> · Weighted Avg Price: <strong className="font-mono font-bold text-slate-900 dark:text-white">৳{previewNewAvgBuy.toFixed(4)}</strong>
+              Post-investment holdings:{" "}
+              <strong className="font-mono font-bold text-slate-900 dark:text-white">
+                {previewNewTotalUnits.toLocaleString("en-BD")} units
+              </strong>{" "}
+              · Weighted Avg Price:{" "}
+              <strong className="font-mono font-bold text-slate-900 dark:text-white">
+                ৳{previewNewAvgBuy.toFixed(4)}
+              </strong>
             </div>
           </div>
 
@@ -432,7 +454,9 @@ export default function AddInvestmentModal({
             disabled={isLoading || previewUnitsAllotted <= 0}
             className="rounded-xl bg-[#33c6e4] hover:bg-[#2eb4cf] text-slate-950 px-5 py-2 text-xs font-bold shadow-sm transition disabled:opacity-50 min-h-[40px] inline-flex items-center gap-1.5"
           >
-            <span>{isLoading ? "Recording..." : "Confirm & Record Investment"}</span>
+            <span>
+              {isLoading ? "Recording..." : "Confirm & Record Investment"}
+            </span>
             <ArrowRight className="h-4 w-4" />
           </button>
         </div>

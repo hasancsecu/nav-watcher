@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { hashPassword, createSessionToken, SESSION_COOKIE_NAME } from "@/lib/auth";
+import {
+  hashPassword,
+  createSessionToken,
+  SESSION_COOKIE_NAME,
+} from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -10,23 +14,20 @@ export async function POST(req: NextRequest) {
     const { name, email, password, phone, address } = body;
 
     if (!name || typeof name !== "string" || name.trim().length === 0) {
-      return NextResponse.json(
-        { error: "Name is required." },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Name is required." }, { status: 400 });
     }
 
     if (!email || typeof email !== "string" || !email.includes("@")) {
       return NextResponse.json(
         { error: "A valid email address is required." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (!password || typeof password !== "string" || password.length < 6) {
       return NextResponse.json(
         { error: "Password must be at least 6 characters long." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -39,8 +40,11 @@ export async function POST(req: NextRequest) {
 
     if (existingUser) {
       return NextResponse.json(
-        { error: "An account with this email address already exists. Please log in." },
-        { status: 409 }
+        {
+          error:
+            "An account with this email address already exists. Please log in.",
+        },
+        { status: 409 },
       );
     }
 
@@ -90,7 +94,7 @@ export async function POST(req: NextRequest) {
     console.error("[API /api/auth/signup POST] Error:", error);
     return NextResponse.json(
       { error: "Failed to create account", details: String(error) },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

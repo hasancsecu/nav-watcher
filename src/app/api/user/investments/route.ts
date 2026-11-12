@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
     if (!user) {
       return NextResponse.json(
         { error: "Unauthorized. Please log in." },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     if (!userFundId) {
       return NextResponse.json(
         { error: "Missing required parameter: userFundId" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
     if (!userFund || userFund.userId !== user.id) {
       return NextResponse.json(
         { error: "Fund holding not found or does not belong to you." },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     if (safeCash <= 0) {
       return NextResponse.json(
         { error: "Investment cash amount must be greater than 0 BDT." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -58,13 +58,20 @@ export async function POST(req: NextRequest) {
         : userFund.fund.latestNav || userFund.fund.defaultNav || 10.0;
 
     // Previous unallotted cash buffer
-    const previousCashBuffer = Math.max(0, Number(userFund.fractionalCashBalance) || 0);
-    const totalAvailableCash = Number((safeCash + previousCashBuffer).toFixed(2));
+    const previousCashBuffer = Math.max(
+      0,
+      Number(userFund.fractionalCashBalance) || 0,
+    );
+    const totalAvailableCash = Number(
+      (safeCash + previousCashBuffer).toFixed(2),
+    );
 
     // STRICT BANGLADESH AMC RULE: Units allotted MUST be whole integers!
     const unitsAllotted = Math.floor(totalAvailableCash / safeNav);
     const unitsCost = Number((unitsAllotted * safeNav).toFixed(2));
-    const newCashRemainder = Number(Math.max(0, totalAvailableCash - unitsCost).toFixed(2));
+    const newCashRemainder = Number(
+      Math.max(0, totalAvailableCash - unitsCost).toFixed(2),
+    );
 
     const existingUnits = Math.max(0, userFund.totalUnits || 0);
     const existingInvested = Math.max(0, userFund.totalInvested || 0);
@@ -76,7 +83,9 @@ export async function POST(req: NextRequest) {
         ? Number((newTotalInvested / newTotalUnits).toFixed(4))
         : safeNav;
 
-    const monthStr = calendarMonth || new Date().toLocaleString("en-US", { month: "long", year: "numeric" });
+    const monthStr =
+      calendarMonth ||
+      new Date().toLocaleString("en-US", { month: "long", year: "numeric" });
     const monthKey = monthStr.toLowerCase().replace(/[^a-z0-9]/g, "-");
     const invDate = investmentDate ? new Date(investmentDate) : new Date();
 
@@ -96,7 +105,9 @@ export async function POST(req: NextRequest) {
           unitsCost,
           cashRemainder: newCashRemainder,
           type,
-          notes: notes || `${type} Investment for ${monthStr}: +${unitsAllotted} integer units allotted @ ৳${safeNav.toFixed(3)}.`,
+          notes:
+            notes ||
+            `${type} Investment for ${monthStr}: +${unitsAllotted} integer units allotted @ ৳${safeNav.toFixed(3)}.`,
         },
       }),
       prisma.userFund.update({
@@ -106,7 +117,9 @@ export async function POST(req: NextRequest) {
           totalInvested: newTotalInvested,
           averageBuyPrice: newAverageBuyPrice,
           fractionalCashBalance: newCashRemainder,
-          ...(type === "CIP" ? { totalCipUnits: { increment: unitsAllotted } } : {}),
+          ...(type === "CIP"
+            ? { totalCipUnits: { increment: unitsAllotted } }
+            : {}),
         },
         include: { fund: true },
       }),
@@ -129,7 +142,7 @@ export async function POST(req: NextRequest) {
     console.error("[API /api/user/investments POST] Error:", error);
     return NextResponse.json(
       { error: "Failed to record investment", details: String(error) },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -140,7 +153,7 @@ export async function DELETE(req: NextRequest) {
     if (!user) {
       return NextResponse.json(
         { error: "Unauthorized. Please log in." },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -150,7 +163,7 @@ export async function DELETE(req: NextRequest) {
     if (!investmentId) {
       return NextResponse.json(
         { error: "Missing required parameter: id" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -162,7 +175,7 @@ export async function DELETE(req: NextRequest) {
     if (!entry || entry.userId !== user.id) {
       return NextResponse.json(
         { error: "Investment entry not found." },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -210,7 +223,7 @@ export async function DELETE(req: NextRequest) {
     console.error("[API /api/user/investments DELETE] Error:", error);
     return NextResponse.json(
       { error: "Failed to delete investment", details: String(error) },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

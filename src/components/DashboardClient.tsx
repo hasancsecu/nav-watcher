@@ -470,6 +470,19 @@ export default function DashboardClient({
               </button>
             )}
 
+            {/* Manual Sync NAVs Button */}
+            <button
+              type="button"
+              disabled={isRefreshing}
+              onClick={handleManualSync}
+              title="Sync Latest NAVs from AMCs"
+              aria-label="Sync Latest NAVs"
+              className="inline-flex min-h-[38px] min-w-[38px] items-center justify-center rounded-xl border theme-border px-2.5 py-1.5 text-xs font-bold theme-text-secondary hover:theme-text-primary hover:bg-slate-100 dark:hover:bg-slate-800 transition disabled:opacity-50"
+            >
+              <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin text-[#33c6e4]" : ""}`} />
+              <span className="hidden sm:inline ml-1.5">{isRefreshing ? "Syncing..." : "Sync NAV"}</span>
+            </button>
+
             {/* Theme Toggle Button */}
             <button
               type="button"

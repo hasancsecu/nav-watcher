@@ -1,7 +1,15 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useId } from "react";
-import { X, User, Mail, Phone, MapPin, CheckCircle2, AlertCircle } from "lucide-react";
+import {
+  X,
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  CheckCircle2,
+  AlertCircle,
+} from "lucide-react";
 
 interface UserProfile {
   id: string;
@@ -32,7 +40,10 @@ export default function ProfileModal({
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [message, setMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -85,9 +96,15 @@ export default function ProfileModal({
       }
 
       onUpdate(data.user);
-      setMessage({ type: "success", text: "Profile details updated successfully." });
+      setMessage({
+        type: "success",
+        text: "Profile details updated successfully.",
+      });
     } catch (err) {
-      setMessage({ type: "error", text: err instanceof Error ? err.message : "Update failed." });
+      setMessage({
+        type: "error",
+        text: err instanceof Error ? err.message : "Update failed.",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -109,7 +126,10 @@ export default function ProfileModal({
               {user.name.slice(0, 2).toUpperCase()}
             </div>
             <div>
-              <h2 id={titleId} className="text-base font-bold theme-text-primary">
+              <h2
+                id={titleId}
+                className="text-base font-bold theme-text-primary"
+              >
                 My Profile
               </h2>
               <p className="text-xs theme-text-secondary">
@@ -158,7 +178,9 @@ export default function ProfileModal({
               value={user.email}
               className="w-full rounded-xl border bg-slate-100 dark:bg-slate-800/50 theme-border px-3.5 py-2.5 text-xs font-mono text-slate-500 cursor-not-allowed"
             />
-            <span className="text-[10px] theme-text-muted">Email is linked to your account credentials</span>
+            <span className="text-[10px] theme-text-muted">
+              Email is linked to your account credentials
+            </span>
           </div>
 
           <div className="space-y-1">

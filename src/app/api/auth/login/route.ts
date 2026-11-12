@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { verifyPassword, createSessionToken, SESSION_COOKIE_NAME } from "@/lib/auth";
+import {
+  verifyPassword,
+  createSessionToken,
+  SESSION_COOKIE_NAME,
+} from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +16,7 @@ export async function POST(req: NextRequest) {
     if (!email || !password) {
       return NextResponse.json(
         { error: "Email and password are required." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -25,15 +29,18 @@ export async function POST(req: NextRequest) {
     if (!user) {
       return NextResponse.json(
         { error: "Invalid email or password." },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
-    const isValidPassword = await verifyPassword(String(password), user.passwordHash);
+    const isValidPassword = await verifyPassword(
+      String(password),
+      user.passwordHash,
+    );
     if (!isValidPassword) {
       return NextResponse.json(
         { error: "Invalid email or password." },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -68,7 +75,7 @@ export async function POST(req: NextRequest) {
     console.error("[API /api/auth/login POST] Error:", error);
     return NextResponse.json(
       { error: "Failed to log in", details: String(error) },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

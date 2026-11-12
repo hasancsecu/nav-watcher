@@ -12,7 +12,7 @@ export async function GET() {
     console.error("[API /api/auth/me GET] Error:", error);
     return NextResponse.json(
       { error: "Failed to retrieve user profile" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -23,7 +23,7 @@ export async function PUT(req: NextRequest) {
     if (!user) {
       return NextResponse.json(
         { error: "Unauthorized. Please log in." },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -34,8 +34,18 @@ export async function PUT(req: NextRequest) {
       where: { id: user.id },
       data: {
         ...(name && typeof name === "string" ? { name: name.trim() } : {}),
-        phone: phone !== undefined ? (phone ? String(phone).trim() : null) : undefined,
-        address: address !== undefined ? (address ? String(address).trim() : null) : undefined,
+        phone:
+          phone !== undefined
+            ? phone
+              ? String(phone).trim()
+              : null
+            : undefined,
+        address:
+          address !== undefined
+            ? address
+              ? String(address).trim()
+              : null
+            : undefined,
       },
       select: {
         id: true,
@@ -55,7 +65,7 @@ export async function PUT(req: NextRequest) {
     console.error("[API /api/auth/me PUT] Error:", error);
     return NextResponse.json(
       { error: "Failed to update profile", details: String(error) },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
