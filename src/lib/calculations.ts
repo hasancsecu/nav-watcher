@@ -4,8 +4,8 @@ export interface FundValuationInput {
   name: string;
   shortName: string;
   fundManager: string;
-  primaryUrl: string;
-  fallbackUrl: string;
+  primaryUrl?: string | null;
+  fallbackUrl?: string | null;
   totalUnits?: number;
   totalInvested: number;
   averageBuyPrice: number;
@@ -41,6 +41,7 @@ export interface PortfolioSummaryMetrics {
   totalMonthlySip: number;
   totalFractionalCash: number;
   totalCipUnits: number;
+  totalUnitsHeld?: number;
   lastUpdatedAt: string | null;
   fundsCount: number;
 }

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, ensureFundsSeeded } from "@/lib/prisma";
-import { computePortfolioSummary } from "@/lib/calculations";
-import { recomputePortfolioHistory } from "@/lib/scraper";
+import { getCurrentUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +14,14 @@ interface HoldingUpdateItem {
 export async function PUT(req: NextRequest) {
   try {
     await ensureFundsSeeded();
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json(
+        { error: "Unauthorized. Please log in." },
+        { status: 401 }
+      );
+    }
+
     const body = await req.json();
 
     const updates: HoldingUpdateItem[] = Array.isArray(body.holdings)
@@ -56,8 +63,8 @@ export async function PUT(req: NextRequest) {
       const costOfUnits = Number((integerUnits * avgBuy).toFixed(2));
       const cashRemainder = Math.max(0, Number((invested - costOfUnits).toFixed(2)));
 
-      await prisma.fund.update({
-        where: { id: item.fundId },
+      await prisma.userFund.updateMany({
+        where: { userId: user.id, fundId: item.fundId },
         data: {
           totalInvested: Number(invested.toFixed(2)),
           averageBuyPrice: Number(avgBuy.toFixed(4)),
@@ -70,20 +77,8 @@ export async function PUT(req: NextRequest) {
       });
     }
 
-    await recomputePortfolioHistory();
-
-    const [funds, history] = await Promise.all([
-      prisma.fund.findMany({ orderBy: { id: "asc" } }),
-      prisma.portfolioHistory.findMany({ orderBy: { dateKey: "asc" }, take: 45 }),
-    ]);
-
-    const { summary, fundsWithMetrics } = computePortfolioSummary(funds);
-
     return NextResponse.json({
       message: "Holdings updated and portfolio valuation recalculated.",
-      summary,
-      funds: fundsWithMetrics,
-      history,
     });
   } catch (error) {
     console.error("[API /api/funds PUT] Error:", error);
@@ -96,4 +91,3 @@ export async function PUT(req: NextRequest) {
     );
   }
 }
-

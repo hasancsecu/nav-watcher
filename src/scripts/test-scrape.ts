@@ -137,7 +137,15 @@ async function runParserAndDbVerification() {
   await recomputePortfolioHistory();
 
   const funds = await prisma.fund.findMany({ orderBy: { id: "asc" } });
-  const { summary, fundsWithMetrics } = computePortfolioSummary(funds);
+  const mappedFunds = funds.map((f) => ({
+    ...f,
+    totalInvested: 0,
+    averageBuyPrice: f.latestNav || f.defaultNav,
+    totalUnits: 0,
+    fractionalCashBalance: 0,
+    monthlySipTarget: 0,
+  }));
+  const { summary, fundsWithMetrics } = computePortfolioSummary(mappedFunds);
   console.log("\n=== 2. Computed Portfolio Valuation Summary ===");
   console.log(summary);
   for (const f of fundsWithMetrics) {

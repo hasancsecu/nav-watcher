@@ -76,7 +76,7 @@ execSync("npx prisma generate", { stdio: "inherit", env: mergedEnv });
 if (!generateOnly) {
   try {
     console.log("[DB Setup] Pushing Prisma schema to PostgreSQL database...");
-    execSync("npx prisma db push --skip-generate", {
+    execSync("npx prisma db push --skip-generate --accept-data-loss", {
       stdio: "inherit",
       env: mergedEnv,
     });

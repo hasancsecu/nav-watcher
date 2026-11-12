@@ -24,7 +24,7 @@ export interface FundSyncResult {
   fundId: string;
   fundName: string;
   status: "SUCCESS" | "FALLBACK_SUCCESS" | "ERROR";
-  sourceUsed: "PRIMARY" | "FALLBACK" | "FAILED";
+  sourceUsed: "PRIMARY" | "FALLBACK" | "BINI" | "FAILED";
   urlUsed: string;
   nav: number | null;
   buyPrice: number | null;
@@ -499,26 +499,38 @@ export function parseEdgePrimaryHtml(html: string): ParsedFundNavResult {
  * - https://bini.com.bd/funds/edge-al-amin-shariah-consumer-fund-759e11aa
  */
 export function parseBiniFallbackHtml(html: string): ParsedFundNavResult {
-  const $ = cheerio.load(html);
   let nav: number | null = null;
   let effectiveDateRaw = "";
 
-  // Strategy 1: <dt> starting with "NAV" followed by <dd> containing "৳ 10.56"
-  $("dt").each((_, dtEl) => {
-    const dtText = $(dtEl).text().replace(/\s+/g, " ").trim();
-    if (/^NAV\b/i.test(dtText)) {
-      const datePart = dtText.replace(/^NAV/i, "").replace(/as\s+of/i, "").trim();
-      const ddEl = $(dtEl).next("dd");
-      const ddText = ddEl.text().trim();
-      const candidate = parseNumericNav(ddText);
-      if (candidate) {
-        nav = candidate;
-        effectiveDateRaw = datePart;
-      }
-    }
-  });
+  // Strategy 1: Exact bini dt/dd structure regex
+  // <dt ...>NAV<span ...><span class="sr-only">as of </span>11 Nov 26</span></dt><dd ...><span class="tabular" ...>৳ 10.60</span></dd>
+  const exactBiniMatch = html.match(
+    />NAV.*?as of <\/span>([^<]+)<\/span><\/dt>\s*<dd[^>]*>[\s\S]*?৳\s*([0-9.]+)/i
+  );
+  if (exactBiniMatch) {
+    effectiveDateRaw = exactBiniMatch[1].trim();
+    nav = parseNumericNav(exactBiniMatch[2]);
+  }
 
-  // Strategy 2: Regex fallback on raw HTML
+  // Strategy 2: Cheerio search for dt/dd
+  if (!nav) {
+    const $ = cheerio.load(html);
+    $("dt").each((_, dtEl) => {
+      const dtText = $(dtEl).text().replace(/\s+/g, " ").trim();
+      if (/^NAV\b/i.test(dtText)) {
+        const datePart = dtText.replace(/^NAV/i, "").replace(/as\s+of/i, "").trim();
+        const ddEl = $(dtEl).next("dd");
+        const ddText = ddEl.text().trim();
+        const candidate = parseNumericNav(ddText);
+        if (candidate) {
+          nav = candidate;
+          effectiveDateRaw = datePart;
+        }
+      }
+    });
+  }
+
+  // Strategy 3: Regex fallback on raw HTML
   if (!nav) {
     const regexMatch = html.match(
       /<dt[^>]*>NAV(?:<span[^>]*>(?:<span[^>]*>as of\s*<\/span>)?([^<]+)<\/span>)?<\/dt>\s*<dd[^>]*>[\s\S]{0,200}?(\d+\.\d+)/i
@@ -530,7 +542,7 @@ export function parseBiniFallbackHtml(html: string): ParsedFundNavResult {
   }
 
   if (!nav) {
-    throw new Error("Could not extract numeric NAV from Bini fallback page DOM");
+    throw new Error("Could not extract numeric NAV from Bini page DOM");
   }
 
   const normalized = normalizeDateString(effectiveDateRaw);
@@ -574,8 +586,9 @@ export async function scrapeSingleFund(
   fund: {
     id: string;
     name: string;
-    primaryUrl: string;
-    fallbackUrl: string;
+    biniUrl?: string;
+    primaryUrl?: string | null;
+    fallbackUrl?: string | null;
   },
   options?: {
     trigger?: string;
@@ -584,10 +597,11 @@ export async function scrapeSingleFund(
 ): Promise<FundSyncResult> {
   const startTime = Date.now();
   const trigger = options?.trigger || "MANUAL";
+  const biniUrl = fund.biniUrl || fund.fallbackUrl;
   let primaryErrorMsg = "";
 
-  // Step 1: Try Primary URL first (unless forceFallback is set for testing)
-  if (!options?.forceFallback) {
+  // Step 1: Try Primary URL first if defined
+  if (fund.primaryUrl && !options?.forceFallback) {
     try {
       const html = await fetchHtml(fund.primaryUrl);
       const parsed = parsePrimaryByFundId(fund.id, html);
@@ -624,94 +638,110 @@ export async function scrapeSingleFund(
       primaryErrorMsg =
         primaryErr instanceof Error ? primaryErr.message : String(primaryErr);
       console.warn(
-        `[NAV Scraper] Primary URL failed for ${fund.name} (${fund.primaryUrl}): ${primaryErrorMsg}. Trying fallback URL: ${fund.fallbackUrl}`
+        `[NAV Scraper] Primary URL failed for ${fund.name} (${fund.primaryUrl}): ${primaryErrorMsg}. Trying bini.com.bd URL: ${biniUrl}`
       );
     }
   } else {
-    primaryErrorMsg = "Primary skipped via forceFallback test flag";
+    primaryErrorMsg = "Primary skipped or not configured";
   }
 
-  // Step 2: Try the specific Bini.com.bd Fallback URL for this fund
-  try {
-    const fallbackHtml = await fetchHtml(fund.fallbackUrl);
-    const parsed = parseBiniFallbackHtml(fallbackHtml);
-    const durationMs = Date.now() - startTime;
+  // Step 2: Scrape live NAV and date from bini.com.bd
+  if (biniUrl) {
+    try {
+      const fallbackHtml = await fetchHtml(biniUrl);
+      const parsed = parseBiniFallbackHtml(fallbackHtml);
+      const durationMs = Date.now() - startTime;
 
-    await persistScrapedFundData(fund.id, parsed, "FALLBACK", "FALLBACK_SUCCESS");
-    await prisma.scrapeLog.create({
-      data: {
+      await persistScrapedFundData(fund.id, parsed, "BINI", "SUCCESS");
+      await prisma.scrapeLog.create({
+        data: {
+          fundId: fund.id,
+          trigger,
+          sourceUsed: "BINI",
+          urlAttempted: biniUrl,
+          status: "SUCCESS",
+          extractedNav: parsed.nav,
+          effectiveDate: parsed.displayDate,
+          durationMs,
+          message: `Scraped live NAV & date from bini.com.bd (${parsed.displayDate}: ${parsed.nav} BDT)`,
+        },
+      });
+
+      return {
         fundId: fund.id,
-        trigger,
-        sourceUsed: "FALLBACK",
-        urlAttempted: fund.fallbackUrl,
-        status: "FALLBACK_SUCCESS",
-        extractedNav: parsed.nav,
+        fundName: fund.name,
+        status: "SUCCESS",
+        sourceUsed: "BINI",
+        urlUsed: biniUrl,
+        nav: parsed.nav,
+        buyPrice: parsed.buyPrice,
+        sellPrice: parsed.sellPrice,
         effectiveDate: parsed.displayDate,
         durationMs,
-        message: `Fallback succeeded after primary failed (${primaryErrorMsg}). Extracted ${parsed.nav} BDT (${parsed.displayDate})`,
-      },
-    });
+      };
+    } catch (fallbackErr) {
+      const fallbackErrorMsg =
+        fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr);
+      const combinedError = `Primary failed (${primaryErrorMsg}); Bini failed (${fallbackErrorMsg})`;
+      const durationMs = Date.now() - startTime;
 
-    return {
-      fundId: fund.id,
-      fundName: fund.name,
-      status: "FALLBACK_SUCCESS",
-      sourceUsed: "FALLBACK",
-      urlUsed: fund.fallbackUrl,
-      nav: parsed.nav,
-      buyPrice: parsed.buyPrice,
-      sellPrice: parsed.sellPrice,
-      effectiveDate: parsed.displayDate,
-      durationMs,
-    };
-  } catch (fallbackErr) {
-    const fallbackErrorMsg =
-      fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr);
-    const combinedError = `Primary failed (${primaryErrorMsg}); Fallback failed (${fallbackErrorMsg})`;
-    const durationMs = Date.now() - startTime;
+      console.error(`[NAV Scraper] Failed for ${fund.name}: ${combinedError}`);
 
-    console.error(`[NAV Scraper] Both Primary and Fallback failed for ${fund.name}: ${combinedError}`);
+      await prisma.fund.update({
+        where: { id: fund.id },
+        data: {
+          lastScrapeStatus: "ERROR",
+          lastScrapeError: combinedError,
+        },
+      });
 
-    await prisma.fund.update({
-      where: { id: fund.id },
-      data: {
-        lastScrapeStatus: "ERROR",
-        lastScrapeError: combinedError,
-      },
-    });
+      await prisma.scrapeLog.create({
+        data: {
+          fundId: fund.id,
+          trigger,
+          sourceUsed: "FAILED",
+          urlAttempted: `${fund.primaryUrl || "none"} -> ${biniUrl}`,
+          status: "ERROR",
+          durationMs,
+          message: combinedError,
+        },
+      });
 
-    await prisma.scrapeLog.create({
-      data: {
+      return {
         fundId: fund.id,
-        trigger,
-        sourceUsed: "FAILED",
-        urlAttempted: `${fund.primaryUrl} -> ${fund.fallbackUrl}`,
+        fundName: fund.name,
         status: "ERROR",
+        sourceUsed: "FAILED",
+        urlUsed: biniUrl,
+        nav: null,
+        buyPrice: null,
+        sellPrice: null,
+        effectiveDate: null,
         durationMs,
-        message: combinedError,
-      },
-    });
-
-    return {
-      fundId: fund.id,
-      fundName: fund.name,
-      status: "ERROR",
-      sourceUsed: "FAILED",
-      urlUsed: fund.fallbackUrl,
-      nav: null,
-      buyPrice: null,
-      sellPrice: null,
-      effectiveDate: null,
-      durationMs,
-      error: combinedError,
-    };
+        error: combinedError,
+      };
+    }
   }
+
+  return {
+    fundId: fund.id,
+    fundName: fund.name,
+    status: "ERROR",
+    sourceUsed: "FAILED",
+    urlUsed: "none",
+    nav: null,
+    buyPrice: null,
+    sellPrice: null,
+    effectiveDate: null,
+    durationMs: Date.now() - startTime,
+    error: "No scraping URL provided",
+  };
 }
 
 async function persistScrapedFundData(
   fundId: string,
   parsed: ParsedFundNavResult,
-  source: "PRIMARY" | "FALLBACK",
+  source: "PRIMARY" | "FALLBACK" | "BINI",
   status: "SUCCESS" | "FALLBACK_SUCCESS"
 ) {
   const now = new Date();
@@ -821,7 +851,7 @@ export async function recomputePortfolioHistory(): Promise<void> {
 
   for (const f of funds) {
     fundSnapByDate.set(f.id, new Map());
-    earliestNavByFund.set(f.id, f.latestNav ?? f.averageBuyPrice ?? 10);
+    earliestNavByFund.set(f.id, f.latestNav ?? f.defaultNav ?? 10);
   }
 
   for (const snap of allSnapshots) {
@@ -853,9 +883,12 @@ export async function recomputePortfolioHistory(): Promise<void> {
         runningNavByFund.set(f.id, snapNav);
       }
       const navForDate =
-        runningNavByFund.get(f.id) ?? f.latestNav ?? f.averageBuyPrice ?? 10;
+        runningNavByFund.get(f.id) ?? f.latestNav ?? f.defaultNav ?? 10;
       return {
         ...f,
+        totalInvested: 0,
+        averageBuyPrice: 10,
+        monthlySipTarget: 8000,
         latestNav: navForDate,
       };
     });

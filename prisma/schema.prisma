@@ -7,33 +7,86 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id           String            @id @default(cuid())
+  name         String
+  email        String            @unique
+  passwordHash String
+  phone        String?
+  address      String?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  funds        UserFund[]
+  investments  InvestmentEntry[]
+}
+
 model Fund {
-  id                    String           @id
-  slug                  String           @unique
-  name                  String
-  shortName             String
-  fundManager           String
-  primaryUrl            String
-  fallbackUrl           String
-  totalUnits            Int              @default(0)   // Plain INTEGER units held (never decimal)
-  totalInvested         Float            @default(8000)
-  averageBuyPrice       Float            @default(10.0)
-  monthlySipTarget      Float            @default(8000)
-  fractionalCashBalance Float            @default(0.0) // Fractional cash balance to settle on next SIP
-  totalCipUnits         Int              @default(0)   // Total integer units received via CIP
-  latestNav             Float?
-  buyPrice              Float?
-  sellPrice             Float?
-  navEffectiveDate      String?
-  lastScrapedAt         DateTime?
-  lastScrapeSource      String?
-  lastScrapeStatus      String?
-  lastScrapeError       String?
-  createdAt             DateTime         @default(now())
-  updatedAt             DateTime         @updatedAt
-  snapshots             NavSnapshot[]
-  scrapeLogs            ScrapeLog[]
+  id               String        @id
+  slug             String        @unique
+  name             String
+  shortName        String
+  fundManager      String
+  category         String        @default("Growth")
+  biniUrl          String        @default("https://bini.com.bd/funds")
+  primaryUrl       String?
+  fallbackUrl      String?
+  defaultNav       Float         @default(10.0)
+  latestNav        Float?
+  buyPrice         Float?
+  sellPrice        Float?
+  navEffectiveDate String?
+  lastScrapedAt    DateTime?
+  lastScrapeSource String?
+  lastScrapeStatus String?
+  lastScrapeError  String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  userFunds        UserFund[]
+  snapshots        NavSnapshot[]
+  scrapeLogs       ScrapeLog[]
+}
+
+model UserFund {
+  id                    String            @id @default(cuid())
+  userId                String
+  user                  User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fundId                String
+  fund                  Fund              @relation(fields: [fundId], references: [id], onDelete: Cascade)
+  monthlySipTarget      Float             @default(8000)
+  totalUnits            Int               @default(0)   // Strictly whole INTEGER units
+  totalInvested         Float             @default(0.0) // Capital deposited into units
+  averageBuyPrice       Float             @default(0.0) // Weighted average cost
+  fractionalCashBalance Float             @default(0.0) // Unallotted cash remainder to settle on next SIP
+  totalCipUnits         Int               @default(0)   // Integer units credited via CIP
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  investments           InvestmentEntry[]
   cipTransactions       CipTransaction[]
+
+  @@unique([userId, fundId])
+  @@index([userId])
+}
+
+model InvestmentEntry {
+  id             String    @id @default(cuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userFundId     String
+  userFund       UserFund  @relation(fields: [userFundId], references: [id], onDelete: Cascade)
+  monthKey       String    // e.g. "2026-10", "2026-11"
+  calendarMonth  String    // e.g. "October 2026", "November 2026"
+  investmentDate DateTime  @default(now())
+  cashInvested   Float     // Fresh cash amount deposited for this investment
+  cashBufferUsed Float     @default(0.0) // Unsettled cash from previous installment
+  executionNav   Float     // Execution NAV
+  unitsAllotted  Int       // Strictly integer units floor((cashInvested + cashBufferUsed) / executionNav)
+  unitsCost      Float     // unitsAllotted * executionNav
+  cashRemainder  Float     @default(0.0) // Remainder held as cash buffer for next SIP
+  type           String    @default("SIP") // "SIP", "LUMPSUM", "CIP"
+  notes          String?
+  createdAt      DateTime  @default(now())
+
+  @@index([userId, monthKey])
 }
 
 model NavSnapshot {
@@ -54,6 +107,7 @@ model NavSnapshot {
 
 model PortfolioHistory {
   id                 String   @id @default(cuid())
+  userId             String?
   dateKey            String   @unique // YYYY-MM-DD
   displayDate        String
   totalInvested      Float
@@ -85,8 +139,8 @@ model ScrapeLog {
 
 model CipTransaction {
   id                   String    @id @default(cuid())
-  fundId               String
-  fund                 Fund      @relation(fields: [fundId], references: [id], onDelete: Cascade)
+  userFundId           String
+  userFund             UserFund  @relation(fields: [userFundId], references: [id], onDelete: Cascade)
   dividendAmount       Float     // Declared dividend payout value in BDT
   cipNav               Float     // Reinvestment NAV used
   unitsAllotted        Int       // Strictly INTEGER units allotted
@@ -97,7 +151,4 @@ model CipTransaction {
   settledWithSipAmount Float?
   notes                String?
   createdAt            DateTime  @default(now())
-
-  @@index([fundId])
 }
-

@@ -6,74 +6,75 @@
 :root {
   color-scheme: light dark;
 
-  /* Light & Dark palette primitives — carefully tuned for high contrast & legibility */
-  --bg-canvas-light: #eef2f6;
+  /* Light & Dark palette primitives — matching bini.com.bd aesthetic */
+  --bg-canvas-light: #fbfbfb;
   --bg-canvas-dark: #090d16;
 
   --bg-surface-light: #ffffff;
   --bg-surface-dark: #111827;
 
-  --bg-elevated-light: #f8fafc;
+  --bg-elevated-light: #ffffff;
   --bg-elevated-dark: #1e293b;
 
-  --bg-subtle-light: #e2e8f0;
+  --bg-subtle-light: #f6f6f6;
   --bg-subtle-dark: #0f172a;
 
-  --bg-header-light: rgba(255, 255, 255, 0.94);
+  --bg-header-light: rgba(251, 251, 251, 0.94);
   --bg-header-dark: rgba(9, 13, 22, 0.92);
 
-  --border-subtle-light: #cbd5e1;
+  --border-subtle-light: #e4e4e4;
   --border-subtle-dark: #1e293b;
 
-  --border-strong-light: #94a3b8;
+  --border-strong-light: #dedede;
   --border-strong-dark: #334155;
 
-  /* Text tokens: deep slate on light surfaces (18:1, 13:1, 7.5:1 contrast), crisp white/slate on dark */
-  --text-primary-light: #0f172a;
+  /* Text tokens: bini deep text #0f0f0f on light surfaces */
+  --text-primary-light: #0f0f0f;
   --text-primary-dark: #f8fafc;
 
-  --text-secondary-light: #1e293b;
+  --text-secondary-light: #505050;
   --text-secondary-dark: #e2e8f0;
 
-  --text-muted-light: #475569;
+  --text-muted-light: #767676;
   --text-muted-dark: #94a3b8;
 
-  /* Semantic financial status tokens (Gain / Loss / Info / Warning) */
-  --gain-text-light: #047857;
+  /* Semantic financial status tokens */
+  --gain-text-light: #15803d;
   --gain-text-dark: #34d399;
-  --gain-bg-light: #ecfdf5;
+  --gain-bg-light: #ecfdf3;
   --gain-bg-dark: rgba(16, 185, 129, 0.16);
-  --gain-border-light: #6ee7b7;
+  --gain-border-light: #bbf7d0;
   --gain-border-dark: rgba(16, 185, 129, 0.38);
 
-  --loss-text-light: #be123c;
+  --loss-text-light: #b91c1c;
   --loss-text-dark: #fb7185;
-  --loss-bg-light: #fff1f2;
+  --loss-bg-light: #fef2f2;
   --loss-bg-dark: rgba(244, 63, 94, 0.16);
-  --loss-border-light: #fda4af;
+  --loss-border-light: #fecaca;
   --loss-border-dark: rgba(244, 63, 94, 0.38);
 
-  --info-text-light: #0369a1;
-  --info-text-dark: #38bdf8;
-  --info-bg-light: #f0f9ff;
-  --info-bg-dark: rgba(14, 165, 233, 0.16);
-  --info-border-light: #7dd3fc;
-  --info-border-dark: rgba(14, 165, 233, 0.38);
+  --info-text-light: #155360;
+  --info-text-dark: #33c6e4;
+  --info-bg-light: #ebf9fc;
+  --info-bg-dark: rgba(51, 198, 228, 0.16);
+  --info-border-light: #c0edf7;
+  --info-border-dark: rgba(51, 198, 228, 0.38);
 
-  --warn-text-light: #b45309;
+  --warn-text-light: #8b6f00;
   --warn-text-dark: #fbbf24;
-  --warn-bg-light: #fffbeb;
+  --warn-bg-light: #fffae6;
   --warn-bg-dark: rgba(245, 158, 11, 0.16);
-  --warn-border-light: #fcd34d;
+  --warn-border-light: #fddb54;
   --warn-border-dark: rgba(245, 158, 11, 0.38);
 
-  --accent-brand-light: #059669;
-  --accent-brand-dark: #10b981;
+  /* Bini signature brand cyan #33c6e4 */
+  --accent-brand-light: #33c6e4;
+  --accent-brand-dark: #33c6e4;
 
-  --btn-primary-bg-light: #047857;
-  --btn-primary-bg-dark: #10b981;
-  --btn-primary-text-light: #ffffff;
-  --btn-primary-text-dark: #022c22;
+  --btn-primary-bg-light: #33c6e4;
+  --btn-primary-bg-dark: #33c6e4;
+  --btn-primary-text-light: #0f0f0f;
+  --btn-primary-text-dark: #0f0f0f;
 
   --chart-grid-light: #cbd5e1;
   --chart-grid-dark: #1e293b;

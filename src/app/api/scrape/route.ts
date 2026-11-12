@@ -19,7 +19,13 @@ export async function GET() {
       prisma.scrapeLog.findMany({ orderBy: { createdAt: "desc" }, take: 15 }),
     ]);
 
-    const { summary, fundsWithMetrics } = computePortfolioSummary(funds);
+    const fundsForMetrics = funds.map((f) => ({
+      ...f,
+      totalInvested: 0,
+      averageBuyPrice: 10,
+      monthlySipTarget: 8000,
+    }));
+    const { summary, fundsWithMetrics } = computePortfolioSummary(fundsForMetrics);
 
     return NextResponse.json({
       syncOutcome,
@@ -65,7 +71,13 @@ export async function POST(req: NextRequest) {
       prisma.scrapeLog.findMany({ orderBy: { createdAt: "desc" }, take: 15 }),
     ]);
 
-    const { summary, fundsWithMetrics } = computePortfolioSummary(funds);
+    const fundsForMetrics = funds.map((f) => ({
+      ...f,
+      totalInvested: 0,
+      averageBuyPrice: 10,
+      monthlySipTarget: 8000,
+    }));
+    const { summary, fundsWithMetrics } = computePortfolioSummary(fundsForMetrics);
 
     return NextResponse.json({
       syncOutcome,

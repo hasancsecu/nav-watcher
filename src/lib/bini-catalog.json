@@ -1,0 +1,282 @@
+[
+  {
+    "id": "edge-amc-growth-fund-759e11d6",
+    "name": "EDGE AMC Growth Fund",
+    "shortName": "EDGE AMC Growth Fund",
+    "slug": "edge-amc-growth-fund-759e11d6",
+    "fundManager": "EDGE Asset Management Company Limited",
+    "category": "Growth",
+    "biniUrl": "https://bini.com.bd/funds/edge-amc-growth-fund-759e11d6",
+    "defaultNav": 10
+  },
+  {
+    "id": "edge-high-quality-income-fund-759e11bc",
+    "name": "EDGE High Quality Income Fund",
+    "shortName": "EDGE High Quality Income Fund",
+    "slug": "edge-high-quality-income-fund-759e11bc",
+    "fundManager": "EDGE Asset Management Company Limited",
+    "category": "Income",
+    "biniUrl": "https://bini.com.bd/funds/edge-high-quality-income-fund-759e11bc",
+    "defaultNav": 10
+  },
+  {
+    "id": "edge-bangladesh-mutual-fund-759e1221",
+    "name": "EDGE Bangladesh Mutual Fund",
+    "shortName": "EDGE Bangladesh",
+    "slug": "edge-bangladesh-mutual-fund-759e1221",
+    "fundManager": "EDGE Asset Management Company Limited",
+    "category": "Growth",
+    "biniUrl": "https://bini.com.bd/funds/edge-bangladesh-mutual-fund-759e1221",
+    "defaultNav": 10
+  },
+  {
+    "id": "edge-al-amin-shariah-consumer-fund-759e11aa",
+    "name": "EDGE Al-Amin Shariah Consumer Fund",
+    "shortName": "EDGE Al-Amin Shariah Consumer Fund",
+    "slug": "edge-al-amin-shariah-consumer-fund-759e11aa",
+    "fundManager": "EDGE Asset Management Company Limited",
+    "category": "Shariah",
+    "biniUrl": "https://bini.com.bd/funds/edge-al-amin-shariah-consumer-fund-759e11aa",
+    "defaultNav": 10
+  },
+  {
+    "id": "vipb-fixed-income-fund-e5221674",
+    "name": "VIPB Fixed Income Fund",
+    "shortName": "VIPB Fixed Income Fund",
+    "slug": "vipb-fixed-income-fund-e5221674",
+    "fundManager": "VIPB Asset Management",
+    "category": "Income",
+    "biniUrl": "https://bini.com.bd/funds/vipb-fixed-income-fund-e5221674",
+    "defaultNav": 10
+  },
+  {
+    "id": "vipb-balanced-fund-ffb53ff2",
+    "name": "VIPB Balanced Fund",
+    "shortName": "VIPB Balanced Fund",
+    "slug": "vipb-balanced-fund-ffb53ff2",
+    "fundManager": "VIPB Asset Management",
+    "category": "Balanced",
+    "biniUrl": "https://bini.com.bd/funds/vipb-balanced-fund-ffb53ff2",
+    "defaultNav": 10
+  },
+  {
+    "id": "vipb-growth-fund-ffb5421e",
+    "name": "VIPB Growth Fund",
+    "shortName": "VIPB Growth Fund",
+    "slug": "vipb-growth-fund-ffb5421e",
+    "fundManager": "VIPB Asset Management",
+    "category": "Growth",
+    "biniUrl": "https://bini.com.bd/funds/vipb-growth-fund-ffb5421e",
+    "defaultNav": 10
+  },
+  {
+    "id": "vipb-sebl-1st-unit-fund-e5221a6a",
+    "name": "VIPB SEBL 1st Unit Fund",
+    "shortName": "VIPB SEBL 1st",
+    "slug": "vipb-sebl-1st-unit-fund-e5221a6a",
+    "fundManager": "VIPB Asset Management",
+    "category": "Growth",
+    "biniUrl": "https://bini.com.bd/funds/vipb-sebl-1st-unit-fund-e5221a6a",
+    "defaultNav": 10
+  },
+  {
+    "id": "vipb-nli-1st-unit-fund-e522194a",
+    "name": "VIPB NLI 1st Unit Fund",
+    "shortName": "VIPB NLI 1st",
+    "slug": "vipb-nli-1st-unit-fund-e522194a",
+    "fundManager": "VIPB Asset Management",
+    "category": "Growth",
+    "biniUrl": "https://bini.com.bd/funds/vipb-nli-1st-unit-fund-e522194a",
+    "defaultNav": 10
+  },
+  {
+    "id": "midland-bank-growth-fund-4b628ce2",
+    "name": "Midland Bank Growth Fund",
+    "shortName": "Midland Bank Growth Fund",
+    "slug": "midland-bank-growth-fund-4b628ce2",
+    "fundManager": "Midland Bank AMC",
+    "category": "Growth",
+    "biniUrl": "https://bini.com.bd/funds/midland-bank-growth-fund-4b628ce2",
+    "defaultNav": 10
+  },
+  {
+    "id": "ekush-first-unit-fund-102f6a43",
+    "name": "Ekush First Unit Fund",
+    "shortName": "Ekush First",
+    "slug": "ekush-first-unit-fund-102f6a43",
+    "fundManager": "Ekush Wealth Management Ltd.",
+    "category": "Growth",
+    "biniUrl": "https://bini.com.bd/funds/ekush-first-unit-fund-102f6a43",
+    "defaultNav": 10
+  },
+  {
+    "id": "ekush-stable-return-fund-102f6aa4",
+    "name": "Ekush Stable Return Fund",
+    "shortName": "Ekush Stable Return Fund",
+    "slug": "ekush-stable-return-fund-102f6aa4",
+    "fundManager": "Ekush Wealth Management Ltd.",
+    "category": "Growth",
+    "biniUrl": "https://bini.com.bd/funds/ekush-stable-return-fund-102f6aa4",
+    "defaultNav": 10
+  },
+  {
+    "id": "ekush-growth-fund-102f6a83",
+    "name": "Ekush Growth Fund",
+    "shortName": "Ekush Growth Fund",
+    "slug": "ekush-growth-fund-102f6a83",
+    "fundManager": "Ekush Wealth Management Ltd.",
+    "category": "Growth",
+    "biniUrl": "https://bini.com.bd/funds/ekush-growth-fund-102f6a83",
+    "defaultNav": 10
+  },
+  {
+    "id": "cwt-emerging-bangladesh-first-growth-fund-e52220e0",
+    "name": "CWT Emerging Bangladesh First Growth Fund",
+    "shortName": "CWT Emerging Bangladesh First Growth Fund",
+    "slug": "cwt-emerging-bangladesh-first-growth-fund-e52220e0",
+    "fundManager": "CWT Asset Management Company Ltd",
+    "category": "Growth",
+    "biniUrl": "https://bini.com.bd/funds/cwt-emerging-bangladesh-first-growth-fund-e52220e0",
+    "defaultNav": 10
+  },
+  {
+    "id": "cwt-sadharan-bima-growth-fund-b40a31d1",
+    "name": "CWT Sadharan Bima Growth Fund",
+    "shortName": "CWT Sadharan Bima Growth Fund",
+    "slug": "cwt-sadharan-bima-growth-fund-b40a31d1",
+    "fundManager": "CWT Asset Management Company Ltd",
+    "category": "Growth",
+    "biniUrl": "https://bini.com.bd/funds/cwt-sadharan-bima-growth-fund-b40a31d1",
+    "defaultNav": 10
+  },
+  {
+    "id": "cwt-opportunities-fund-e5221fc4",
+    "name": "CWT Opportunities Fund",
+    "shortName": "CWT Opportunities Fund",
+    "slug": "cwt-opportunities-fund-e5221fc4",
+    "fundManager": "CWT Asset Management Company Ltd",
+    "category": "Growth",
+    "biniUrl": "https://bini.com.bd/funds/cwt-opportunities-fund-e5221fc4",
+    "defaultNav": 10
+  },
+  {
+    "id": "cwt-community-bank-shariah-fund-e5222123",
+    "name": "CWT Community Bank Shariah Fund",
+    "shortName": "CWT Community Bank Shariah Fund",
+    "slug": "cwt-community-bank-shariah-fund-e5222123",
+    "fundManager": "CWT Asset Management Company Ltd",
+    "category": "Shariah",
+    "biniUrl": "https://bini.com.bd/funds/cwt-community-bank-shariah-fund-e5222123",
+    "defaultNav": 10
+  },
+  {
+    "id": "investit-growth-fund-932f6c96",
+    "name": "Investit Growth Fund",
+    "shortName": "Investit Growth Fund",
+    "slug": "investit-growth-fund-932f6c96",
+    "fundManager": "Investit Asset Management ",
+    "category": "Growth",
+    "biniUrl": "https://bini.com.bd/funds/investit-growth-fund-932f6c96",
+    "defaultNav": 10
+  },
+  {
+    "id": "idlc-balanced-fund-95537154",
+    "name": "IDLC Balanced Fund",
+    "shortName": "IDLC Balanced Fund",
+    "slug": "idlc-balanced-fund-95537154",
+    "fundManager": "IDLC Asset Management Limited",
+    "category": "Balanced",
+    "biniUrl": "https://bini.com.bd/funds/idlc-balanced-fund-95537154",
+    "defaultNav": 10
+  },
+  {
+    "id": "idlc-aml-shariah-fund-ffb5288f",
+    "name": "IDLC AML Shariah Fund",
+    "shortName": "IDLC AML Shariah Fund",
+    "slug": "idlc-aml-shariah-fund-ffb5288f",
+    "fundManager": "IDLC Asset Management Limited",
+    "category": "Shariah",
+    "biniUrl": "https://bini.com.bd/funds/idlc-aml-shariah-fund-ffb5288f",
+    "defaultNav": 10
+  },
+  {
+    "id": "idlc-growth-fund-da7eea9d",
+    "name": "IDLC Growth Fund",
+    "shortName": "IDLC Growth Fund",
+    "slug": "idlc-growth-fund-da7eea9d",
+    "fundManager": "IDLC Asset Management Limited",
+    "category": "Growth",
+    "biniUrl": "https://bini.com.bd/funds/idlc-growth-fund-da7eea9d",
+    "defaultNav": 10
+  },
+  {
+    "id": "idlc-income-fund-ffb51d14",
+    "name": "IDLC Income Fund",
+    "shortName": "IDLC Income Fund",
+    "slug": "idlc-income-fund-ffb51d14",
+    "fundManager": "IDLC Asset Management Limited",
+    "category": "Income",
+    "biniUrl": "https://bini.com.bd/funds/idlc-income-fund-ffb51d14",
+    "defaultNav": 10
+  },
+  {
+    "id": "ucb-income-plus-fund-ffb539d4",
+    "name": "UCB Income Plus Fund",
+    "shortName": "UCB Income Plus Fund",
+    "slug": "ucb-income-plus-fund-ffb539d4",
+    "fundManager": "UCB Asset Management",
+    "category": "Income",
+    "biniUrl": "https://bini.com.bd/funds/ucb-income-plus-fund-ffb539d4",
+    "defaultNav": 10
+  },
+  {
+    "id": "ucb-taqwa-growth-fund-ffb53aad",
+    "name": "UCB Taqwa Growth Fund",
+    "shortName": "UCB Taqwa Growth Fund",
+    "slug": "ucb-taqwa-growth-fund-ffb53aad",
+    "fundManager": "UCB Asset Management",
+    "category": "Growth",
+    "biniUrl": "https://bini.com.bd/funds/ucb-taqwa-growth-fund-ffb53aad",
+    "defaultNav": 10
+  },
+  {
+    "id": "ucb-aml-first-mutual-fund-ffb53882",
+    "name": "UCB AML First Mutual Fund",
+    "shortName": "UCB AML First",
+    "slug": "ucb-aml-first-mutual-fund-ffb53882",
+    "fundManager": "UCB Asset Management",
+    "category": "Growth",
+    "biniUrl": "https://bini.com.bd/funds/ucb-aml-first-mutual-fund-ffb53882",
+    "defaultNav": 10
+  },
+  {
+    "id": "shanta-amanah-shariah-fund-ffb52cac",
+    "name": "Shanta Amanah Shariah Fund",
+    "shortName": "Shanta Amanah Shariah Fund",
+    "slug": "shanta-amanah-shariah-fund-ffb52cac",
+    "fundManager": "Shanta Asset Management",
+    "category": "Shariah",
+    "biniUrl": "https://bini.com.bd/funds/shanta-amanah-shariah-fund-ffb52cac",
+    "defaultNav": 10
+  },
+  {
+    "id": "shanta-first-income-unit-fund-ffb532a5",
+    "name": "Shanta First Income Unit Fund",
+    "shortName": "Shanta First Income",
+    "slug": "shanta-first-income-unit-fund-ffb532a5",
+    "fundManager": "Shanta Asset Management",
+    "category": "Income",
+    "biniUrl": "https://bini.com.bd/funds/shanta-first-income-unit-fund-ffb532a5",
+    "defaultNav": 10
+  },
+  {
+    "id": "shanta-fixed-income-fund-e5221c4d",
+    "name": "Shanta Fixed Income Fund",
+    "shortName": "Shanta Fixed Income Fund",
+    "slug": "shanta-fixed-income-fund-e5221c4d",
+    "fundManager": "Shanta Asset Management",
+    "category": "Income",
+    "biniUrl": "https://bini.com.bd/funds/shanta-fixed-income-fund-e5221c4d",
+    "defaultNav": 10
+  }
+]
