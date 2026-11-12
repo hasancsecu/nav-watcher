@@ -254,6 +254,8 @@ function DashboardClientContent({
 
   // UI state
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isDataLoading, setIsDataLoading] = useState(false);
+  const [crudLoadingMessage, setCrudLoadingMessage] = useState<string | null>(null);
   const [syncBanner, setSyncBanner] = useState<{
     type: "success" | "error" | "info";
     text: string;
@@ -357,8 +359,10 @@ function DashboardClientContent({
   };
 
   // Refresh user portfolio data
-  const refreshUserData = async () => {
+  const refreshUserData = async (loadingMsg?: string) => {
     try {
+      setIsDataLoading(true);
+      if (loadingMsg) setCrudLoadingMessage(loadingMsg);
       const res = await fetch("/api/user/funds");
       if (res.status === 401) {
         setUser(null);
@@ -372,6 +376,9 @@ function DashboardClientContent({
       }
     } catch (err) {
       console.error("Failed to refresh user data", err);
+    } finally {
+      setIsDataLoading(false);
+      setCrudLoadingMessage(null);
     }
   };
 
@@ -412,7 +419,7 @@ function DashboardClientContent({
           const data = await res.json();
           if (!res.ok) throw new Error(data.error || "Failed to remove fund.");
 
-          await refreshUserData();
+          await refreshUserData("Removing fund from portfolio...");
           toast.success(`Removed "${fundName}" from your portfolio.`);
           setConfirmDialog((prev) => ({
             ...prev,
@@ -451,7 +458,7 @@ function DashboardClientContent({
           if (!res.ok)
             throw new Error(data.error || "Failed to delete investment.");
 
-          await refreshUserData();
+          await refreshUserData("Deleting investment & recalculating...");
           toast.success(`Deleted investment record for ${month}.`);
           setConfirmDialog((prev) => ({
             ...prev,
@@ -507,7 +514,7 @@ function DashboardClientContent({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to sync NAVs.");
 
-      await refreshUserData();
+      await refreshUserData("Syncing live NAVs from AMCs...");
       toast.success("Latest NAVs scraped & updated successfully.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to sync NAVs.");
@@ -520,6 +527,31 @@ function DashboardClientContent({
 
   return (
     <div className="min-h-[100dvh] w-full max-w-full overflow-x-clip flex flex-col pb-28 sm:pb-8">
+      {/* ------------------------------------------------------------- */}
+      {/* GLOBAL LOADING PROGRESS BAR & FLOATING SPINNER */}
+      {/* ------------------------------------------------------------- */}
+      {(isDataLoading || isRefreshing) && (
+        <div className="fixed top-0 inset-x-0 h-1 z-50 bg-[#33c6e4]/20 overflow-hidden">
+          <div className="h-full bg-[#33c6e4] animate-pulse w-full shadow-[0_0_10px_#33c6e4]" />
+        </div>
+      )}
+
+      {(isDataLoading || isRefreshing) && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed top-16 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-4 py-2 rounded-full bg-slate-950/95 dark:bg-[#070b14]/95 text-white backdrop-blur-md border border-[#33c6e4]/50 shadow-2xl animate-in fade-in slide-in-from-top-2 text-xs font-bold pointer-events-none"
+        >
+          <Loader2 className="h-4 w-4 animate-spin text-[#33c6e4]" />
+          <span>
+            {crudLoadingMessage ||
+              (isRefreshing
+                ? "Syncing live NAV from AMCs..."
+                : "Updating portfolio data...")}
+          </span>
+        </div>
+      )}
+
       {/* ------------------------------------------------------------- */}
       {/* 1. TOP NAVBAR (Bini Aesthetic) */}
       {/* ------------------------------------------------------------- */}
@@ -906,6 +938,13 @@ function DashboardClientContent({
               </div>
 
               <div className="flex items-center gap-2">
+                {isDataLoading && (
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#33c6e4]/15 text-[#155360] dark:text-[#33c6e4] text-xs font-bold animate-in fade-in">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    <span className="truncate max-w-[140px] sm:max-w-none">{crudLoadingMessage || "Updating..."}</span>
+                  </div>
+                )}
+
                 <button
                   type="button"
                   disabled={isRefreshing}
@@ -1722,7 +1761,7 @@ function DashboardClientContent({
         onClose={() => setIsAuthModalOpen(false)}
         onSuccess={(newUser) => {
           setUser(newUser);
-          refreshUserData();
+          refreshUserData("Loading your portfolio...");
           setSyncBanner({
             type: "success",
             text: `Welcome, ${newUser.name}!`,
@@ -1749,7 +1788,7 @@ function DashboardClientContent({
         isOpen={isAddFundModalOpen}
         onClose={() => setIsAddFundModalOpen(false)}
         onFundAdded={() => {
-          refreshUserData();
+          refreshUserData("Adding fund to portfolio...");
           setSyncBanner({
             type: "success",
             text: "Mutual fund added to your portfolio.",
@@ -1764,7 +1803,7 @@ function DashboardClientContent({
         preselectedUserFundId={preselectedFundIdForInv}
         onClose={() => setIsAddInvestmentModalOpen(false)}
         onInvestmentAdded={() => {
-          refreshUserData();
+          refreshUserData("Recording investment & updating units...");
           toast.success("Investment recorded and portfolio metrics updated.");
         }}
       />
@@ -1778,7 +1817,7 @@ function DashboardClientContent({
           setEditingInvestment(null);
         }}
         onUpdated={() => {
-          refreshUserData();
+          refreshUserData("Updating investment & recalculating...");
           toast.success(
             "Investment updated and portfolio metrics recalculated.",
           );

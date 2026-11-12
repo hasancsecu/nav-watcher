@@ -9,6 +9,7 @@ import {
   MapPin,
   CheckCircle2,
   AlertCircle,
+  Loader2,
 } from "lucide-react";
 
 interface UserProfile {
@@ -238,9 +239,16 @@ export default function ProfileModal({
           <button
             type="submit"
             disabled={isLoading}
-            className="rounded-xl bg-[#33c6e4] hover:bg-[#2eb4cf] text-slate-950 px-5 py-2 text-xs font-bold shadow-sm transition disabled:opacity-60 min-h-[40px]"
+            className="rounded-xl bg-[#33c6e4] hover:bg-[#2eb4cf] text-slate-950 px-5 py-2 text-xs font-bold shadow-sm transition disabled:opacity-60 min-h-[40px] inline-flex items-center gap-2"
           >
-            {isLoading ? "Saving..." : "Save Changes"}
+            {isLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Saving Changes...</span>
+              </>
+            ) : (
+              <span>Save Changes</span>
+            )}
           </button>
         </div>
       </form>

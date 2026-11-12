@@ -14,6 +14,7 @@ import {
   Sparkles,
   Eye,
   EyeOff,
+  Loader2,
 } from "lucide-react";
 
 interface AuthModalProps {
@@ -303,14 +304,21 @@ export default function AuthModal({
               disabled={isLoading}
               className="w-full min-h-[44px] rounded-xl bg-[#33c6e4] hover:bg-[#2eb4cf] text-slate-950 font-bold text-xs sm:text-sm shadow-sm inline-flex items-center justify-center gap-2 transition disabled:opacity-60"
             >
-              <span>
-                {isLoading
-                  ? "Please wait..."
-                  : mode === "login"
-                    ? "Sign In to Portfolio"
-                    : "Create Account & Start"}
-              </span>
-              <ArrowRight className="h-4 w-4" />
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Please wait...</span>
+                </>
+              ) : (
+                <>
+                  <span>
+                    {mode === "login"
+                      ? "Sign In to Portfolio"
+                      : "Create Account & Start"}
+                  </span>
+                  <ArrowRight className="h-4 w-4" />
+                </>
+              )}
             </button>
           </div>
         </form>

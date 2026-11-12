@@ -11,6 +11,7 @@ import {
   ArrowRight,
   RefreshCw,
   SlidersHorizontal,
+  Loader2,
 } from "lucide-react";
 import MonthYearDatePicker from "./MonthYearDatePicker";
 
@@ -449,12 +450,19 @@ export default function AddInvestmentModal({
           <button
             type="submit"
             disabled={isLoading || previewUnitsAllotted <= 0}
-            className="rounded-xl bg-[#33c6e4] hover:bg-[#2eb4cf] text-slate-950 px-5 py-2 text-xs font-bold shadow-sm transition disabled:opacity-50 min-h-[40px] inline-flex items-center gap-1.5"
+            className="rounded-xl bg-[#33c6e4] hover:bg-[#2eb4cf] text-slate-950 px-5 py-2 text-xs font-bold shadow-sm transition disabled:opacity-50 min-h-[40px] inline-flex items-center gap-2"
           >
-            <span>
-              {isLoading ? "Recording..." : "Confirm & Record Investment"}
-            </span>
-            <ArrowRight className="h-4 w-4" />
+            {isLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Recording Investment...</span>
+              </>
+            ) : (
+              <>
+                <span>Confirm &amp; Record Investment</span>
+                <ArrowRight className="h-4 w-4" />
+              </>
+            )}
           </button>
         </div>
       </form>

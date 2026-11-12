@@ -12,6 +12,7 @@ import {
   TrendingUp,
   ShieldCheck,
   Layers,
+  Loader2,
 } from "lucide-react";
 
 interface FundDirectoryItem {
@@ -222,8 +223,9 @@ export default function AddFundModal({
           )}
 
           {isLoading ? (
-            <div className="py-12 text-center text-xs theme-text-muted">
-              Loading mutual funds directory...
+            <div className="py-16 text-center text-xs theme-text-muted flex flex-col items-center justify-center gap-3">
+              <Loader2 className="h-7 w-7 animate-spin text-[#33c6e4]" />
+              <span className="font-semibold">Loading mutual funds directory...</span>
             </div>
           ) : filteredFunds.length === 0 ? (
             <div className="py-12 text-center text-xs theme-text-muted">
@@ -295,7 +297,11 @@ export default function AddFundModal({
                         onClick={() => handleAddFund(fund)}
                         className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#33c6e4] hover:bg-[#2eb4cf] text-slate-950 text-xs font-bold transition shadow-sm disabled:opacity-50 min-h-[38px]"
                       >
-                        <Plus className="h-3.5 w-3.5" />
+                        {isAdding ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Plus className="h-3.5 w-3.5" />
+                        )}
                         <span>{isAdding ? "Adding..." : "Add to Portfolio"}</span>
                       </button>
                     )}
