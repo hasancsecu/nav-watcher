@@ -153,6 +153,10 @@ export default function DashboardClient({
   // Active navigation tab (Mobile & Desktop)
   const [activeTab, setActiveTab] = useState<MobileTab>("portfolio");
 
+  // Mobile breakdown display toggle (Cards vs Table)
+  const [mobileBreakdownMode, setMobileBreakdownMode] =
+    useState<"cards" | "table">("cards");
+
   // Sync state & notifications
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncBanner, setSyncBanner] = useState<{
@@ -868,134 +872,286 @@ export default function DashboardClient({
               </div>
             </section>
 
-            {/* 3. Detailed SIP Valuation & Formula Breakdown Table (Isolated Horizontal Scroll) */}
+            {/* 3. Detailed SIP Valuation & Formula Breakdown Section */}
             <section
               aria-labelledby="fund-breakdown-heading"
-              className="theme-surface rounded-2xl border p-4 sm:p-6 shadow-sm overflow-hidden"
+              className="theme-surface rounded-2xl border p-4 sm:p-6 shadow-sm overflow-hidden space-y-4"
             >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3.5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <h2
                     id="fund-breakdown-heading"
-                    className="text-sm sm:text-base font-extrabold tracking-tight theme-text-primary"
+                    className="text-base sm:text-lg font-extrabold tracking-tight theme-text-primary"
                   >
-                    Detailed SIP Valuation &amp; Formula Breakdown Table
+                    Detailed SIP Valuation &amp; Formula Breakdown
                   </h2>
-                  <p className="text-xs sm:text-sm theme-text-secondary mt-0.5">
+                  <p className="text-xs sm:text-sm theme-text-secondary mt-0.5 leading-relaxed">
                     Units = Invested ÷ Avg Buy Price · Market Value = Units × Latest NAV · Return (%) = (Gain/Loss ÷ Invested) × 100
                   </p>
                 </div>
-                <div className="flex items-center gap-1.5 text-[11px] theme-text-muted sm:hidden">
-                  <span>← Swipe table horizontally for full metrics →</span>
+
+                {/* Mobile View Toggle: Cards View vs Wide Table */}
+                <div className="flex sm:hidden items-center p-1 rounded-xl theme-elevated border theme-border shrink-0 self-start">
+                  <button
+                    type="button"
+                    onClick={() => setMobileBreakdownMode("cards")}
+                    className={`px-3 py-1.5 text-xs font-bold rounded-lg transition ${
+                      mobileBreakdownMode === "cards"
+                        ? "btn-primary shadow-sm"
+                        : "theme-text-secondary hover:theme-text-primary"
+                    }`}
+                  >
+                    Mobile Cards
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMobileBreakdownMode("table")}
+                    className={`px-3 py-1.5 text-xs font-bold rounded-lg transition ${
+                      mobileBreakdownMode === "table"
+                        ? "btn-primary shadow-sm"
+                        : "theme-text-secondary hover:theme-text-primary"
+                    }`}
+                  >
+                    Wide Table
+                  </button>
                 </div>
               </div>
 
+              {/* 1. Mobile-Optimized Formula Breakdown Cards (Default on Mobile) */}
               <div
-                tabIndex={0}
-                role="region"
-                aria-labelledby="fund-breakdown-heading"
-                className="table-wrapper scrollbar-thin rounded-xl border theme-border"
+                className={`${
+                  mobileBreakdownMode === "cards"
+                    ? "flex flex-col gap-3.5 sm:hidden"
+                    : "hidden"
+                }`}
               >
-                <table className="responsive-fund-table text-left text-xs sm:text-sm min-w-[720px] w-full">
-                  <caption className="sr-only">
-                    Detailed SIP Valuation and Formula Breakdown Table
-                  </caption>
-                  <thead>
-                    <tr className="theme-elevated border-b theme-border text-xs uppercase tracking-wider theme-text-secondary">
-                      <th scope="col" className="py-3 px-3.5 font-bold">
-                        Mutual Fund
-                      </th>
-                      <th scope="col" className="py-3 px-3.5 font-bold text-right">
-                        Current NAV
-                      </th>
-                      <th scope="col" className="py-3 px-3.5 font-bold text-right">
-                        Avg Buy Price
-                      </th>
-                      <th scope="col" className="py-3 px-3.5 font-bold text-right">
-                        Units Held
-                      </th>
-                      <th scope="col" className="py-3 px-3.5 font-bold text-right">
-                        Invested (BDT)
-                      </th>
-                      <th scope="col" className="py-3 px-3.5 font-bold text-right">
-                        Current Value
-                      </th>
-                      <th scope="col" className="py-3 px-3.5 font-bold text-right">
-                        Gain / Loss
-                      </th>
-                      <th scope="col" className="py-3 px-3.5 font-bold text-right">
-                        Action
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-500/15">
-                    {funds.map((fund) => {
-                      const isGain = fund.absoluteGainLoss >= 0;
-                      return (
-                        <tr
-                          key={fund.id}
-                          className="hover:bg-slate-500/5 transition"
-                        >
-                          <th
-                            scope="row"
-                            className="py-3 px-3.5 font-bold theme-text-primary whitespace-nowrap"
-                          >
-                            <div className="flex items-center gap-2">
-                              <span
-                                className="h-2.5 w-2.5 rounded-full shrink-0"
-                                style={{
-                                  backgroundColor:
-                                    FUND_BRAND_CONFIG[fund.id]?.color ||
-                                    "#059669",
-                                }}
-                              />
-                              <span>{fund.name}</span>
-                            </div>
-                            <div className="text-[11px] font-medium theme-text-muted mt-0.5">
+                {funds.map((fund) => {
+                  const isGain = fund.absoluteGainLoss >= 0;
+                  const brand =
+                    FUND_BRAND_CONFIG[fund.id] ||
+                    FUND_BRAND_CONFIG["shanta-amanah"];
+                  return (
+                    <article
+                      key={fund.id}
+                      className="theme-elevated rounded-xl border p-3.5 space-y-3"
+                    >
+                      {/* Fund Title & Edit Action */}
+                      <div className="flex items-center justify-between gap-2 border-b theme-border pb-2.5">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span
+                            className="h-3 w-3 rounded-full shrink-0"
+                            style={{ backgroundColor: brand.color }}
+                          />
+                          <div className="min-w-0">
+                            <h3 className="text-sm font-extrabold theme-text-primary truncate">
+                              {fund.name}
+                            </h3>
+                            <p className="text-[11px] theme-text-muted">
                               NAV Date: {fund.navEffectiveDate || "Latest Day"}
-                            </div>
-                          </th>
-                          <td className="py-3 px-3.5 font-mono text-right status-gain-text font-bold whitespace-nowrap">
-                            ৳{fund.effectiveNav.toFixed(3)}
-                          </td>
-                          <td className="py-3 px-3.5 font-mono text-right font-semibold theme-text-primary whitespace-nowrap">
-                            ৳{fund.averageBuyPrice.toFixed(4)}
-                          </td>
-                          <td className="py-3 px-3.5 font-mono text-right font-bold status-info-text whitespace-nowrap">
-                            {fund.totalUnitsHeld.toFixed(4)}
-                          </td>
-                          <td className="py-3 px-3.5 font-mono text-right font-semibold theme-text-primary whitespace-nowrap">
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => openHoldingsModal(fund.id)}
+                          className="theme-surface min-h-[34px] rounded-lg border px-3 py-1 text-xs font-bold theme-text-primary hover:opacity-80 transition shrink-0"
+                        >
+                          Edit
+                        </button>
+                      </div>
+
+                      {/* 4-Item Math Formula Grid */}
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="theme-surface rounded-lg border p-2.5">
+                          <span className="text-[10px] theme-text-muted uppercase font-bold block">
+                            Invested Capital
+                          </span>
+                          <span className="font-mono text-sm font-bold theme-text-primary">
                             ৳{formatBdt(fund.totalInvested, 2)}
-                          </td>
-                          <td className="py-3 px-3.5 font-mono text-right font-extrabold theme-text-primary whitespace-nowrap">
+                          </span>
+                        </div>
+                        <div className="theme-surface rounded-lg border p-2.5">
+                          <span className="text-[10px] theme-text-muted uppercase font-bold block">
+                            Avg Buy Cost
+                          </span>
+                          <span className="font-mono text-sm font-bold theme-text-primary">
+                            ৳{fund.averageBuyPrice.toFixed(4)}
+                          </span>
+                        </div>
+                        <div className="theme-surface rounded-lg border p-2.5">
+                          <span className="text-[10px] theme-text-muted uppercase font-bold block">
+                            Calculated Units Held
+                          </span>
+                          <span className="font-mono text-sm font-bold status-info-text">
+                            {fund.totalUnitsHeld.toFixed(4)}
+                          </span>
+                          <span className="block text-[9px] theme-text-muted mt-0.5">
+                            Invested ÷ Avg Price
+                          </span>
+                        </div>
+                        <div className="theme-surface rounded-lg border p-2.5">
+                          <span className="text-[10px] theme-text-muted uppercase font-bold block">
+                            Current Scraped NAV
+                          </span>
+                          <span className="font-mono text-sm font-bold status-gain-text">
+                            ৳{fund.effectiveNav.toFixed(3)}
+                          </span>
+                          <span className="block text-[9px] theme-text-muted mt-0.5">
+                            Live AMC Portal
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Current Valuation & Return Banner */}
+                      <div className="theme-surface flex items-center justify-between rounded-lg border p-3">
+                        <div>
+                          <span className="text-[10px] theme-text-muted uppercase font-bold block">
+                            Current Market Value
+                          </span>
+                          <span className="font-mono text-base font-black theme-text-primary">
                             ৳{formatBdt(fund.currentMarketValue, 2)}
-                          </td>
-                          <td className="py-3 px-3.5 font-mono text-right whitespace-nowrap">
-                            <span
-                              className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-bold font-mono ${
-                                isGain ? "status-gain-badge" : "status-loss-badge"
-                              }`}
+                          </span>
+                          <span className="block text-[9px] theme-text-muted mt-0.5">
+                            Units × Current NAV
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-[10px] theme-text-muted uppercase font-bold block">
+                            Net Gain / Loss
+                          </span>
+                          <span
+                            className={`inline-flex items-center rounded-md px-2 py-0.5 font-mono text-xs font-bold mt-0.5 ${
+                              isGain ? "status-gain-badge" : "status-loss-badge"
+                            }`}
+                          >
+                            {isGain ? "+" : "-"}৳
+                            {formatBdt(Math.abs(fund.absoluteGainLoss), 2)} (
+                            {isGain ? "+" : ""}
+                            {fund.returnPct.toFixed(2)}%)
+                          </span>
+                        </div>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+
+              {/* 2. Full Wide Data Table (Shown on Desktop, or when mobile user selects "Wide Table") */}
+              <div
+                className={`${
+                  mobileBreakdownMode === "table" ? "block" : "hidden sm:block"
+                }`}
+              >
+                <div className="flex items-center justify-between text-[11px] theme-text-muted mb-2 sm:hidden">
+                  <span>← Swipe horizontally to see all columns →</span>
+                </div>
+                <div
+                  tabIndex={0}
+                  role="region"
+                  aria-labelledby="fund-breakdown-heading"
+                  className="table-wrapper scrollbar-thin rounded-xl border theme-border"
+                >
+                  <table className="responsive-fund-table text-left text-xs sm:text-sm min-w-[760px] w-full">
+                    <caption className="sr-only">
+                      Detailed SIP Valuation and Formula Breakdown Table
+                    </caption>
+                    <thead>
+                      <tr className="theme-elevated border-b theme-border text-xs uppercase tracking-wider theme-text-secondary">
+                        <th scope="col" className="py-3 px-3.5 font-bold">
+                          Mutual Fund
+                        </th>
+                        <th scope="col" className="py-3 px-3.5 font-bold text-right">
+                          Current NAV
+                        </th>
+                        <th scope="col" className="py-3 px-3.5 font-bold text-right">
+                          Avg Buy Price
+                        </th>
+                        <th scope="col" className="py-3 px-3.5 font-bold text-right">
+                          Units Held
+                        </th>
+                        <th scope="col" className="py-3 px-3.5 font-bold text-right">
+                          Invested (BDT)
+                        </th>
+                        <th scope="col" className="py-3 px-3.5 font-bold text-right">
+                          Current Value
+                        </th>
+                        <th scope="col" className="py-3 px-3.5 font-bold text-right">
+                          Gain / Loss
+                        </th>
+                        <th scope="col" className="py-3 px-3.5 font-bold text-right">
+                          Action
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-500/15">
+                      {funds.map((fund) => {
+                        const isGain = fund.absoluteGainLoss >= 0;
+                        return (
+                          <tr
+                            key={fund.id}
+                            className="hover:bg-slate-500/5 transition"
+                          >
+                            <th
+                              scope="row"
+                              className="py-3 px-3.5 font-bold theme-text-primary whitespace-nowrap"
                             >
-                              {isGain ? "+" : "-"}৳
-                              {formatBdt(Math.abs(fund.absoluteGainLoss), 2)} (
-                              {isGain ? "+" : ""}
-                              {fund.returnPct.toFixed(2)}%)
-                            </span>
-                          </td>
-                          <td className="py-3 px-3.5 text-right whitespace-nowrap">
-                            <button
-                              type="button"
-                              onClick={() => openHoldingsModal(fund.id)}
-                              className="theme-elevated min-h-[34px] rounded-lg border px-2.5 py-1 text-xs font-semibold theme-text-primary hover:opacity-80 transition"
-                            >
-                              Edit
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className="h-2.5 w-2.5 rounded-full shrink-0"
+                                  style={{
+                                    backgroundColor:
+                                      FUND_BRAND_CONFIG[fund.id]?.color ||
+                                      "#059669",
+                                  }}
+                                />
+                                <span>{fund.name}</span>
+                              </div>
+                              <div className="text-[11px] font-medium theme-text-muted mt-0.5">
+                                NAV Date: {fund.navEffectiveDate || "Latest Day"}
+                              </div>
+                            </th>
+                            <td className="py-3 px-3.5 font-mono text-right status-gain-text font-bold whitespace-nowrap">
+                              ৳{fund.effectiveNav.toFixed(3)}
+                            </td>
+                            <td className="py-3 px-3.5 font-mono text-right font-semibold theme-text-primary whitespace-nowrap">
+                              ৳{fund.averageBuyPrice.toFixed(4)}
+                            </td>
+                            <td className="py-3 px-3.5 font-mono text-right font-bold status-info-text whitespace-nowrap">
+                              {fund.totalUnitsHeld.toFixed(4)}
+                            </td>
+                            <td className="py-3 px-3.5 font-mono text-right font-semibold theme-text-primary whitespace-nowrap">
+                              ৳{formatBdt(fund.totalInvested, 2)}
+                            </td>
+                            <td className="py-3 px-3.5 font-mono text-right font-extrabold theme-text-primary whitespace-nowrap">
+                              ৳{formatBdt(fund.currentMarketValue, 2)}
+                            </td>
+                            <td className="py-3 px-3.5 font-mono text-right whitespace-nowrap">
+                              <span
+                                className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-bold font-mono ${
+                                  isGain ? "status-gain-badge" : "status-loss-badge"
+                                }`}
+                              >
+                                {isGain ? "+" : "-"}৳
+                                {formatBdt(Math.abs(fund.absoluteGainLoss), 2)} (
+                                {isGain ? "+" : ""}
+                                {fund.returnPct.toFixed(2)}%)
+                              </span>
+                            </td>
+                            <td className="py-3 px-3.5 text-right whitespace-nowrap">
+                              <button
+                                type="button"
+                                onClick={() => openHoldingsModal(fund.id)}
+                                className="theme-elevated min-h-[34px] rounded-lg border px-2.5 py-1 text-xs font-semibold theme-text-primary hover:opacity-80 transition"
+                              >
+                                Edit
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </section>
           </div>

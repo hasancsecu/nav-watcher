@@ -424,22 +424,17 @@ dialog::backdrop {
 }
 
 .responsive-fund-table {
-  border-collapse: separate;
-  border-spacing: 0;
+  border-collapse: collapse;
   width: 100%;
 }
 
 .responsive-fund-table thead {
-  position: sticky;
-  inset-block-start: 0;
-  z-index: 2;
+  position: static;
 }
 
 .responsive-fund-table tbody th {
-  position: sticky;
-  inset-inline-start: 0;
-  z-index: 1;
-  background-color: var(--bg-surface);
+  position: static;
+  background-color: transparent;
 }
 
 /* Custom sleek scrollbar for isolated horizontal overflow cards */
