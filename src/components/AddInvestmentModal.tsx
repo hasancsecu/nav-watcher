@@ -43,17 +43,22 @@ function formatBdt(amount: number, decimals = 2): string {
   }).format(amount);
 }
 
-// Generate calendar month choices (past 12 months up to current month)
-function generateMonthOptions(): string[] {
-  const options: string[] = [];
-  const now = new Date(); // Current date (Nov 2026)
-  for (let i = 0; i < 12; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const label = d.toLocaleString("en-US", { month: "long", year: "numeric" });
-    options.push(label);
-  }
-  return options;
-}
+const MONTH_NAMES = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+const AVAILABLE_YEARS = [2026, 2025, 2024, 2023, 2022, 2021, 2020];
 
 export default function AddInvestmentModal({
   isOpen,
@@ -65,14 +70,15 @@ export default function AddInvestmentModal({
   const dialogRef = useRef<HTMLDialogElement | null>(null);
   const titleId = useId();
 
-  const monthOptions = useMemo(() => generateMonthOptions(), []);
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonthIdx = now.getMonth();
 
   const [selectedUserFundId, setSelectedUserFundId] = useState<string>(
     preselectedUserFundId || funds[0]?.id || "",
   );
-  const [selectedMonth, setSelectedMonth] = useState<string>(
-    monthOptions[0] || "November 2026",
-  );
+  const [selectedMonthIdx, setSelectedMonthIdx] = useState<number>(currentMonthIdx);
+  const [selectedYear, setSelectedYear] = useState<number>(currentYear);
   const [cashAmount, setCashAmount] = useState<string>("8000");
   const [executionNav, setExecutionNav] = useState<string>("");
   const [investmentType, setInvestmentType] = useState<
@@ -99,11 +105,12 @@ export default function AddInvestmentModal({
         setCashAmount(String(fund.monthlySipTarget || 8000));
         setExecutionNav(String(fund.effectiveNav || 10.5));
       }
-      setSelectedMonth(monthOptions[0]);
+      setSelectedMonthIdx(currentMonthIdx);
+      setSelectedYear(currentYear);
       setError(null);
       setSuccessMsg(null);
     }
-  }, [isOpen, funds, preselectedUserFundId, monthOptions]);
+  }, [isOpen, funds, preselectedUserFundId, currentMonthIdx, currentYear]);
 
   // Update default NAV and cash when user switches fund in dropdown
   const handleFundChange = (ufId: string) => {
@@ -173,13 +180,17 @@ export default function AddInvestmentModal({
     setSuccessMsg(null);
     setIsLoading(true);
 
+    const monthStr = `${MONTH_NAMES[selectedMonthIdx]} ${selectedYear}`;
+    const invDate = new Date(selectedYear, selectedMonthIdx, 1);
+
     try {
       const res = await fetch("/api/user/investments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userFundId: activeFund.id,
-          calendarMonth: selectedMonth,
+          calendarMonth: monthStr,
+          investmentDate: invDate.toISOString(),
           cashInvested: numCash,
           executionNav: numNav,
           type: investmentType,
@@ -275,30 +286,95 @@ export default function AddInvestmentModal({
             </select>
           </div>
 
-          {/* Calendar Month Choice */}
-          <div className="space-y-1">
-            <label className="text-xs font-semibold theme-text-primary">
-              Calendar Month of Investment
-            </label>
-            <select
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
-              className="form-control-input w-full rounded-xl border px-3.5 py-2.5 text-xs font-semibold"
-            >
-              {monthOptions.map((m, idx) => (
-                <option key={m} value={m}>
-                  {m}{" "}
-                  {idx === 0
-                    ? "(Current Month)"
-                    : idx === 1
-                      ? "(Previous Month)"
-                      : ""}
-                </option>
-              ))}
-            </select>
-            <span className="text-[10px] theme-text-muted">
+          {/* Calendar Month & Year Selector */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold theme-text-primary">
+                Calendar Month &amp; Year of Investment
+              </label>
+              <span className="text-[11px] font-bold text-[#155360] dark:text-[#33c6e4]">
+                {selectedYear === currentYear && selectedMonthIdx === currentMonthIdx
+                  ? "Current Month"
+                  : selectedYear === (currentMonthIdx === 0 ? currentYear - 1 : currentYear) &&
+                    selectedMonthIdx === (currentMonthIdx === 0 ? 11 : currentMonthIdx - 1)
+                  ? "Previous Month"
+                  : `${MONTH_NAMES[selectedMonthIdx]} ${selectedYear}`}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-[10px] uppercase font-bold theme-text-muted block mb-1">
+                  Month
+                </label>
+                <select
+                  value={selectedMonthIdx}
+                  onChange={(e) => setSelectedMonthIdx(Number(e.target.value))}
+                  className="form-control-input w-full rounded-xl border px-3 py-2 text-xs font-semibold theme-surface"
+                >
+                  {MONTH_NAMES.map((name, idx) => (
+                    <option key={name} value={idx}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[10px] uppercase font-bold theme-text-muted block mb-1">
+                  Year
+                </label>
+                <select
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(Number(e.target.value))}
+                  className="form-control-input w-full rounded-xl border px-3 py-2 text-xs font-semibold theme-surface"
+                >
+                  {AVAILABLE_YEARS.map((y) => (
+                    <option key={y} value={y}>
+                      {y}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Quick shortcuts for current and previous month */}
+            <div className="flex items-center gap-1.5 pt-0.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedMonthIdx(currentMonthIdx);
+                  setSelectedYear(currentYear);
+                }}
+                className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold transition ${
+                  selectedYear === currentYear && selectedMonthIdx === currentMonthIdx
+                    ? "bg-[#33c6e4]/20 text-[#155360] dark:text-[#33c6e4] border border-[#33c6e4]/40 font-bold"
+                    : "theme-surface theme-text-secondary border theme-border hover:theme-text-primary"
+                }`}
+              >
+                Current ({MONTH_NAMES[currentMonthIdx]} {currentYear})
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const prevMonth = currentMonthIdx === 0 ? 11 : currentMonthIdx - 1;
+                  const prevYear = currentMonthIdx === 0 ? currentYear - 1 : currentYear;
+                  setSelectedMonthIdx(prevMonth);
+                  setSelectedYear(prevYear);
+                }}
+                className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold transition ${
+                  selectedYear === (currentMonthIdx === 0 ? currentYear - 1 : currentYear) &&
+                  selectedMonthIdx === (currentMonthIdx === 0 ? 11 : currentMonthIdx - 1)
+                    ? "bg-[#33c6e4]/20 text-[#155360] dark:text-[#33c6e4] border border-[#33c6e4]/40 font-bold"
+                    : "theme-surface theme-text-secondary border theme-border hover:theme-text-primary"
+                }`}
+              >
+                Previous ({MONTH_NAMES[currentMonthIdx === 0 ? 11 : currentMonthIdx - 1]} {currentMonthIdx === 0 ? currentYear - 1 : currentYear})
+              </button>
+            </div>
+            <p className="text-[10px] theme-text-muted">
               Select previous or current calendar month for this installment
-            </span>
+            </p>
           </div>
 
           {/* Investment Type */}

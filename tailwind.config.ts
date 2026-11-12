@@ -11,6 +11,8 @@ const config: Config = {
     extend: {
       fontFamily: {
         sans: [
+          "var(--font-red-hat-text)",
+          "Red Hat Text",
           "Inter",
           "-apple-system",
           "BlinkMacSystemFont",

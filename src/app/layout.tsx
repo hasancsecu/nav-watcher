@@ -32,7 +32,7 @@ export const viewport: Viewport = {
   userScalable: false,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#059669" },
+    { media: "(prefers-color-scheme: light)", color: "#33c6e4" },
     { media: "(prefers-color-scheme: dark)", color: "#090d16" },
   ],
 };
@@ -75,8 +75,18 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* MANDATORY: Declare support for both light and dark themes & prevent FOUC (modern-web-guidance: dark-mode-toggle) */}
+        {/* MANDATORY: Declare support for both light and dark themes & prevent FOUC */}
         <meta name="color-scheme" content="light dark" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Red+Hat+Text:ital,wght@0,300..700;1,300..700&display=swap"
+          rel="stylesheet"
+        />
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
         <link rel="manifest" href="/manifest.webmanifest" />
         <meta name="mobile-web-app-capable" content="yes" />
@@ -86,7 +96,7 @@ export default function RootLayout({
       </head>
       <body
         suppressHydrationWarning
-        className="min-h-[100dvh] w-full max-w-full overflow-x-clip antialiased selection:bg-emerald-500/25"
+        className="min-h-[100dvh] w-full max-w-full overflow-x-clip font-sans antialiased selection:bg-[#33c6e4]/25"
       >
         {children}
       </body>

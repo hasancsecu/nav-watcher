@@ -596,7 +596,7 @@ export default function UpdateHoldingsDialog({
                     >
                       <span className="inline-flex items-center gap-1.5">
                         <RefreshCw className="h-4 w-4 shrink-0" />
-                        <span>+ Record Monthly SIP (৳{formatBdt(fund.monthlySipTarget || 8000, 0)})</span>
+                        <span>Record Monthly SIP (৳{formatBdt(fund.monthlySipTarget || 8000, 0)})</span>
                       </span>
                       {isSipExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                     </button>
@@ -612,7 +612,7 @@ export default function UpdateHoldingsDialog({
                     >
                       <span className="inline-flex items-center gap-1.5">
                         <Coins className="h-4 w-4 status-gain-text shrink-0" />
-                        <span>+ Add CIP Dividend</span>
+                        <span>Add CIP Dividend</span>
                       </span>
                       {isCipExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                     </button>

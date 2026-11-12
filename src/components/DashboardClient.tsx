@@ -13,6 +13,10 @@ import AuthModal from "./AuthModal";
 import ProfileModal from "./ProfileModal";
 import AddFundModal from "./AddFundModal";
 import AddInvestmentModal from "./AddInvestmentModal";
+import EditInvestmentModal, { EditableInvestment } from "./EditInvestmentModal";
+import ConfirmDialog from "./ConfirmDialog";
+import FundComparisonSection from "./FundComparisonSection";
+import { ToastProvider, useToast } from "./Toast";
 import {
   RefreshCw,
   Wallet,
@@ -40,6 +44,8 @@ import {
   Building2,
   ChevronDown,
   ChevronUp,
+  Pencil,
+  Loader2,
 } from "lucide-react";
 
 export interface ScrapeLogItem {
@@ -154,7 +160,15 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
 }
 
-export default function DashboardClient({
+export default function DashboardClient(props: DashboardClientProps) {
+  return (
+    <ToastProvider>
+      <DashboardClientContent {...props} />
+    </ToastProvider>
+  );
+}
+
+function DashboardClientContent({
   initialUser,
   initialSummary,
   initialFunds,
@@ -162,6 +176,8 @@ export default function DashboardClient({
   initialLogs,
   initialScheduler,
 }: DashboardClientProps) {
+  const toast = useToast();
+
   // Current user state
   const [user, setUser] = useState<UserProfile | null>(initialUser || null);
 
@@ -190,6 +206,26 @@ export default function DashboardClient({
   const [isAddFundModalOpen, setIsAddFundModalOpen] = useState(false);
   const [isAddInvestmentModalOpen, setIsAddInvestmentModalOpen] = useState(false);
   const [preselectedFundIdForInv, setPreselectedFundIdForInv] = useState<string | null>(null);
+
+  // Edit investment modal state
+  const [editingInvestment, setEditingInvestment] = useState<EditableInvestment | null>(null);
+  const [isEditInvestmentModalOpen, setIsEditInvestmentModalOpen] = useState(false);
+
+  // ConfirmDialog state
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmLabel?: string;
+    variant?: "danger" | "primary";
+    isLoading?: boolean;
+    onConfirm: () => void | Promise<void>;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+  });
 
   // User menu dropdown toggle
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -312,64 +348,86 @@ export default function DashboardClient({
     }
   };
 
+  const handleOpenEditInvestment = (inv: any, fund: any) => {
+    setEditingInvestment({
+      id: inv.id,
+      userFundId: fund.id,
+      fundName: fund.name,
+      calendarMonth: inv.calendarMonth,
+      cashInvested: inv.cashInvested,
+      cashBufferUsed: inv.cashBufferUsed || 0,
+      executionNav: inv.executionNav,
+      unitsAllotted: inv.unitsAllotted,
+      unitsCost: inv.unitsCost,
+      cashRemainder: inv.cashRemainder || 0,
+      type: inv.type || "SIP",
+      notes: inv.notes,
+    });
+    setIsEditInvestmentModalOpen(true);
+  };
+
   // Delete Fund from profile
-  const handleDeleteFund = async (userFundId: string, fundName: string) => {
-    if (
-      !confirm(
-        `Remove "${fundName}" from your portfolio? All associated investments will also be removed.`
-      )
-    ) {
-      return;
-    }
+  const handleDeleteFund = (userFundId: string, fundName: string) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: "Remove Mutual Fund",
+      message: `Are you sure you want to remove "${fundName}" from your portfolio? All associated monthly SIP and CIP investments will also be removed.`,
+      confirmLabel: "Remove Fund",
+      variant: "danger",
+      isLoading: false,
+      onConfirm: async () => {
+        try {
+          setConfirmDialog((prev) => ({ ...prev, isLoading: true }));
+          setIsRefreshing(true);
+          const res = await fetch(`/api/user/funds?id=${userFundId}`, {
+            method: "DELETE",
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Failed to remove fund.");
 
-    try {
-      setIsRefreshing(true);
-      const res = await fetch(`/api/user/funds?id=${userFundId}`, {
-        method: "DELETE",
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to remove fund.");
-
-      await refreshUserData();
-      setSyncBanner({
-        type: "success",
-        text: `Removed "${fundName}" from your portfolio.`,
-      });
-    } catch (err) {
-      setSyncBanner({
-        type: "error",
-        text: err instanceof Error ? err.message : "Error deleting fund.",
-      });
-    } finally {
-      setIsRefreshing(false);
-    }
+          await refreshUserData();
+          toast.success(`Removed "${fundName}" from your portfolio.`);
+          setConfirmDialog((prev) => ({ ...prev, isOpen: false, isLoading: false }));
+        } catch (err) {
+          toast.error(err instanceof Error ? err.message : "Error deleting fund.");
+          setConfirmDialog((prev) => ({ ...prev, isLoading: false }));
+        } finally {
+          setIsRefreshing(false);
+        }
+      },
+    });
   };
 
   // Delete single investment record
-  const handleDeleteInvestment = async (invId: string, month: string) => {
-    if (!confirm(`Delete investment record for ${month}?`)) return;
+  const handleDeleteInvestment = (invId: string, month: string) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: "Delete Investment Record",
+      message: `Delete the investment record for ${month}? Integer units and cash buffers will be recalculated automatically.`,
+      confirmLabel: "Delete Investment",
+      variant: "danger",
+      isLoading: false,
+      onConfirm: async () => {
+        try {
+          setConfirmDialog((prev) => ({ ...prev, isLoading: true }));
+          setIsRefreshing(true);
+          const res = await fetch(`/api/user/investments?id=${invId}`, {
+            method: "DELETE",
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Failed to delete investment.");
 
-    try {
-      setIsRefreshing(true);
-      const res = await fetch(`/api/user/investments?id=${invId}`, {
-        method: "DELETE",
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to delete investment.");
-
-      await refreshUserData();
-      setSyncBanner({
-        type: "success",
-        text: `Deleted investment record for ${month}.`,
-      });
-    } catch (err) {
-      setSyncBanner({
-        type: "error",
-        text: err instanceof Error ? err.message : "Error deleting investment.",
-      });
-    } finally {
-      setIsRefreshing(false);
-    }
+          await refreshUserData();
+          toast.success(`Deleted investment record for ${month}.`);
+          setConfirmDialog((prev) => ({ ...prev, isOpen: false, isLoading: false }));
+        } catch (err) {
+          toast.error(err instanceof Error ? err.message : "Error deleting investment.");
+          setConfirmDialog((prev) => ({ ...prev, isLoading: false }));
+        } finally {
+          setIsRefreshing(false);
+        }
+      },
+    });
   };
 
   // Logout handler
@@ -390,10 +448,7 @@ export default function DashboardClient({
         fundsCount: 0,
       });
       setIsUserMenuOpen(false);
-      setSyncBanner({
-        type: "info",
-        text: "You have been signed out.",
-      });
+      toast.info("You have been signed out.");
     } catch (err) {
       console.error("Logout failed", err);
     }
@@ -403,8 +458,6 @@ export default function DashboardClient({
   const handleManualSync = async () => {
     try {
       setIsRefreshing(true);
-      setSyncBanner(null);
-
       const res = await fetch("/api/scrape", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -415,15 +468,9 @@ export default function DashboardClient({
       if (!res.ok) throw new Error(data.error || "Failed to sync NAVs.");
 
       await refreshUserData();
-      setSyncBanner({
-        type: "success",
-        text: "Latest NAVs updated successfully.",
-      });
+      toast.success("Latest NAVs scraped & updated successfully.");
     } catch (err) {
-      setSyncBanner({
-        type: "error",
-        text: err instanceof Error ? err.message : "Failed to sync NAVs.",
-      });
+      toast.error(err instanceof Error ? err.message : "Failed to sync NAVs.");
     } finally {
       setIsRefreshing(false);
     }
@@ -500,17 +547,17 @@ export default function DashboardClient({
             {/* Authenticated Controls vs Unauthenticated Auth Buttons */}
             {user ? (
               <div className="flex items-center gap-2">
-                {/* + Add Fund Button */}
+                {/* Add Fund Button */}
                 <button
                   type="button"
                   onClick={() => setIsAddFundModalOpen(true)}
-                  className="hidden md:inline-flex min-h-[38px] items-center gap-1.5 rounded-xl bg-[#33c6e4] hover:bg-[#2eb4cf] text-slate-950 px-3 py-1.5 text-xs font-bold transition shadow-sm"
+                  className="hidden md:inline-flex min-h-[38px] items-center gap-1.5 rounded-xl bg-[#33c6e4] hover:bg-[#2eb4cf] text-slate-950 px-3.5 py-1.5 text-xs font-bold transition shadow-sm"
                 >
                   <Plus className="h-3.5 w-3.5" />
-                  <span>+ Add Fund</span>
+                  <span>Add Fund</span>
                 </button>
 
-                {/* + Add Investment Button */}
+                {/* Add Investment Button */}
                 {funds.length > 0 && (
                   <button
                     type="button"
@@ -518,10 +565,10 @@ export default function DashboardClient({
                       setPreselectedFundIdForInv(funds[0]?.id || null);
                       setIsAddInvestmentModalOpen(true);
                     }}
-                    className="hidden sm:inline-flex min-h-[38px] items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-bold transition hover:bg-slate-50 dark:hover:bg-slate-800"
+                    className="hidden sm:inline-flex min-h-[38px] items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-1.5 text-xs font-bold transition hover:bg-slate-50 dark:hover:bg-slate-800"
                   >
                     <Calendar className="h-3.5 w-3.5 text-[#33c6e4]" />
-                    <span>+ Add Investment</span>
+                    <span>Add Investment</span>
                   </button>
                 )}
 
@@ -872,6 +919,15 @@ export default function DashboardClient({
               </div>
             </section>
 
+            {/* Invested Funds Comparison Section */}
+            {funds.length > 0 && (
+              <FundComparisonSection
+                funds={funds}
+                totalPortfolioInvested={summary.totalInvested}
+                totalPortfolioValue={summary.currentMarketValue}
+              />
+            )}
+
             {/* 2. User Fund Asset Cards */}
             <section aria-labelledby="user-funds-heading" className="space-y-4">
               <div className="flex items-center justify-between px-1">
@@ -985,17 +1041,17 @@ export default function DashboardClient({
                               setPreselectedFundIdForInv(fund.id);
                               setIsAddInvestmentModalOpen(true);
                             }}
-                            className="flex-1 rounded-xl bg-[#33c6e4] hover:bg-[#2eb4cf] text-slate-950 py-2 text-xs font-bold transition shadow-sm inline-flex items-center justify-center gap-1"
+                            className="flex-1 rounded-xl bg-[#33c6e4] hover:bg-[#2eb4cf] text-slate-950 py-2.5 px-3 text-xs font-bold transition shadow-sm inline-flex items-center justify-center gap-1.5"
                           >
                             <Calendar className="h-3.5 w-3.5" />
-                            <span>+ Add Investment</span>
+                            <span>Add Investment</span>
                           </button>
 
                           <button
                             type="button"
                             onClick={() => handleDeleteFund(fund.id, fund.name)}
                             title="Remove fund from portfolio"
-                            className="rounded-xl border theme-border p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition shrink-0"
+                            className="rounded-xl border border-rose-200 dark:border-rose-900/60 p-2.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition shrink-0"
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -1033,17 +1089,25 @@ export default function DashboardClient({
                                         ৳{formatBdt(inv.cashInvested, 0)} @ ৳{inv.executionNav.toFixed(3)}
                                       </span>
                                     </div>
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-1.5">
                                       <span className="font-mono font-bold text-[#155360] dark:text-[#33c6e4]">
                                         +{inv.unitsAllotted} units
                                       </span>
                                       <button
                                         type="button"
+                                        onClick={() => handleOpenEditInvestment(inv, fund)}
+                                        title="Edit investment record"
+                                        className="p-1 rounded-md text-slate-400 hover:text-[#33c6e4] hover:bg-slate-200/60 dark:hover:bg-slate-800 transition"
+                                      >
+                                        <Pencil className="h-3.5 w-3.5" />
+                                      </button>
+                                      <button
+                                        type="button"
                                         onClick={() => handleDeleteInvestment(inv.id, inv.calendarMonth)}
                                         title="Delete investment"
-                                        className="text-rose-400 hover:text-rose-600 p-0.5"
+                                        className="p-1 rounded-md text-rose-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
                                       >
-                                        <X className="h-3 w-3" />
+                                        <Trash2 className="h-3.5 w-3.5" />
                                       </button>
                                     </div>
                                   </div>
@@ -1129,9 +1193,10 @@ export default function DashboardClient({
                             setPreselectedFundIdForInv(fund.id);
                             setIsAddInvestmentModalOpen(true);
                           }}
-                          className="theme-surface rounded-lg border px-3 py-1 text-xs font-bold theme-text-primary"
+                          className="rounded-xl bg-[#33c6e4] hover:bg-[#2eb4cf] text-slate-950 px-3.5 py-1.5 text-xs font-bold transition shadow-sm inline-flex items-center gap-1 shrink-0"
                         >
-                          + Investment
+                          <Calendar className="h-3 w-3" />
+                          <span>Add Investment</span>
                         </button>
                       </div>
 
@@ -1269,9 +1334,10 @@ export default function DashboardClient({
                                     setPreselectedFundIdForInv(fund.id);
                                     setIsAddInvestmentModalOpen(true);
                                   }}
-                                  className="theme-surface rounded-lg border px-2.5 py-1 text-xs font-bold theme-text-primary hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                                  className="rounded-lg bg-[#33c6e4] hover:bg-[#2eb4cf] text-slate-950 px-3 py-1.5 text-xs font-bold transition shadow-sm inline-flex items-center gap-1"
                                 >
-                                  + Investment
+                                  <Calendar className="h-3 w-3" />
+                                  <span>Add Investment</span>
                                 </button>
                                 <button
                                   type="button"
@@ -1348,11 +1414,36 @@ export default function DashboardClient({
         onClose={() => setIsAddInvestmentModalOpen(false)}
         onInvestmentAdded={() => {
           refreshUserData();
-          setSyncBanner({
-            type: "success",
-            text: "Investment recorded and portfolio metrics updated.",
-          });
+          toast.success("Investment recorded and portfolio metrics updated.");
         }}
+      />
+
+      {/* Edit Previously Inserted Investment Modal */}
+      <EditInvestmentModal
+        isOpen={isEditInvestmentModalOpen}
+        investment={editingInvestment}
+        onClose={() => {
+          setIsEditInvestmentModalOpen(false);
+          setEditingInvestment(null);
+        }}
+        onUpdated={() => {
+          refreshUserData();
+          toast.success("Investment updated and portfolio metrics recalculated.");
+        }}
+      />
+
+      {/* Custom Confirmation Modal */}
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        confirmLabel={confirmDialog.confirmLabel}
+        variant={confirmDialog.variant}
+        isLoading={confirmDialog.isLoading}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={() =>
+          setConfirmDialog((prev) => ({ ...prev, isOpen: false }))
+        }
       />
     </div>
   );

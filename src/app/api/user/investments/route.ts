@@ -4,6 +4,76 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * Rechains all investments for a user fund in chronological sequence.
+ * Enforces:
+ * 1. Available cash = cashInvested + previous cashRemainder buffer
+ * 2. Units allotted = floor(availableCash / executionNav) [Plain integer units]
+ * 3. Units cost = unitsAllotted * executionNav
+ * 4. New cash remainder = availableCash - unitsCost (held as buffer for next installment)
+ * 5. Recomputes UserFund totalUnits, totalInvested, averageBuyPrice, fractionalCashBalance
+ */
+async function rechainUserFundInvestments(userFundId: string) {
+  const entries = await prisma.investmentEntry.findMany({
+    where: { userFundId },
+    orderBy: [{ investmentDate: "asc" }, { createdAt: "asc" }],
+  });
+
+  let runningCashBuffer = 0;
+  let totalUnits = 0;
+  let totalInvested = 0;
+  let totalCipUnits = 0;
+
+  for (const entry of entries) {
+    const cashInvested = Math.max(0, Number(entry.cashInvested) || 0);
+    const executionNav =
+      Number(entry.executionNav) > 0 ? Number(entry.executionNav) : 10.0;
+    const cashBufferUsed = runningCashBuffer;
+    const totalAvailable = Number((cashInvested + cashBufferUsed).toFixed(2));
+
+    // STRICT BANGLADESH AMC RULE: Strictly whole integer units!
+    const unitsAllotted = Math.floor(totalAvailable / executionNav);
+    const unitsCost = Number((unitsAllotted * executionNav).toFixed(2));
+    const cashRemainder = Number(
+      Math.max(0, totalAvailable - unitsCost).toFixed(2),
+    );
+
+    await prisma.investmentEntry.update({
+      where: { id: entry.id },
+      data: {
+        cashBufferUsed,
+        unitsAllotted,
+        unitsCost,
+        cashRemainder,
+      },
+    });
+
+    runningCashBuffer = cashRemainder;
+    totalUnits += unitsAllotted;
+    totalInvested += unitsCost;
+    if (entry.type === "CIP") {
+      totalCipUnits += unitsAllotted;
+    }
+  }
+
+  const averageBuyPrice =
+    totalUnits > 0 ? Number((totalInvested / totalUnits).toFixed(4)) : 10.0;
+
+  const updatedUserFund = await prisma.userFund.update({
+    where: { id: userFundId },
+    data: {
+      totalUnits,
+      totalInvested: Number(totalInvested.toFixed(2)),
+      averageBuyPrice,
+      fractionalCashBalance: Number(runningCashBuffer.toFixed(2)),
+      totalCipUnits,
+    },
+    include: { fund: true },
+  });
+
+  return updatedUserFund;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const user = await getCurrentUser();
@@ -57,91 +127,155 @@ export async function POST(req: NextRequest) {
         ? Number(executionNav)
         : userFund.fund.latestNav || userFund.fund.defaultNav || 10.0;
 
-    // Previous unallotted cash buffer
-    const previousCashBuffer = Math.max(
-      0,
-      Number(userFund.fractionalCashBalance) || 0,
-    );
-    const totalAvailableCash = Number(
-      (safeCash + previousCashBuffer).toFixed(2),
-    );
-
-    // STRICT BANGLADESH AMC RULE: Units allotted MUST be whole integers!
-    const unitsAllotted = Math.floor(totalAvailableCash / safeNav);
-    const unitsCost = Number((unitsAllotted * safeNav).toFixed(2));
-    const newCashRemainder = Number(
-      Math.max(0, totalAvailableCash - unitsCost).toFixed(2),
-    );
-
-    const existingUnits = Math.max(0, userFund.totalUnits || 0);
-    const existingInvested = Math.max(0, userFund.totalInvested || 0);
-
-    const newTotalUnits = existingUnits + unitsAllotted;
-    const newTotalInvested = Number((existingInvested + unitsCost).toFixed(2));
-    const newAverageBuyPrice =
-      newTotalUnits > 0
-        ? Number((newTotalInvested / newTotalUnits).toFixed(4))
-        : safeNav;
-
     const monthStr =
       calendarMonth ||
       new Date().toLocaleString("en-US", { month: "long", year: "numeric" });
     const monthKey = monthStr.toLowerCase().replace(/[^a-z0-9]/g, "-");
     const invDate = investmentDate ? new Date(investmentDate) : new Date();
 
-    // Create investment record & update user fund in a transaction
-    const [investment, updatedFund] = await prisma.$transaction([
-      prisma.investmentEntry.create({
-        data: {
-          userId: user.id,
-          userFundId: userFund.id,
-          monthKey,
-          calendarMonth: monthStr,
-          investmentDate: invDate,
-          cashInvested: safeCash,
-          cashBufferUsed: previousCashBuffer,
-          executionNav: safeNav,
-          unitsAllotted,
-          unitsCost,
-          cashRemainder: newCashRemainder,
-          type,
-          notes:
-            notes ||
-            `${type} Investment for ${monthStr}: +${unitsAllotted} integer units allotted @ ৳${safeNav.toFixed(3)}.`,
-        },
-      }),
-      prisma.userFund.update({
-        where: { id: userFund.id },
-        data: {
-          totalUnits: newTotalUnits,
-          totalInvested: newTotalInvested,
-          averageBuyPrice: newAverageBuyPrice,
-          fractionalCashBalance: newCashRemainder,
-          ...(type === "CIP"
-            ? { totalCipUnits: { increment: unitsAllotted } }
-            : {}),
-        },
-        include: { fund: true },
-      }),
-    ]);
+    // Create entry initially with base values
+    const newEntry = await prisma.investmentEntry.create({
+      data: {
+        userId: user.id,
+        userFundId: userFund.id,
+        monthKey,
+        calendarMonth: monthStr,
+        investmentDate: invDate,
+        cashInvested: safeCash,
+        cashBufferUsed: 0,
+        executionNav: safeNav,
+        unitsAllotted: 0,
+        unitsCost: 0,
+        cashRemainder: 0,
+        type,
+        notes:
+          notes ||
+          `${type} Investment for ${monthStr}: Cash ৳${safeCash} @ ৳${safeNav.toFixed(3)}.`,
+      },
+    });
+
+    // Rechain all investments to maintain sequential cash buffer integrity
+    const updatedFund = await rechainUserFundInvestments(userFund.id);
+
+    const recomputedEntry = await prisma.investmentEntry.findUnique({
+      where: { id: newEntry.id },
+    });
 
     return NextResponse.json({
       message: `Successfully recorded ${type} investment of ৳${safeCash.toLocaleString("en-BD")} for ${monthStr}.`,
-      investment,
+      investment: recomputedEntry,
       userFund: updatedFund,
       summary: {
-        unitsAllotted,
-        unitsCost,
-        newCashRemainder,
-        newTotalUnits,
-        newTotalInvested,
-        newAverageBuyPrice,
+        unitsAllotted: recomputedEntry?.unitsAllotted ?? 0,
+        unitsCost: recomputedEntry?.unitsCost ?? 0,
+        newCashRemainder: updatedFund.fractionalCashBalance,
+        newTotalUnits: updatedFund.totalUnits,
+        newTotalInvested: updatedFund.totalInvested,
+        newAverageBuyPrice: updatedFund.averageBuyPrice,
       },
     });
   } catch (error) {
     console.error("[API /api/user/investments POST] Error:", error);
     return NextResponse.json(
       { error: "Failed to record investment", details: String(error) },
+      { status: 500 },
+    );
+  }
+}
+
+export async function PUT(req: NextRequest) {
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json(
+        { error: "Unauthorized. Please log in." },
+        { status: 401 },
+      );
+    }
+
+    const body = await req.json();
+    const {
+      investmentId,
+      calendarMonth,
+      investmentDate,
+      cashInvested,
+      executionNav,
+      type,
+      notes,
+    } = body;
+
+    if (!investmentId) {
+      return NextResponse.json(
+        { error: "Missing required parameter: investmentId" },
+        { status: 400 },
+      );
+    }
+
+    const entry = await prisma.investmentEntry.findUnique({
+      where: { id: investmentId },
+      include: { userFund: { include: { fund: true } } },
+    });
+
+    if (!entry || entry.userId !== user.id) {
+      return NextResponse.json(
+        { error: "Investment entry not found or unauthorized." },
+        { status: 404 },
+      );
+    }
+
+    const safeCash =
+      cashInvested !== undefined
+        ? Math.max(0, Number(cashInvested) || 0)
+        : entry.cashInvested;
+    if (safeCash <= 0) {
+      return NextResponse.json(
+        { error: "Invested cash amount must be greater than 0 BDT." },
+        { status: 400 },
+      );
+    }
+
+    const safeNav =
+      executionNav !== undefined && Number(executionNav) > 0
+        ? Number(executionNav)
+        : entry.executionNav;
+
+    const monthStr = calendarMonth || entry.calendarMonth;
+    const monthKey = monthStr.toLowerCase().replace(/[^a-z0-9]/g, "-");
+    const invDate = investmentDate
+      ? new Date(investmentDate)
+      : entry.investmentDate;
+    const invType = type || entry.type;
+
+    // Update targeted investment entry
+    await prisma.investmentEntry.update({
+      where: { id: investmentId },
+      data: {
+        calendarMonth: monthStr,
+        monthKey,
+        investmentDate: invDate,
+        cashInvested: safeCash,
+        executionNav: safeNav,
+        type: invType,
+        notes: notes !== undefined ? notes : entry.notes,
+      },
+    });
+
+    // Rechain sequence so cash remainder and integer units roll forward seamlessly
+    const updatedFund = await rechainUserFundInvestments(entry.userFundId);
+
+    const recomputedEntry = await prisma.investmentEntry.findUnique({
+      where: { id: investmentId },
+    });
+
+    return NextResponse.json({
+      message: `Successfully updated ${invType} investment for ${monthStr}.`,
+      investment: recomputedEntry,
+      userFund: updatedFund,
+    });
+  } catch (error) {
+    console.error("[API /api/user/investments PUT] Error:", error);
+    return NextResponse.json(
+      { error: "Failed to update investment", details: String(error) },
       { status: 500 },
     );
   }
@@ -179,41 +313,15 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
+    const userFundId = entry.userFundId;
+
     // Delete investment
     await prisma.investmentEntry.delete({
       where: { id: investmentId },
     });
 
-    // Recompute UserFund metrics from remaining investments
-    const remainingInvestments = await prisma.investmentEntry.findMany({
-      where: { userFundId: entry.userFundId },
-      orderBy: { investmentDate: "asc" },
-    });
-
-    let runningCashRemainder = 0;
-    let runningUnits = 0;
-    let runningInvested = 0;
-
-    for (const inv of remainingInvestments) {
-      runningUnits += inv.unitsAllotted;
-      runningInvested += inv.unitsCost;
-      runningCashRemainder = inv.cashRemainder;
-    }
-
-    const finalAvgBuy =
-      runningUnits > 0
-        ? Number((runningInvested / runningUnits).toFixed(4))
-        : 10.0;
-
-    const updatedUserFund = await prisma.userFund.update({
-      where: { id: entry.userFundId },
-      data: {
-        totalUnits: runningUnits,
-        totalInvested: Number(runningInvested.toFixed(2)),
-        averageBuyPrice: finalAvgBuy,
-        fractionalCashBalance: Number(runningCashRemainder.toFixed(2)),
-      },
-    });
+    // Rechain remaining investments
+    const updatedUserFund = await rechainUserFundInvestments(userFundId);
 
     return NextResponse.json({
       message: "Investment entry deleted and holding metrics recalculated.",

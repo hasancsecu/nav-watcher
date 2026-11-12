@@ -1,47 +1,112 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
+    <!-- Background Gradient: Deep Obsidian Navy to Midnight Teal -->
     <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#047857" />
-      <stop offset="50%" stop-color="#059669" />
-      <stop offset="100%" stop-color="#0f766e" />
+      <stop offset="0%" stop-color="#070c14" />
+      <stop offset="50%" stop-color="#0a1822" />
+      <stop offset="100%" stop-color="#0e232e" />
     </linearGradient>
-    <linearGradient id="chartGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#34d399" />
-      <stop offset="100%" stop-color="#6ee7b7" />
+
+    <!-- Vibrant Cyan Brand Gradient -->
+    <linearGradient id="cyanGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0284c7" />
+      <stop offset="50%" stop-color="#33c6e4" />
+      <stop offset="100%" stop-color="#7dd3fc" />
     </linearGradient>
-    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.3" />
-      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.0" />
+
+    <!-- Glass Surface Gradient -->
+    <linearGradient id="glassGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.14" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.02" />
     </linearGradient>
-    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.28" />
+
+    <!-- Area Chart Soft Fill -->
+    <linearGradient id="chartFill" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#33c6e4" stop-opacity="0.35" />
+      <stop offset="70%" stop-color="#155360" stop-opacity="0.10" />
+      <stop offset="100%" stop-color="#33c6e4" stop-opacity="0.0" />
+    </linearGradient>
+
+    <!-- Radial Cyan Aura Glow -->
+    <radialGradient id="auraGlow" cx="65%" cy="35%" r="60%">
+      <stop offset="0%" stop-color="#33c6e4" stop-opacity="0.28" />
+      <stop offset="60%" stop-color="#155360" stop-opacity="0.12" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.0" />
+    </radialGradient>
+
+    <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <filter id="dropShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="16" flood-color="#000000" flood-opacity="0.45" />
     </filter>
   </defs>
 
-  <!-- Background Squircle -->
-  <rect x="16" y="16" width="480" height="480" rx="108" fill="url(#bgGrad)" />
-  <rect x="16" y="16" width="480" height="480" rx="108" fill="url(#accentGrad)" stroke="rgba(255,255,255,0.2)" stroke-width="4" />
+  <!-- Background Squircle Container -->
+  <rect x="16" y="16" width="480" height="480" rx="112" fill="url(#bgGrad)" />
+  <rect x="16" y="16" width="480" height="480" rx="112" fill="url(#auraGlow)" />
+  <rect x="16" y="16" width="480" height="480" rx="112" fill="none" stroke="url(#cyanGrad)" stroke-width="4" stroke-opacity="0.35" />
 
-  <!-- Shield Shape -->
-  <g filter="url(#glow)">
-    <path d="M256 96 C336 96 384 128 384 128 C384 272 320 368 256 400 C192 368 128 272 128 128 C128 128 176 96 256 96 Z"
-          fill="#091e17" stroke="#34d399" stroke-width="12" stroke-linejoin="round" />
+  <!-- Inner Glass Card Frame -->
+  <g filter="url(#dropShadow)">
+    <rect x="64" y="64" width="384" height="384" rx="64" fill="url(#glassGrad)" stroke="rgba(255, 255, 255, 0.12)" stroke-width="2" />
   </g>
 
-  <!-- Financial Trend Line & Candlestick/Bars -->
-  <!-- Bar 1 -->
-  <rect x="176" y="240" width="22" height="70" rx="6" fill="#10b981" opacity="0.85" />
-  <!-- Bar 2 -->
-  <rect x="216" y="200" width="22" height="110" rx="6" fill="#34d399" opacity="0.9" />
-  <!-- Bar 3 -->
-  <rect x="256" y="220" width="22" height="90" rx="6" fill="#10b981" opacity="0.85" />
-  <!-- Bar 4 -->
-  <rect x="296" y="160" width="22" height="150" rx="6" fill="#6ee7b7" />
+  <!-- Financial Grid Lines (Subtle) -->
+  <g opacity="0.18">
+    <line x1="104" y1="160" x2="408" y2="160" stroke="#33c6e4" stroke-width="2" stroke-dasharray="4 6" />
+    <line x1="104" y1="230" x2="408" y2="230" stroke="#33c6e4" stroke-width="2" stroke-dasharray="4 6" />
+    <line x1="104" y1="300" x2="408" y2="300" stroke="#33c6e4" stroke-width="2" stroke-dasharray="4 6" />
+    <line x1="104" y1="370" x2="408" y2="370" stroke="#33c6e4" stroke-width="2" stroke-dasharray="4 6" />
+  </g>
 
-  <!-- Upward Trend Arrow Line -->
-  <path d="M168 260 L 220 210 L 260 230 L 328 150" fill="none" stroke="#ffffff" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" />
-  <polygon points="334,136 342,166 312,156" fill="#ffffff" />
+  <!-- Fund Capital Stack Bars (Integer Units Growth) -->
+  <g opacity="0.85">
+    <!-- Bar 1 (Month 1) -->
+    <rect x="120" y="290" width="36" height="80" rx="10" fill="#155360" />
+    <rect x="120" y="290" width="36" height="80" rx="10" fill="url(#cyanGrad)" fill-opacity="0.3" />
 
-  <!-- Sparkle in top right of shield -->
-  <circle cx="340" cy="148" r="8" fill="#fef08a" />
+    <!-- Bar 2 (Month 2) -->
+    <rect x="180" y="240" width="36" height="130" rx="10" fill="#155360" />
+    <rect x="180" y="240" width="36" height="130" rx="10" fill="url(#cyanGrad)" fill-opacity="0.5" />
+
+    <!-- Bar 3 (Month 3) -->
+    <rect x="240" y="210" width="36" height="160" rx="10" fill="#155360" />
+    <rect x="240" y="210" width="36" height="160" rx="10" fill="url(#cyanGrad)" fill-opacity="0.75" />
+
+    <!-- Bar 4 (Month 4 / Latest) -->
+    <rect x="300" y="150" width="36" height="220" rx="10" fill="url(#cyanGrad)" />
+  </g>
+
+  <!-- NAV Area Fill under curve -->
+  <path d="M 104 370 L 138 310 L 198 255 L 258 220 L 318 165 L 388 120 L 388 370 Z" fill="url(#chartFill)" />
+
+  <!-- Ascending NAV Spline Curve Line -->
+  <path d="M 104 370 C 140 330, 160 270, 198 255 C 235 240, 275 200, 318 165 C 345 145, 365 130, 388 120"
+        fill="none" stroke="url(#cyanGrad)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" filter="url(#softGlow)" />
+
+  <!-- Milestone NAV Data Nodes -->
+  <circle cx="138" cy="310" r="6" fill="#ffffff" stroke="#155360" stroke-width="3" />
+  <circle cx="198" cy="255" r="7" fill="#ffffff" stroke="#0284c7" stroke-width="3" />
+  <circle cx="258" cy="220" r="7" fill="#ffffff" stroke="#0284c7" stroke-width="3" />
+  <circle cx="318" cy="165" r="8" fill="#ffffff" stroke="#33c6e4" stroke-width="3.5" />
+
+  <!-- Peak NAV Star Diamond Node -->
+  <g transform="translate(388, 120)" filter="url(#softGlow)">
+    <circle cx="0" cy="0" r="16" fill="#33c6e4" fill-opacity="0.3" />
+    <circle cx="0" cy="0" r="10" fill="#ffffff" />
+    <!-- 4-point sparkle -->
+    <path d="M 0 -18 L 3 -4 L 17 0 L 3 4 L 0 18 L -3 4 L -17 0 L -3 -4 Z" fill="#ffffff" />
+  </g>
+
+  <!-- Minimal Brand Monogram / Currency Indicator (৳) Top Left -->
+  <g transform="translate(112, 106)" opacity="0.9">
+    <circle cx="20" cy="20" r="20" fill="#155360" fill-opacity="0.7" stroke="#33c6e4" stroke-width="2" />
+    <text x="20" y="27" font-family="'Red Hat Text', sans-serif" font-weight="900" font-size="20" fill="#33c6e4" text-anchor="middle">৳</text>
+  </g>
 </svg>

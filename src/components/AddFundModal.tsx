@@ -296,7 +296,7 @@ export default function AddFundModal({
                         className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#33c6e4] hover:bg-[#2eb4cf] text-slate-950 text-xs font-bold transition shadow-sm disabled:opacity-50 min-h-[38px]"
                       >
                         <Plus className="h-3.5 w-3.5" />
-                        <span>{isAdding ? "Adding..." : "+ Add to Portfolio"}</span>
+                        <span>{isAdding ? "Adding..." : "Add to Portfolio"}</span>
                       </button>
                     )}
                   </div>
