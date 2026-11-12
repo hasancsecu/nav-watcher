@@ -12,6 +12,7 @@ import {
   RefreshCw,
   SlidersHorizontal,
 } from "lucide-react";
+import MonthYearDatePicker from "./MonthYearDatePicker";
 
 interface UserFundOption {
   id: string; // userFundId
@@ -286,96 +287,16 @@ export default function AddInvestmentModal({
             </select>
           </div>
 
-          {/* Calendar Month & Year Selector */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-bold theme-text-primary">
-                Calendar Month &amp; Year of Investment
-              </label>
-              <span className="text-[11px] font-bold text-[#155360] dark:text-[#33c6e4]">
-                {selectedYear === currentYear && selectedMonthIdx === currentMonthIdx
-                  ? "Current Month"
-                  : selectedYear === (currentMonthIdx === 0 ? currentYear - 1 : currentYear) &&
-                    selectedMonthIdx === (currentMonthIdx === 0 ? 11 : currentMonthIdx - 1)
-                  ? "Previous Month"
-                  : `${MONTH_NAMES[selectedMonthIdx]} ${selectedYear}`}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-[10px] uppercase font-bold theme-text-muted block mb-1">
-                  Month
-                </label>
-                <select
-                  value={selectedMonthIdx}
-                  onChange={(e) => setSelectedMonthIdx(Number(e.target.value))}
-                  className="form-control-input w-full rounded-xl border px-3 py-2 text-xs font-semibold theme-surface"
-                >
-                  {MONTH_NAMES.map((name, idx) => (
-                    <option key={name} value={idx}>
-                      {name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-[10px] uppercase font-bold theme-text-muted block mb-1">
-                  Year
-                </label>
-                <select
-                  value={selectedYear}
-                  onChange={(e) => setSelectedYear(Number(e.target.value))}
-                  className="form-control-input w-full rounded-xl border px-3 py-2 text-xs font-semibold theme-surface"
-                >
-                  {AVAILABLE_YEARS.map((y) => (
-                    <option key={y} value={y}>
-                      {y}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Quick shortcuts for current and previous month */}
-            <div className="flex items-center gap-1.5 pt-0.5">
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedMonthIdx(currentMonthIdx);
-                  setSelectedYear(currentYear);
-                }}
-                className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold transition ${
-                  selectedYear === currentYear && selectedMonthIdx === currentMonthIdx
-                    ? "bg-[#33c6e4]/20 text-[#155360] dark:text-[#33c6e4] border border-[#33c6e4]/40 font-bold"
-                    : "theme-surface theme-text-secondary border theme-border hover:theme-text-primary"
-                }`}
-              >
-                Current ({MONTH_NAMES[currentMonthIdx]} {currentYear})
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  const prevMonth = currentMonthIdx === 0 ? 11 : currentMonthIdx - 1;
-                  const prevYear = currentMonthIdx === 0 ? currentYear - 1 : currentYear;
-                  setSelectedMonthIdx(prevMonth);
-                  setSelectedYear(prevYear);
-                }}
-                className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold transition ${
-                  selectedYear === (currentMonthIdx === 0 ? currentYear - 1 : currentYear) &&
-                  selectedMonthIdx === (currentMonthIdx === 0 ? 11 : currentMonthIdx - 1)
-                    ? "bg-[#33c6e4]/20 text-[#155360] dark:text-[#33c6e4] border border-[#33c6e4]/40 font-bold"
-                    : "theme-surface theme-text-secondary border theme-border hover:theme-text-primary"
-                }`}
-              >
-                Previous ({MONTH_NAMES[currentMonthIdx === 0 ? 11 : currentMonthIdx - 1]} {currentMonthIdx === 0 ? currentYear - 1 : currentYear})
-              </button>
-            </div>
-            <p className="text-[10px] theme-text-muted">
-              Select previous or current calendar month for this installment
-            </p>
-          </div>
+          {/* Calendar Month & Year DatePicker */}
+          <MonthYearDatePicker
+            value={{ monthIndex: selectedMonthIdx, year: selectedYear }}
+            onChange={(val) => {
+              setSelectedMonthIdx(val.monthIndex);
+              setSelectedYear(val.year);
+            }}
+            label="Calendar Month of Investment"
+            helperText="Select previous or current calendar month for this installment"
+          />
 
           {/* Investment Type */}
           <div className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-semibold">

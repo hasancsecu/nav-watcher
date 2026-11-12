@@ -92,7 +92,7 @@ interface DashboardClientProps {
   initialScheduler: SchedulerInfo;
 }
 
-type MobileTab = "portfolio" | "compare" | "history" | "logs";
+type MobileTab = "portfolio" | "charts" | "compare" | "breakdown";
 
 const FUND_BRAND_CONFIG: Record<
   string,
@@ -143,7 +143,7 @@ function formatDhakaTimestamp(iso?: string | Date | null): string {
 
 function applyThemeToDocument(effective: "light" | "dark", metaValue: string) {
   const meta = document.querySelector(
-    'meta[name="color-scheme"]'
+    'meta[name="color-scheme"]',
   ) as HTMLMetaElement | null;
   if (meta) {
     meta.content = metaValue;
@@ -197,25 +197,36 @@ function DashboardClientContent({
       totalCipUnits: 0,
       lastUpdatedAt: null,
       fundsCount: 0,
-    }
+    },
   );
   const [funds, setFunds] = useState<any[]>(initialFunds || []);
-  const [snapshots, setSnapshots] = useState<SnapshotItem[]>(initialSnapshots || []);
-  const [history, setHistory] = useState<PortfolioHistoryItem[]>(initialHistory || []);
+  const [snapshots, setSnapshots] = useState<SnapshotItem[]>(
+    initialSnapshots || [],
+  );
+  const [history, setHistory] = useState<PortfolioHistoryItem[]>(
+    initialHistory || [],
+  );
   const [logs, setLogs] = useState<ScrapeLogItem[]>(initialLogs || []);
   const [scheduler] = useState<SchedulerInfo>(initialScheduler);
 
   // Modals state
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [authModalMode, setAuthModalMode] = useState<"login" | "signup">("login");
+  const [authModalMode, setAuthModalMode] = useState<"login" | "signup">(
+    "login",
+  );
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isAddFundModalOpen, setIsAddFundModalOpen] = useState(false);
-  const [isAddInvestmentModalOpen, setIsAddInvestmentModalOpen] = useState(false);
-  const [preselectedFundIdForInv, setPreselectedFundIdForInv] = useState<string | null>(null);
+  const [isAddInvestmentModalOpen, setIsAddInvestmentModalOpen] =
+    useState(false);
+  const [preselectedFundIdForInv, setPreselectedFundIdForInv] = useState<
+    string | null
+  >(null);
 
   // Edit investment modal state
-  const [editingInvestment, setEditingInvestment] = useState<EditableInvestment | null>(null);
-  const [isEditInvestmentModalOpen, setIsEditInvestmentModalOpen] = useState(false);
+  const [editingInvestment, setEditingInvestment] =
+    useState<EditableInvestment | null>(null);
+  const [isEditInvestmentModalOpen, setIsEditInvestmentModalOpen] =
+    useState(false);
 
   // ConfirmDialog state
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -237,7 +248,9 @@ function DashboardClientContent({
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   // Accordion for viewing investments per fund
-  const [expandedInvestmentsFundId, setExpandedInvestmentsFundId] = useState<string | null>(null);
+  const [expandedInvestmentsFundId, setExpandedInvestmentsFundId] = useState<
+    string | null
+  >(null);
 
   // UI state
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -247,13 +260,18 @@ function DashboardClientContent({
   } | null>(null);
 
   const [mobileTab, setMobileTab] = useState<MobileTab>("portfolio");
-  const [mobileBreakdownMode, setMobileBreakdownMode] = useState<"cards" | "table">("cards");
+  const [mobileBreakdownMode, setMobileBreakdownMode] = useState<
+    "cards" | "table"
+  >("cards");
 
   // Theme state
-  const [themePreference, setThemePreference] = useState<"system" | "light" | "dark">("light");
+  const [themePreference, setThemePreference] = useState<
+    "system" | "light" | "dark"
+  >("light");
 
   // PWA install prompt
-  const [deferredInstallPrompt, setDeferredInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [deferredInstallPrompt, setDeferredInstallPrompt] =
+    useState<BeforeInstallPromptEvent | null>(null);
   const [isAppInstalled, setIsAppInstalled] = useState(false);
 
   // Initialize theme
@@ -316,7 +334,10 @@ function DashboardClientContent({
     window.addEventListener("appinstalled", handleAppInstalled);
 
     return () => {
-      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      window.removeEventListener(
+        "beforeinstallprompt",
+        handleBeforeInstallPrompt,
+      );
       window.removeEventListener("appinstalled", handleAppInstalled);
     };
   }, []);
@@ -393,9 +414,15 @@ function DashboardClientContent({
 
           await refreshUserData();
           toast.success(`Removed "${fundName}" from your portfolio.`);
-          setConfirmDialog((prev) => ({ ...prev, isOpen: false, isLoading: false }));
+          setConfirmDialog((prev) => ({
+            ...prev,
+            isOpen: false,
+            isLoading: false,
+          }));
         } catch (err) {
-          toast.error(err instanceof Error ? err.message : "Error deleting fund.");
+          toast.error(
+            err instanceof Error ? err.message : "Error deleting fund.",
+          );
           setConfirmDialog((prev) => ({ ...prev, isLoading: false }));
         } finally {
           setIsRefreshing(false);
@@ -421,13 +448,20 @@ function DashboardClientContent({
             method: "DELETE",
           });
           const data = await res.json();
-          if (!res.ok) throw new Error(data.error || "Failed to delete investment.");
+          if (!res.ok)
+            throw new Error(data.error || "Failed to delete investment.");
 
           await refreshUserData();
           toast.success(`Deleted investment record for ${month}.`);
-          setConfirmDialog((prev) => ({ ...prev, isOpen: false, isLoading: false }));
+          setConfirmDialog((prev) => ({
+            ...prev,
+            isOpen: false,
+            isLoading: false,
+          }));
         } catch (err) {
-          toast.error(err instanceof Error ? err.message : "Error deleting investment.");
+          toast.error(
+            err instanceof Error ? err.message : "Error deleting investment.",
+          );
           setConfirmDialog((prev) => ({ ...prev, isLoading: false }));
         } finally {
           setIsRefreshing(false);
@@ -504,7 +538,7 @@ function DashboardClientContent({
               </div>
               <p className="text-[10px] sm:text-xs theme-text-secondary truncate flex items-center gap-1.5">
                 <span className="h-1.5 w-1.5 rounded-full inline-block animate-pulse shrink-0 bg-[#33c6e4]" />
-                <span className="truncate">Bangladesh Mutual Funds Tracker</span>
+                <span className="truncate">Mutual Funds Tracker</span>
               </p>
             </div>
           </div>
@@ -532,8 +566,12 @@ function DashboardClientContent({
               aria-label="Sync Latest NAVs"
               className="inline-flex min-h-[38px] min-w-[38px] items-center justify-center rounded-xl border theme-border px-2.5 py-1.5 text-xs font-bold theme-text-secondary hover:theme-text-primary hover:bg-slate-100 dark:hover:bg-slate-800 transition disabled:opacity-50"
             >
-              <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin text-[#33c6e4]" : ""}`} />
-              <span className="hidden sm:inline ml-1.5">{isRefreshing ? "Syncing..." : "Sync NAV"}</span>
+              <RefreshCw
+                className={`h-4 w-4 ${isRefreshing ? "animate-spin text-[#33c6e4]" : ""}`}
+              />
+              <span className="hidden sm:inline ml-1.5">
+                {isRefreshing ? "Syncing..." : "Sync NAV"}
+              </span>
             </button>
 
             {/* Theme Toggle Button */}
@@ -598,10 +636,16 @@ function DashboardClientContent({
                   {isUserMenuOpen && (
                     <div className="absolute right-0 mt-2 w-56 rounded-2xl border theme-border bg-white dark:bg-slate-900 p-2 shadow-xl z-50 animate-in fade-in zoom-in-95">
                       <div className="px-3 py-2 border-b theme-border">
-                        <p className="text-xs font-bold theme-text-primary truncate">{user.name}</p>
-                        <p className="text-[11px] theme-text-muted truncate">{user.email}</p>
+                        <p className="text-xs font-bold theme-text-primary truncate">
+                          {user.name}
+                        </p>
+                        <p className="text-[11px] theme-text-muted truncate">
+                          {user.email}
+                        </p>
                         {user.phone && (
-                          <p className="text-[10px] theme-text-muted truncate mt-0.5">{user.phone}</p>
+                          <p className="text-[10px] theme-text-muted truncate mt-0.5">
+                            {user.phone}
+                          </p>
                         )}
                       </div>
 
@@ -683,8 +727,8 @@ function DashboardClientContent({
             syncBanner.type === "success"
               ? "status-gain-badge border-emerald-500/25"
               : syncBanner.type === "error"
-              ? "status-loss-badge border-rose-500/25"
-              : "status-info-badge border-sky-500/25"
+                ? "status-loss-badge border-rose-500/25"
+                : "status-info-badge border-sky-500/25"
           }`}
         >
           <div className="mx-auto flex max-w-7xl items-center justify-center gap-2">
@@ -709,7 +753,7 @@ function DashboardClientContent({
       {/* ------------------------------------------------------------- */}
       {/* 3. MAIN DASHBOARD CONTENT */}
       {/* ------------------------------------------------------------- */}
-      <main className="mx-auto max-w-7xl w-full flex-1 px-3 py-4 sm:px-6 sm:py-6 lg:px-8 space-y-6">
+      <main className="mx-auto max-w-7xl w-full flex-1 px-3 py-4 sm:px-6 sm:py-6 lg:px-8 space-y-6 pb-24 sm:pb-8">
         {/* CASE A: UNREGISTERED / NOT LOGGED IN LANDING SCREEN */}
         {!user ? (
           <div className="py-8 sm:py-16 max-w-3xl mx-auto text-center space-y-6">
@@ -723,7 +767,10 @@ function DashboardClientContent({
             </h2>
 
             <p className="text-sm sm:text-base theme-text-secondary max-w-xl mx-auto leading-relaxed">
-              Create your profile, add mutual funds across top AMCs, log previous and current month SIP investments, and track live valuations with strict whole integer units and automatic cash buffer roll-forward.
+              Create your profile, add mutual funds across top AMCs, log
+              previous and current month SIP investments, and track live
+              valuations with strict whole integer units and automatic cash
+              buffer roll-forward.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
@@ -755,9 +802,12 @@ function DashboardClientContent({
                 <div className="p-2 rounded-xl bg-[#33c6e4]/15 text-[#155360] dark:text-[#33c6e4] w-fit">
                   <Layers className="h-5 w-5" />
                 </div>
-                <h3 className="font-bold text-sm theme-text-primary">28 Mutual Funds</h3>
+                <h3 className="font-bold text-sm theme-text-primary">
+                  28 Mutual Funds
+                </h3>
                 <p className="text-xs theme-text-muted leading-relaxed">
-                  Browse and add funds across major AMCs including Shanta, IDLC, EDGE, VIPB, Ekush, UCB, and CWT.
+                  Browse and add funds across major AMCs including Shanta, IDLC,
+                  EDGE, VIPB, Ekush, UCB, and CWT.
                 </p>
               </div>
 
@@ -765,9 +815,13 @@ function DashboardClientContent({
                 <div className="p-2 rounded-xl bg-[#33c6e4]/15 text-[#155360] dark:text-[#33c6e4] w-fit">
                   <Coins className="h-5 w-5" />
                 </div>
-                <h3 className="font-bold text-sm theme-text-primary">Strict Integer Units</h3>
+                <h3 className="font-bold text-sm theme-text-primary">
+                  Strict Integer Units
+                </h3>
                 <p className="text-xs theme-text-muted leading-relaxed">
-                  Mutual fund units are strictly whole integers. Any fractional remainder is retained as a cash buffer to settle on your next SIP.
+                  Mutual fund units are strictly whole integers. Any fractional
+                  remainder is retained as a cash buffer to settle on your next
+                  SIP.
                 </p>
               </div>
 
@@ -775,9 +829,12 @@ function DashboardClientContent({
                 <div className="p-2 rounded-xl bg-[#33c6e4]/15 text-[#155360] dark:text-[#33c6e4] w-fit">
                   <Calendar className="h-5 w-5" />
                 </div>
-                <h3 className="font-bold text-sm theme-text-primary">Monthly SIP Logging</h3>
+                <h3 className="font-bold text-sm theme-text-primary">
+                  Monthly SIP Logging
+                </h3>
                 <p className="text-xs theme-text-muted leading-relaxed">
-                  Log previous or current calendar month installments. Portfolios update dynamically with weighted cost averaging.
+                  Log previous or current calendar month installments.
+                  Portfolios update dynamically with weighted cost averaging.
                 </p>
               </div>
             </div>
@@ -795,7 +852,8 @@ function DashboardClientContent({
                   Welcome, {user.name}!
                 </h2>
                 <p className="text-xs sm:text-sm theme-text-secondary leading-relaxed">
-                  Your portfolio is ready for a fresh start with zero seed data. Begin by adding your mutual funds to track.
+                  Your portfolio is ready for a fresh start with zero seed data.
+                  Begin by adding your mutual funds to track.
                 </p>
               </div>
 
@@ -814,7 +872,15 @@ function DashboardClientContent({
         ) : (
           /* CASE C: LOGGED IN WITH ACTIVE FUNDS */
           <div className="space-y-6">
-            {/* Top Quick Actions Bar */}
+            {/* TAB 1: PORTFOLIO (Quick Actions, Net Worth Hero, Mutual Fund Asset Cards) */}
+            <div
+              className={
+                mobileTab === "portfolio"
+                  ? "space-y-6"
+                  : "hidden sm:block sm:space-y-6"
+              }
+            >
+              {/* Top Quick Actions Bar */}
             <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-slate-900 border theme-border rounded-2xl p-3 sm:p-4 shadow-sm">
               <div className="flex items-center gap-2">
                 <button
@@ -846,7 +912,9 @@ function DashboardClientContent({
                   onClick={handleManualSync}
                   className="rounded-xl border theme-border px-3 py-2 text-xs font-semibold theme-text-secondary hover:theme-text-primary transition inline-flex items-center gap-1.5 disabled:opacity-50"
                 >
-                  <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin text-[#33c6e4]" : ""}`} />
+                  <RefreshCw
+                    className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin text-[#33c6e4]" : ""}`}
+                  />
                   <span>{isRefreshing ? "Syncing..." : "Sync Live NAV"}</span>
                 </button>
               </div>
@@ -882,7 +950,8 @@ function DashboardClientContent({
                       <TrendingDown className="h-4 w-4 shrink-0 status-loss-text" />
                     )}
                     <span>
-                      {isNetGain ? "+" : "-"}৳{formatBdt(Math.abs(summary.absoluteGainLoss), 2)} (
+                      {isNetGain ? "+" : "-"}৳
+                      {formatBdt(Math.abs(summary.absoluteGainLoss), 2)} (
                       {isNetGain ? "+" : ""}
                       {summary.returnPct.toFixed(2)}%)
                     </span>
@@ -893,61 +962,70 @@ function DashboardClientContent({
               {/* 3 Key Metrics */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                 <div className="theme-elevated rounded-xl border p-3">
-                  <span className="theme-text-muted block text-[11px]">Total Invested Capital</span>
+                  <span className="theme-text-muted block text-[11px]">
+                    Total Invested Capital
+                  </span>
                   <strong className="font-mono text-sm sm:text-base font-bold theme-text-primary">
                     ৳{formatBdt(summary.totalInvested, 2)}
                   </strong>
                 </div>
 
                 <div className="theme-elevated rounded-xl border p-3">
-                  <span className="theme-text-muted block text-[11px]">Total Units Held</span>
+                  <span className="theme-text-muted block text-[11px]">
+                    Total Units Held
+                  </span>
                   <strong className="font-mono text-sm sm:text-base font-bold text-[#155360] dark:text-[#33c6e4]">
-                    {Math.floor(summary.totalUnitsHeld ?? funds.reduce((acc, f) => acc + (f.totalUnitsHeld || 0), 0)).toLocaleString("en-BD")} units
+                    {Math.floor(
+                      summary.totalUnitsHeld ??
+                        funds.reduce(
+                          (acc, f) => acc + (f.totalUnitsHeld || 0),
+                          0,
+                        ),
+                    ).toLocaleString("en-BD")}{" "}
+                    units
                   </strong>
-                  <span className="block text-[10px] theme-text-muted mt-0.5">Strictly Plain Integer</span>
+                  <span className="block text-[10px] theme-text-muted mt-0.5">
+                    Strictly Plain Integer
+                  </span>
                 </div>
 
                 <div className="theme-elevated rounded-xl border p-3">
-                  <span className="theme-text-muted block text-[11px]">Unallotted Cash Buffer</span>
+                  <span className="theme-text-muted block text-[11px]">
+                    Unallotted Cash Buffer
+                  </span>
                   <strong className="font-mono text-sm sm:text-base font-bold text-amber-600 dark:text-amber-400">
                     ৳{formatBdt(summary.totalFractionalCash, 2)}
                   </strong>
-                  <span className="block text-[10px] theme-text-muted mt-0.5">Rolls to next SIP</span>
+                  <span className="block text-[10px] theme-text-muted mt-0.5">
+                    Rolls to next SIP
+                  </span>
                 </div>
 
                 <div className="theme-elevated rounded-xl border p-3">
-                  <span className="theme-text-muted block text-[11px]">Funds Tracked</span>
+                  <span className="theme-text-muted block text-[11px]">
+                    Funds Tracked
+                  </span>
                   <strong className="font-mono text-sm sm:text-base font-bold theme-text-primary">
                     {summary.fundsCount} Funds
                   </strong>
-                  <span className="block text-[10px] theme-text-muted mt-0.5">In Portfolio</span>
+                  <span className="block text-[10px] theme-text-muted mt-0.5">
+                    In Portfolio
+                  </span>
                 </div>
               </div>
             </section>
 
-            {/* Historical Investment & Performance Comparison Chart */}
-            {funds.length > 0 && (
-              <HistoricalInvestmentComparisonChart
-                funds={funds}
-                snapshots={snapshots}
-              />
-            )}
-
-            {/* Invested Funds Comparison Section */}
-            {funds.length > 0 && (
-              <FundComparisonSection
-                funds={funds}
-                totalPortfolioInvested={summary.totalInvested}
-                totalPortfolioValue={summary.currentMarketValue}
-              />
-            )}
-
             {/* 2. User Fund Asset Cards */}
             <section aria-labelledby="user-funds-heading" className="space-y-4">
               <div className="flex items-center justify-between px-1">
-                <h3 id="user-funds-heading" className="text-base font-bold theme-text-primary flex items-center gap-2">
+                <h3
+                  id="user-funds-heading"
+                  className="text-base font-bold theme-text-primary flex items-center gap-2"
+                >
                   <span>My Mutual Funds</span>
-                  <span className="text-xs font-normal theme-text-muted">({funds.length})</span>
+                  <span className="text-xs font-normal theme-text-muted">
+                    ({funds.length})
+                  </span>
                 </h3>
               </div>
 
@@ -970,8 +1048,8 @@ function DashboardClientContent({
                                 fund.category === "Shariah"
                                   ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
                                   : fund.category === "Income"
-                                  ? "bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 border border-sky-200 dark:border-sky-800"
-                                  : "bg-[#ebf9fc] text-[#155360] dark:bg-slate-800 dark:text-[#33c6e4] border border-[#c0edf7] dark:border-slate-700"
+                                    ? "bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 border border-sky-200 dark:border-sky-800"
+                                    : "bg-[#ebf9fc] text-[#155360] dark:bg-slate-800 dark:text-[#33c6e4] border border-[#c0edf7] dark:border-slate-700"
                               }`}
                             >
                               {fund.category}
@@ -997,7 +1075,9 @@ function DashboardClientContent({
 
                         {/* NAV Badge */}
                         <div className="flex items-center justify-between text-xs rounded-xl bg-slate-50 dark:bg-slate-800/50 p-2 border theme-border">
-                          <span className="theme-text-muted">Latest Scraped NAV:</span>
+                          <span className="theme-text-muted">
+                            Latest Scraped NAV:
+                          </span>
                           <span className="font-mono font-bold status-gain-text">
                             ৳{fund.effectiveNav.toFixed(3)}
                           </span>
@@ -1006,25 +1086,36 @@ function DashboardClientContent({
                         {/* Financial Stats */}
                         <div className="grid grid-cols-2 gap-2 text-xs pt-1">
                           <div>
-                            <span className="text-[10px] theme-text-muted block">Invested Capital</span>
+                            <span className="text-[10px] theme-text-muted block">
+                              Invested Capital
+                            </span>
                             <strong className="font-mono text-xs font-bold theme-text-primary">
                               ৳{formatBdt(fund.totalInvested, 2)}
                             </strong>
                           </div>
                           <div className="text-right">
-                            <span className="text-[10px] theme-text-muted block">Market Value</span>
+                            <span className="text-[10px] theme-text-muted block">
+                              Market Value
+                            </span>
                             <strong className="font-mono text-xs font-bold theme-text-primary">
                               ৳{formatBdt(fund.currentMarketValue, 2)}
                             </strong>
                           </div>
                           <div>
-                            <span className="text-[10px] theme-text-muted block">Integer Units Held</span>
+                            <span className="text-[10px] theme-text-muted block">
+                              Integer Units Held
+                            </span>
                             <strong className="font-mono text-xs font-bold text-[#155360] dark:text-[#33c6e4]">
-                              {Math.floor(fund.totalUnitsHeld).toLocaleString("en-BD")} units
+                              {Math.floor(fund.totalUnitsHeld).toLocaleString(
+                                "en-BD",
+                              )}{" "}
+                              units
                             </strong>
                           </div>
                           <div className="text-right">
-                            <span className="text-[10px] theme-text-muted block">Cash Buffer</span>
+                            <span className="text-[10px] theme-text-muted block">
+                              Cash Buffer
+                            </span>
                             <strong className="font-mono text-xs font-bold text-amber-600 dark:text-amber-400">
                               ৳{formatBdt(fund.fractionalCashBalance, 2)}
                             </strong>
@@ -1033,13 +1124,16 @@ function DashboardClientContent({
 
                         {/* Return Badge */}
                         <div className="flex items-center justify-between text-xs border-t theme-border pt-2.5">
-                          <span className="theme-text-muted text-[11px]">Net Gain / Loss</span>
+                          <span className="theme-text-muted text-[11px]">
+                            Net Gain / Loss
+                          </span>
                           <span
                             className={`font-mono text-xs font-bold px-2 py-0.5 rounded-md ${
                               isGain ? "status-gain-badge" : "status-loss-badge"
                             }`}
                           >
-                            {isGain ? "+" : "-"}৳{formatBdt(Math.abs(fund.absoluteGainLoss), 2)} (
+                            {isGain ? "+" : "-"}৳
+                            {formatBdt(Math.abs(fund.absoluteGainLoss), 2)} (
                             {isGain ? "+" : ""}
                             {fund.returnPct.toFixed(2)}%)
                           </span>
@@ -1077,14 +1171,21 @@ function DashboardClientContent({
                             <button
                               type="button"
                               onClick={() =>
-                                setExpandedInvestmentsFundId((prev) => (prev === fund.id ? null : fund.id))
+                                setExpandedInvestmentsFundId((prev) =>
+                                  prev === fund.id ? null : fund.id,
+                                )
                               }
                               className="w-full text-center text-[11px] theme-text-secondary hover:theme-text-primary py-1 font-semibold flex items-center justify-center gap-1"
                             >
                               <span>
-                                {isExpanded ? "Hide" : "View"} {fund.investments.length} logged investments
+                                {isExpanded ? "Hide" : "View"}{" "}
+                                {fund.investments.length} logged investments
                               </span>
-                              {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                              {isExpanded ? (
+                                <ChevronUp className="h-3 w-3" />
+                              ) : (
+                                <ChevronDown className="h-3 w-3" />
+                              )}
                             </button>
 
                             {/* Investment Entries List Drawer */}
@@ -1100,7 +1201,8 @@ function DashboardClientContent({
                                         {inv.calendarMonth} ({inv.type})
                                       </span>
                                       <span className="theme-text-muted">
-                                        ৳{formatBdt(inv.cashInvested, 0)} @ ৳{inv.executionNav.toFixed(3)}
+                                        ৳{formatBdt(inv.cashInvested, 0)} @ ৳
+                                        {inv.executionNav.toFixed(3)}
                                       </span>
                                     </div>
                                     <div className="flex items-center gap-1.5">
@@ -1109,7 +1211,9 @@ function DashboardClientContent({
                                       </span>
                                       <button
                                         type="button"
-                                        onClick={() => handleOpenEditInvestment(inv, fund)}
+                                        onClick={() =>
+                                          handleOpenEditInvestment(inv, fund)
+                                        }
                                         title="Edit investment record"
                                         className="p-1 rounded-md text-slate-400 hover:text-[#33c6e4] hover:bg-slate-200/60 dark:hover:bg-slate-800 transition"
                                       >
@@ -1117,7 +1221,12 @@ function DashboardClientContent({
                                       </button>
                                       <button
                                         type="button"
-                                        onClick={() => handleDeleteInvestment(inv.id, inv.calendarMonth)}
+                                        onClick={() =>
+                                          handleDeleteInvestment(
+                                            inv.id,
+                                            inv.calendarMonth,
+                                          )
+                                        }
                                         title="Delete investment"
                                         className="p-1 rounded-md text-rose-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
                                       >
@@ -1136,7 +1245,31 @@ function DashboardClientContent({
                 })}
               </div>
             </section>
+          </div>
 
+          {/* TAB 2: CHARTS (Historical Investment & Performance Comparison Chart) */}
+          <div className={mobileTab === "charts" ? "block" : "hidden sm:block"}>
+            {funds.length > 0 && (
+              <HistoricalInvestmentComparisonChart
+                funds={funds}
+                snapshots={snapshots}
+              />
+            )}
+          </div>
+
+          {/* TAB 3: COMPARE (Invested Funds Comparison Section) */}
+          <div className={mobileTab === "compare" ? "block" : "hidden sm:block"}>
+            {funds.length > 0 && (
+              <FundComparisonSection
+                funds={funds}
+                totalPortfolioInvested={summary.totalInvested}
+                totalPortfolioValue={summary.currentMarketValue}
+              />
+            )}
+          </div>
+
+          {/* TAB 4: BREAKDOWN (Detailed SIP Valuation & Formula Breakdown) */}
+          <div className={mobileTab === "breakdown" ? "block" : "hidden sm:block"}>
             {/* 3. Detailed SIP Valuation Breakdown Section */}
             <section
               aria-labelledby="fund-breakdown-heading"
@@ -1151,7 +1284,8 @@ function DashboardClientContent({
                     Detailed SIP Valuation &amp; Formula Breakdown
                   </h3>
                   <p className="text-xs sm:text-sm theme-text-secondary mt-0.5 leading-relaxed">
-                    Units = ⌊Invested ÷ Avg Price⌋ · Market Value = Units × Latest NAV · Unallotted remainder stays in cash buffer
+                    Units = ⌊Invested ÷ Avg Price⌋ · Market Value = Units ×
+                    Latest NAV · Unallotted remainder stays in cash buffer
                   </p>
                 </div>
 
@@ -1185,20 +1319,29 @@ function DashboardClientContent({
               {/* Mobile Cards View */}
               <div
                 className={`${
-                  mobileBreakdownMode === "cards" ? "flex flex-col gap-3 sm:hidden" : "hidden"
+                  mobileBreakdownMode === "cards"
+                    ? "flex flex-col gap-3 sm:hidden"
+                    : "hidden"
                 }`}
               >
                 {funds.map((fund) => {
                   const isGain = fund.absoluteGainLoss >= 0;
                   return (
-                    <article key={fund.id} className="theme-elevated rounded-2xl border theme-border p-4 space-y-3 overflow-hidden shadow-sm">
+                    <article
+                      key={fund.id}
+                      className="theme-elevated rounded-2xl border theme-border p-4 space-y-3 overflow-hidden shadow-sm"
+                    >
                       <div className="flex items-start justify-between gap-2 border-b theme-border pb-2.5 min-w-0">
                         <div className="min-w-0 flex-1">
-                          <h4 className="text-sm font-extrabold theme-text-primary truncate" title={fund.name}>
+                          <h4
+                            className="text-sm font-extrabold theme-text-primary truncate"
+                            title={fund.name}
+                          >
                             {fund.name}
                           </h4>
                           <p className="text-[11px] theme-text-muted mt-0.5 truncate">
-                            NAV Date: {fund.navEffectiveDate || "Latest Day"} · {fund.fundManager}
+                            NAV Date: {fund.navEffectiveDate || "Latest Day"} ·{" "}
+                            {fund.fundManager}
                           </p>
                         </div>
                         <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-md bg-[#33c6e4]/15 text-[#155360] dark:text-[#33c6e4] shrink-0 whitespace-nowrap">
@@ -1228,7 +1371,10 @@ function DashboardClientContent({
                             Integer Units Held
                           </span>
                           <span className="font-mono text-sm font-bold text-[#155360] dark:text-[#33c6e4]">
-                            {Math.floor(fund.totalUnitsHeld).toLocaleString("en-BD")} units
+                            {Math.floor(fund.totalUnitsHeld).toLocaleString(
+                              "en-BD",
+                            )}{" "}
+                            units
                           </span>
                         </div>
                         <div className="theme-surface rounded-lg border p-2.5">
@@ -1259,7 +1405,8 @@ function DashboardClientContent({
                               isGain ? "status-gain-badge" : "status-loss-badge"
                             }`}
                           >
-                            {isGain ? "+" : "-"}৳{formatBdt(Math.abs(fund.absoluteGainLoss), 2)} (
+                            {isGain ? "+" : "-"}৳
+                            {formatBdt(Math.abs(fund.absoluteGainLoss), 2)} (
                             {isGain ? "+" : ""}
                             {fund.returnPct.toFixed(2)}%)
                           </span>
@@ -1304,22 +1451,65 @@ function DashboardClientContent({
                   <table className="responsive-fund-table text-left text-xs sm:text-sm min-w-[760px] w-full">
                     <thead>
                       <tr className="theme-elevated border-b theme-border text-xs uppercase tracking-wider theme-text-secondary">
-                        <th scope="col" className="py-3 px-3.5 font-bold">Mutual Fund</th>
-                        <th scope="col" className="py-3 px-3.5 font-bold text-right">Current NAV</th>
-                        <th scope="col" className="py-3 px-3.5 font-bold text-right">Avg Buy Price</th>
-                        <th scope="col" className="py-3 px-3.5 font-bold text-right">Units (Integer)</th>
-                        <th scope="col" className="py-3 px-3.5 font-bold text-right">Invested (BDT)</th>
-                        <th scope="col" className="py-3 px-3.5 font-bold text-right">Current Value</th>
-                        <th scope="col" className="py-3 px-3.5 font-bold text-right">Gain / Loss</th>
-                        <th scope="col" className="py-3 px-3.5 font-bold text-right">Action</th>
+                        <th scope="col" className="py-3 px-3.5 font-bold">
+                          Mutual Fund
+                        </th>
+                        <th
+                          scope="col"
+                          className="py-3 px-3.5 font-bold text-right"
+                        >
+                          Current NAV
+                        </th>
+                        <th
+                          scope="col"
+                          className="py-3 px-3.5 font-bold text-right"
+                        >
+                          Avg Buy Price
+                        </th>
+                        <th
+                          scope="col"
+                          className="py-3 px-3.5 font-bold text-right"
+                        >
+                          Units (Integer)
+                        </th>
+                        <th
+                          scope="col"
+                          className="py-3 px-3.5 font-bold text-right"
+                        >
+                          Invested (BDT)
+                        </th>
+                        <th
+                          scope="col"
+                          className="py-3 px-3.5 font-bold text-right"
+                        >
+                          Current Value
+                        </th>
+                        <th
+                          scope="col"
+                          className="py-3 px-3.5 font-bold text-right"
+                        >
+                          Gain / Loss
+                        </th>
+                        <th
+                          scope="col"
+                          className="py-3 px-3.5 font-bold text-right"
+                        >
+                          Action
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-500/15">
                       {funds.map((fund) => {
                         const isGain = fund.absoluteGainLoss >= 0;
                         return (
-                          <tr key={fund.id} className="hover:bg-slate-500/5 transition">
-                            <th scope="row" className="py-3 px-3.5 font-bold theme-text-primary whitespace-nowrap">
+                          <tr
+                            key={fund.id}
+                            className="hover:bg-slate-500/5 transition"
+                          >
+                            <th
+                              scope="row"
+                              className="py-3 px-3.5 font-bold theme-text-primary whitespace-nowrap"
+                            >
                               <div>{fund.name}</div>
                               <div className="text-[11px] font-medium theme-text-muted mt-0.5">
                                 {fund.category} · {fund.fundManager}
@@ -1332,10 +1522,15 @@ function DashboardClientContent({
                               ৳{fund.averageBuyPrice.toFixed(4)}
                             </td>
                             <td className="py-3 px-3.5 font-mono text-right font-bold text-[#155360] dark:text-[#33c6e4] whitespace-nowrap">
-                              <div>{Math.floor(fund.totalUnitsHeld).toLocaleString("en-BD")}</div>
+                              <div>
+                                {Math.floor(fund.totalUnitsHeld).toLocaleString(
+                                  "en-BD",
+                                )}
+                              </div>
                               {fund.fractionalCashBalance > 0 && (
                                 <div className="text-[10px] text-amber-600 dark:text-amber-400 font-normal">
-                                  +৳{formatBdt(fund.fractionalCashBalance, 2)} buffer
+                                  +৳{formatBdt(fund.fractionalCashBalance, 2)}{" "}
+                                  buffer
                                 </div>
                               )}
                             </td>
@@ -1348,11 +1543,14 @@ function DashboardClientContent({
                             <td className="py-3 px-3.5 font-mono text-right whitespace-nowrap">
                               <span
                                 className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-bold font-mono ${
-                                  isGain ? "status-gain-badge" : "status-loss-badge"
+                                  isGain
+                                    ? "status-gain-badge"
+                                    : "status-loss-badge"
                                 }`}
                               >
-                                {isGain ? "+" : "-"}৳{formatBdt(Math.abs(fund.absoluteGainLoss), 2)} (
-                                {isGain ? "+" : ""}
+                                {isGain ? "+" : "-"}৳
+                                {formatBdt(Math.abs(fund.absoluteGainLoss), 2)}{" "}
+                                ({isGain ? "+" : ""}
                                 {fund.returnPct.toFixed(2)}%)
                               </span>
                             </td>
@@ -1371,7 +1569,9 @@ function DashboardClientContent({
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={() => handleDeleteFund(fund.id, fund.name)}
+                                  onClick={() =>
+                                    handleDeleteFund(fund.id, fund.name)
+                                  }
                                   title="Delete fund"
                                   className="text-rose-500 hover:text-rose-700 p-1"
                                 >
@@ -1388,8 +1588,129 @@ function DashboardClientContent({
               </div>
             </section>
           </div>
-        )}
-      </main>
+        </div>
+      )}
+    </main>
+
+    {/* ------------------------------------------------------------- */}
+    {/* MOBILE BOTTOM NAVIGATION DOCK (sm:hidden) */}
+    {/* ------------------------------------------------------------- */}
+    {user && funds.length > 0 && (
+      <nav
+        aria-label="Mobile Navigation"
+        className="sm:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 dark:bg-[#090d16]/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] pb-[env(safe-area-inset-bottom)]"
+      >
+        <div className="grid grid-cols-4 h-16 items-center px-1">
+          <button
+            type="button"
+            onClick={() => {
+              setMobileTab("portfolio");
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            className={`flex flex-col items-center justify-center gap-1 h-full py-1 transition relative ${
+              mobileTab === "portfolio"
+                ? "text-[#155360] dark:text-[#33c6e4] font-bold"
+                : "theme-text-muted hover:theme-text-secondary"
+            }`}
+          >
+            <div
+              className={`p-1 rounded-xl transition ${
+                mobileTab === "portfolio"
+                  ? "bg-[#33c6e4]/20"
+                  : "bg-transparent"
+              }`}
+            >
+              <Wallet className="h-5 w-5" />
+            </div>
+            <span className="text-[10px] tracking-tight">Portfolio</span>
+            {mobileTab === "portfolio" && (
+              <span className="absolute bottom-1 w-6 h-0.5 rounded-full bg-[#33c6e4]" />
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setMobileTab("charts");
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            className={`flex flex-col items-center justify-center gap-1 h-full py-1 transition relative ${
+              mobileTab === "charts"
+                ? "text-[#155360] dark:text-[#33c6e4] font-bold"
+                : "theme-text-muted hover:theme-text-secondary"
+            }`}
+          >
+            <div
+              className={`p-1 rounded-xl transition ${
+                mobileTab === "charts"
+                  ? "bg-[#33c6e4]/20"
+                  : "bg-transparent"
+              }`}
+            >
+              <BarChart3 className="h-5 w-5" />
+            </div>
+            <span className="text-[10px] tracking-tight">Charts</span>
+            {mobileTab === "charts" && (
+              <span className="absolute bottom-1 w-6 h-0.5 rounded-full bg-[#33c6e4]" />
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setMobileTab("compare");
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            className={`flex flex-col items-center justify-center gap-1 h-full py-1 transition relative ${
+              mobileTab === "compare"
+                ? "text-[#155360] dark:text-[#33c6e4] font-bold"
+                : "theme-text-muted hover:theme-text-secondary"
+            }`}
+          >
+            <div
+              className={`p-1 rounded-xl transition ${
+                mobileTab === "compare"
+                  ? "bg-[#33c6e4]/20"
+                  : "bg-transparent"
+              }`}
+            >
+              <Layers className="h-5 w-5" />
+            </div>
+            <span className="text-[10px] tracking-tight">Compare</span>
+            {mobileTab === "compare" && (
+              <span className="absolute bottom-1 w-6 h-0.5 rounded-full bg-[#33c6e4]" />
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setMobileTab("breakdown");
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            className={`flex flex-col items-center justify-center gap-1 h-full py-1 transition relative ${
+              mobileTab === "breakdown"
+                ? "text-[#155360] dark:text-[#33c6e4] font-bold"
+                : "theme-text-muted hover:theme-text-secondary"
+            }`}
+          >
+            <div
+              className={`p-1 rounded-xl transition ${
+                mobileTab === "breakdown"
+                  ? "bg-[#33c6e4]/20"
+                  : "bg-transparent"
+              }`}
+            >
+              <Coins className="h-5 w-5" />
+            </div>
+            <span className="text-[10px] tracking-tight">Breakdown</span>
+            {mobileTab === "breakdown" && (
+              <span className="absolute bottom-1 w-6 h-0.5 rounded-full bg-[#33c6e4]" />
+            )}
+          </button>
+        </div>
+      </nav>
+    )}
 
       {/* ------------------------------------------------------------- */}
       {/* 4. MODALS */}
@@ -1458,7 +1779,9 @@ function DashboardClientContent({
         }}
         onUpdated={() => {
           refreshUserData();
-          toast.success("Investment updated and portfolio metrics recalculated.");
+          toast.success(
+            "Investment updated and portfolio metrics recalculated.",
+          );
         }}
       />
 

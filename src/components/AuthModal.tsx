@@ -12,6 +12,8 @@ import {
   CheckCircle2,
   AlertCircle,
   Sparkles,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 
 interface AuthModalProps {
@@ -39,6 +41,7 @@ export default function AuthModal({
   const [mode, setMode] = useState<"login" | "signup">(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
@@ -236,15 +239,30 @@ export default function AuthModal({
               <Lock className="h-3.5 w-3.5 text-slate-400" />
               <span>Password *</span>
             </label>
-            <input
-              type="password"
-              required
-              minLength={6}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Minimum 6 characters"
-              className="form-control-input w-full rounded-xl border px-3.5 py-2.5 text-xs font-medium"
-            />
+            <div className="relative flex items-center">
+              <input
+                type={showPassword ? "text" : "password"}
+                required
+                minLength={6}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Minimum 6 characters"
+                className="form-control-input w-full rounded-xl border px-3.5 py-2.5 pr-10 text-xs font-medium"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute right-2.5 p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition focus:outline-none"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                title={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
+            </div>
           </div>
 
           {mode === "signup" && (
