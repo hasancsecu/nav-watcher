@@ -22,7 +22,10 @@ function resolveDatabaseUrl(): string {
             fs.copyFileSync(src, tmpDbPath);
             break;
           } catch (err) {
-            console.warn("[Prisma] Failed to copy seed SQLite DB to /tmp:", err);
+            console.warn(
+              "[Prisma] Failed to copy seed SQLite DB to /tmp:",
+              err,
+            );
           }
         }
       }
@@ -69,10 +72,12 @@ export const DEFAULT_FUNDS: DefaultFundConfig[] = [
     name: "Shanta Amanah Shariah Fund",
     shortName: "Shanta Amanah",
     fundManager: "Shanta Asset Management Limited",
-    primaryUrl: "https://www.shanta-aml.com/our-funds/shanta-amanah-shariah-fund",
-    fallbackUrl: "https://bini.com.bd/funds/shanta-amanah-shariah-fund-ffb52cac",
-    totalInvested: 48000,
-    averageBuyPrice: 10.25,
+    primaryUrl:
+      "https://www.shanta-aml.com/our-funds/shanta-amanah-shariah-fund",
+    fallbackUrl:
+      "https://bini.com.bd/funds/shanta-amanah-shariah-fund-ffb52cac",
+    totalInvested: 44000,
+    averageBuyPrice: 10.74,
     monthlySipTarget: 8000,
     defaultNav: 10.596,
   },
@@ -84,8 +89,8 @@ export const DEFAULT_FUNDS: DefaultFundConfig[] = [
     fundManager: "IDLC Asset Management Limited",
     primaryUrl: "https://idlc.com/aml/shariah_fund.php",
     fallbackUrl: "https://bini.com.bd/funds/idlc-aml-shariah-fund-ffb5288f",
-    totalInvested: 48000,
-    averageBuyPrice: 10.40,
+    totalInvested: 38000,
+    averageBuyPrice: 11.121,
     monthlySipTarget: 8000,
     defaultNav: 10.92,
   },
@@ -96,11 +101,12 @@ export const DEFAULT_FUNDS: DefaultFundConfig[] = [
     shortName: "Edge Al-Amin",
     fundManager: "EDGE AMC Limited",
     primaryUrl: "https://www.edgeamc.com/edge-alamin-shariah-consumer-fund",
-    fallbackUrl: "https://bini.com.bd/funds/edge-al-amin-shariah-consumer-fund-759e11aa",
-    totalInvested: 48000,
-    averageBuyPrice: 10.65,
+    fallbackUrl:
+      "https://bini.com.bd/funds/edge-al-amin-shariah-consumer-fund-759e11aa",
+    totalInvested: 24000,
+    averageBuyPrice: 11.32,
     monthlySipTarget: 8000,
-    defaultNav: 11.30,
+    defaultNav: 11.3,
   },
 ];
 

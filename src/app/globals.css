@@ -2,14 +2,391 @@
 @tailwind components;
 @tailwind utilities;
 
+/* MANDATORY: Apply color-scheme to :root and map <meta name="color-scheme"> override (modern-web-guidance: dark-mode & dark-mode-toggle) */
 :root {
+  color-scheme: light dark;
+
+  /* Light & Dark palette primitives — carefully tuned for high contrast & legibility */
+  --bg-canvas-light: #eef2f6;
+  --bg-canvas-dark: #090d16;
+
+  --bg-surface-light: #ffffff;
+  --bg-surface-dark: #111827;
+
+  --bg-elevated-light: #f8fafc;
+  --bg-elevated-dark: #1e293b;
+
+  --bg-subtle-light: #e2e8f0;
+  --bg-subtle-dark: #0f172a;
+
+  --bg-header-light: rgba(255, 255, 255, 0.94);
+  --bg-header-dark: rgba(9, 13, 22, 0.92);
+
+  --border-subtle-light: #cbd5e1;
+  --border-subtle-dark: #1e293b;
+
+  --border-strong-light: #94a3b8;
+  --border-strong-dark: #334155;
+
+  /* Text tokens: deep slate on light surfaces (18:1, 13:1, 7.5:1 contrast), crisp white/slate on dark */
+  --text-primary-light: #0f172a;
+  --text-primary-dark: #f8fafc;
+
+  --text-secondary-light: #1e293b;
+  --text-secondary-dark: #e2e8f0;
+
+  --text-muted-light: #475569;
+  --text-muted-dark: #94a3b8;
+
+  /* Semantic financial status tokens (Gain / Loss / Info / Warning) */
+  --gain-text-light: #047857;
+  --gain-text-dark: #34d399;
+  --gain-bg-light: #ecfdf5;
+  --gain-bg-dark: rgba(16, 185, 129, 0.16);
+  --gain-border-light: #6ee7b7;
+  --gain-border-dark: rgba(16, 185, 129, 0.38);
+
+  --loss-text-light: #be123c;
+  --loss-text-dark: #fb7185;
+  --loss-bg-light: #fff1f2;
+  --loss-bg-dark: rgba(244, 63, 94, 0.16);
+  --loss-border-light: #fda4af;
+  --loss-border-dark: rgba(244, 63, 94, 0.38);
+
+  --info-text-light: #0369a1;
+  --info-text-dark: #38bdf8;
+  --info-bg-light: #f0f9ff;
+  --info-bg-dark: rgba(14, 165, 233, 0.16);
+  --info-border-light: #7dd3fc;
+  --info-border-dark: rgba(14, 165, 233, 0.38);
+
+  --warn-text-light: #b45309;
+  --warn-text-dark: #fbbf24;
+  --warn-bg-light: #fffbeb;
+  --warn-bg-dark: rgba(245, 158, 11, 0.16);
+  --warn-border-light: #fcd34d;
+  --warn-border-dark: rgba(245, 158, 11, 0.38);
+
+  --accent-brand-light: #059669;
+  --accent-brand-dark: #10b981;
+
+  --btn-primary-bg-light: #047857;
+  --btn-primary-bg-dark: #10b981;
+  --btn-primary-text-light: #ffffff;
+  --btn-primary-text-dark: #022c22;
+
+  --chart-grid-light: #cbd5e1;
+  --chart-grid-dark: #1e293b;
+
+  --card-shadow-light: 0 1px 3px 0 rgba(15, 23, 42, 0.08), 0 1px 2px -1px rgba(15, 23, 42, 0.06);
+  --card-shadow-dark: 0 10px 25px -5px rgba(0, 0, 0, 0.45);
+
+  /* Default (light) fallback for browsers without light-dark() */
+  --bg-canvas: var(--bg-canvas-light);
+  --bg-surface: var(--bg-surface-light);
+  --bg-elevated: var(--bg-elevated-light);
+  --bg-subtle: var(--bg-subtle-light);
+  --bg-header: var(--bg-header-light);
+  --border-subtle: var(--border-subtle-light);
+  --border-strong: var(--border-strong-light);
+  --text-primary: var(--text-primary-light);
+  --text-secondary: var(--text-secondary-light);
+  --text-muted: var(--text-muted-light);
+  --gain-text: var(--gain-text-light);
+  --gain-bg: var(--gain-bg-light);
+  --gain-border: var(--gain-border-light);
+  --loss-text: var(--loss-text-light);
+  --loss-bg: var(--loss-bg-light);
+  --loss-border: var(--loss-border-light);
+  --info-text: var(--info-text-light);
+  --info-bg: var(--info-bg-light);
+  --info-border: var(--info-border-light);
+  --warn-text: var(--warn-text-light);
+  --warn-bg: var(--warn-bg-light);
+  --warn-border: var(--warn-border-light);
+  --accent-color: var(--accent-brand-light);
+  --btn-primary-bg: var(--btn-primary-bg-light);
+  --btn-primary-text: var(--btn-primary-text-light);
+  --chart-grid: var(--chart-grid-light);
+  --card-shadow: var(--card-shadow-light);
+
+  /* MANDATORY: Fallback for browsers without light-dark() support */
+  @media (prefers-color-scheme: dark) {
+    --bg-canvas: var(--bg-canvas-dark);
+    --bg-surface: var(--bg-surface-dark);
+    --bg-elevated: var(--bg-elevated-dark);
+    --bg-subtle: var(--bg-subtle-dark);
+    --bg-header: var(--bg-header-dark);
+    --border-subtle: var(--border-subtle-dark);
+    --border-strong: var(--border-strong-dark);
+    --text-primary: var(--text-primary-dark);
+    --text-secondary: var(--text-secondary-dark);
+    --text-muted: var(--text-muted-dark);
+    --gain-text: var(--gain-text-dark);
+    --gain-bg: var(--gain-bg-dark);
+    --gain-border: var(--gain-border-dark);
+    --loss-text: var(--loss-text-dark);
+    --loss-bg: var(--loss-bg-dark);
+    --loss-border: var(--loss-border-dark);
+    --info-text: var(--info-text-dark);
+    --info-bg: var(--info-bg-dark);
+    --info-border: var(--info-border-dark);
+    --warn-text: var(--warn-text-dark);
+    --warn-bg: var(--warn-bg-dark);
+    --warn-border: var(--warn-border-dark);
+    --accent-color: var(--accent-brand-dark);
+    --btn-primary-bg: var(--btn-primary-bg-dark);
+    --btn-primary-text: var(--btn-primary-text-dark);
+    --chart-grid: var(--chart-grid-dark);
+    --card-shadow: var(--card-shadow-dark);
+  }
+
+  @supports (color: light-dark(white, black)) {
+    --bg-canvas: light-dark(var(--bg-canvas-light), var(--bg-canvas-dark));
+    --bg-surface: light-dark(var(--bg-surface-light), var(--bg-surface-dark));
+    --bg-elevated: light-dark(var(--bg-elevated-light), var(--bg-elevated-dark));
+    --bg-subtle: light-dark(var(--bg-subtle-light), var(--bg-subtle-dark));
+    --bg-header: light-dark(var(--bg-header-light), var(--bg-header-dark));
+    --border-subtle: light-dark(var(--border-subtle-light), var(--border-subtle-dark));
+    --border-strong: light-dark(var(--border-strong-light), var(--border-strong-dark));
+    --text-primary: light-dark(var(--text-primary-light), var(--text-primary-dark));
+    --text-secondary: light-dark(var(--text-secondary-light), var(--text-secondary-dark));
+    --text-muted: light-dark(var(--text-muted-light), var(--text-muted-dark));
+    --gain-text: light-dark(var(--gain-text-light), var(--gain-text-dark));
+    --gain-bg: light-dark(var(--gain-bg-light), var(--gain-bg-dark));
+    --gain-border: light-dark(var(--gain-border-light), var(--gain-border-dark));
+    --loss-text: light-dark(var(--loss-text-light), var(--loss-text-dark));
+    --loss-bg: light-dark(var(--loss-bg-light), var(--loss-bg-dark));
+    --loss-border: light-dark(var(--loss-border-light), var(--loss-border-dark));
+    --info-text: light-dark(var(--info-text-light), var(--info-text-dark));
+    --info-bg: light-dark(var(--info-bg-light), var(--info-bg-dark));
+    --info-border: light-dark(var(--info-border-light), var(--info-border-dark));
+    --warn-text: light-dark(var(--warn-text-light), var(--warn-text-dark));
+    --warn-bg: light-dark(var(--warn-bg-light), var(--warn-bg-dark));
+    --warn-border: light-dark(var(--warn-border-light), var(--warn-border-dark));
+    --accent-color: light-dark(var(--accent-brand-light), var(--accent-brand-dark));
+    --btn-primary-bg: light-dark(var(--btn-primary-bg-light), var(--btn-primary-bg-dark));
+    --btn-primary-text: light-dark(var(--btn-primary-text-light), var(--btn-primary-text-dark));
+    --chart-grid: light-dark(var(--chart-grid-light), var(--chart-grid-dark));
+  }
+
+  accent-color: var(--accent-color);
+}
+
+/* Explicit theme pin via <meta name="color-scheme"> or data-theme attribute */
+:root[data-theme="light"],
+:root:has(> head > meta[name="color-scheme"][content="light"]) {
+  color-scheme: light;
+  --bg-canvas: var(--bg-canvas-light);
+  --bg-surface: var(--bg-surface-light);
+  --bg-elevated: var(--bg-elevated-light);
+  --bg-subtle: var(--bg-subtle-light);
+  --bg-header: var(--bg-header-light);
+  --border-subtle: var(--border-subtle-light);
+  --border-strong: var(--border-strong-light);
+  --text-primary: var(--text-primary-light);
+  --text-secondary: var(--text-secondary-light);
+  --text-muted: var(--text-muted-light);
+  --gain-text: var(--gain-text-light);
+  --gain-bg: var(--gain-bg-light);
+  --gain-border: var(--gain-border-light);
+  --loss-text: var(--loss-text-light);
+  --loss-bg: var(--loss-bg-light);
+  --loss-border: var(--loss-border-light);
+  --info-text: var(--info-text-light);
+  --info-bg: var(--info-bg-light);
+  --info-border: var(--info-border-light);
+  --warn-text: var(--warn-text-light);
+  --warn-bg: var(--warn-bg-light);
+  --warn-border: var(--warn-border-light);
+  --accent-color: var(--accent-brand-light);
+  --btn-primary-bg: var(--btn-primary-bg-light);
+  --btn-primary-text: var(--btn-primary-text-light);
+  --chart-grid: var(--chart-grid-light);
+  --card-shadow: var(--card-shadow-light);
+}
+
+:root[data-theme="dark"],
+:root:has(> head > meta[name="color-scheme"][content="dark"]) {
   color-scheme: dark;
+  --bg-canvas: var(--bg-canvas-dark);
+  --bg-surface: var(--bg-surface-dark);
+  --bg-elevated: var(--bg-elevated-dark);
+  --bg-subtle: var(--bg-subtle-dark);
+  --bg-header: var(--bg-header-dark);
+  --border-subtle: var(--border-subtle-dark);
+  --border-strong: var(--border-strong-dark);
+  --text-primary: var(--text-primary-dark);
+  --text-secondary: var(--text-secondary-dark);
+  --text-muted: var(--text-muted-dark);
+  --gain-text: var(--gain-text-dark);
+  --gain-bg: var(--gain-bg-dark);
+  --gain-border: var(--gain-border-dark);
+  --loss-text: var(--loss-text-dark);
+  --loss-bg: var(--loss-bg-dark);
+  --loss-border: var(--loss-border-dark);
+  --info-text: var(--info-text-dark);
+  --info-bg: var(--info-bg-dark);
+  --info-border: var(--info-border-dark);
+  --warn-text: var(--warn-text-dark);
+  --warn-bg: var(--warn-bg-dark);
+  --warn-border: var(--warn-border-dark);
+  --accent-color: var(--accent-brand-dark);
+  --btn-primary-bg: var(--btn-primary-bg-dark);
+  --btn-primary-text: var(--btn-primary-text-dark);
+  --chart-grid: var(--chart-grid-dark);
+  --card-shadow: var(--card-shadow-dark);
 }
 
 body {
-  background-color: #090d16;
-  color: #f1f5f9;
+  background-color: var(--bg-canvas);
+  color: var(--text-primary);
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  transition: background-color 0.18s ease, color 0.18s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Fluid typography with clamp() (modern-web-guidance: responsive-design) */
+.kpi-value-fluid {
+  font-size: clamp(1.35rem, 1.1rem + 1.2vw, 1.875rem);
+  line-height: 1.2;
+}
+
+.section-title-fluid {
+  font-size: clamp(1.05rem, 0.95rem + 0.45vw, 1.25rem);
+  line-height: 1.35;
+}
+
+/* Theme surface & typography utility classes */
+.theme-surface {
+  background-color: var(--bg-surface);
+  border-color: var(--border-subtle);
+  color: var(--text-primary);
+  box-shadow: var(--card-shadow);
+}
+
+.theme-elevated {
+  background-color: var(--bg-elevated);
+  border-color: var(--border-subtle);
+  color: var(--text-primary);
+}
+
+.theme-subtle-bg {
+  background-color: var(--bg-subtle);
+}
+
+.theme-header {
+  background-color: var(--bg-header);
+  border-color: var(--border-subtle);
+}
+
+.theme-text-primary {
+  color: var(--text-primary);
+}
+
+.theme-text-secondary {
+  color: var(--text-secondary);
+}
+
+.theme-text-muted {
+  color: var(--text-muted);
+}
+
+.theme-border {
+  border-color: var(--border-subtle);
+}
+
+/* High-contrast semantic status classes for Light & Dark modes */
+.status-gain-text {
+  color: var(--gain-text);
+}
+
+.status-gain-badge {
+  color: var(--gain-text);
+  background-color: var(--gain-bg);
+  border: 1px solid var(--gain-border);
+}
+
+.status-loss-text {
+  color: var(--loss-text);
+}
+
+.status-loss-badge {
+  color: var(--loss-text);
+  background-color: var(--loss-bg);
+  border: 1px solid var(--loss-border);
+}
+
+.status-info-text {
+  color: var(--info-text);
+}
+
+.status-info-badge {
+  color: var(--info-text);
+  background-color: var(--info-bg);
+  border: 1px solid var(--info-border);
+}
+
+.status-warn-text {
+  color: var(--warn-text);
+}
+
+.status-warn-badge {
+  color: var(--warn-text);
+  background-color: var(--warn-bg);
+  border: 1px solid var(--warn-border);
+}
+
+.btn-primary {
+  background-color: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+}
+
+.btn-primary:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+
+/* Single-row accessible tabs with shape indicator (modern-web-guidance: tabs & color) */
+[role="tablist"].app-tablist {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-bottom: 1px solid var(--border-subtle);
+  gap: 0.25rem;
+}
+
+[role="tablist"].app-tablist::-webkit-scrollbar {
+  display: none;
+}
+
+[role="tab"].app-tab {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  position: relative;
+  min-height: 44px;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  transition: color 0.15s ease;
+}
+
+[role="tab"].app-tab:hover {
+  color: var(--text-primary);
+}
+
+[role="tab"].app-tab[aria-selected="true"] {
+  color: var(--gain-text);
+}
+
+[role="tab"].app-tab[aria-selected="true"]::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0.5rem;
+  inset-block-end: 0;
+  height: 3px;
+  border-radius: 999px;
+  background-color: var(--gain-text);
 }
 
 /* MANDATORY dialog scroll-containment rules from modern-web-guidance (dialog) */
@@ -20,7 +397,7 @@ dialog:modal {
 dialog::backdrop {
   overflow: hidden;
   overscroll-behavior: contain;
-  background-color: rgba(2, 6, 23, 0.78);
+  background-color: rgba(15, 23, 42, 0.65);
   backdrop-filter: blur(4px);
 }
 
@@ -41,7 +418,7 @@ dialog::backdrop {
   --label-5: "Invested (BDT)";
   --label-6: "Current Value";
   --label-7: "Net Gain / Loss";
-  --label-8: "Source / Action";
+  --label-8: "Action";
 }
 
 .responsive-fund-table thead {
@@ -54,7 +431,7 @@ dialog::backdrop {
   position: sticky;
   inset-inline-start: 0;
   z-index: 1;
-  background-color: #0f172a;
+  background-color: var(--bg-surface);
 }
 
 @container (width < 720px) {
@@ -73,18 +450,19 @@ dialog::backdrop {
 
   .responsive-fund-table tbody tr {
     margin-block-end: 1rem;
-    border: 1px solid #1e293b;
-    border-radius: 0.75rem;
+    border: 1px solid var(--border-subtle);
+    border-radius: 0.875rem;
     overflow: hidden;
-    background-color: #0f172a;
+    background-color: var(--bg-surface);
+    box-shadow: var(--card-shadow);
   }
 
   .responsive-fund-table tbody th {
     position: sticky;
     inset-block-start: 0;
     z-index: 2;
-    background-color: #1e293b;
-    border-bottom: 1px solid #334155;
+    background-color: var(--bg-elevated);
+    border-bottom: 1px solid var(--border-subtle);
   }
 
   .responsive-fund-table td {
@@ -92,43 +470,47 @@ dialog::backdrop {
     justify-content: space-between;
     align-items: center;
     gap: 0.75rem;
-    border-bottom: 1px solid rgba(51, 65, 85, 0.4);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .responsive-fund-table td:last-child {
+    border-bottom: none;
   }
 
   .responsive-fund-table td:nth-child(2)::before {
-    content: var(--label-2) ": ";
-    color: #94a3b8;
-    font-weight: 500;
+    content: var(--label-2);
+    color: var(--text-secondary);
+    font-weight: 600;
   }
   .responsive-fund-table td:nth-child(3)::before {
-    content: var(--label-3) ": ";
-    color: #94a3b8;
-    font-weight: 500;
+    content: var(--label-3);
+    color: var(--text-secondary);
+    font-weight: 600;
   }
   .responsive-fund-table td:nth-child(4)::before {
-    content: var(--label-4) ": ";
-    color: #94a3b8;
-    font-weight: 500;
+    content: var(--label-4);
+    color: var(--text-secondary);
+    font-weight: 600;
   }
   .responsive-fund-table td:nth-child(5)::before {
-    content: var(--label-5) ": ";
-    color: #94a3b8;
-    font-weight: 500;
+    content: var(--label-5);
+    color: var(--text-secondary);
+    font-weight: 600;
   }
   .responsive-fund-table td:nth-child(6)::before {
-    content: var(--label-6) ": ";
-    color: #94a3b8;
-    font-weight: 500;
+    content: var(--label-6);
+    color: var(--text-secondary);
+    font-weight: 600;
   }
   .responsive-fund-table td:nth-child(7)::before {
-    content: var(--label-7) ": ";
-    color: #94a3b8;
-    font-weight: 500;
+    content: var(--label-7);
+    color: var(--text-secondary);
+    font-weight: 600;
   }
   .responsive-fund-table td:nth-child(8)::before {
-    content: var(--label-8) ": ";
-    color: #94a3b8;
-    font-weight: 500;
+    content: var(--label-8);
+    color: var(--text-secondary);
+    font-weight: 600;
   }
 }
 
@@ -138,10 +520,17 @@ dialog::backdrop {
   font-size: max(1rem, 1em);
   min-height: 48px;
   box-sizing: border-box;
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+  border-color: var(--border-strong);
 }
 
 .form-control-input:focus-visible {
-  outline: 2px solid #38bdf8;
+  outline: 2px solid var(--info-text);
   outline-offset: 2px;
 }
 
+/* Safe area padding for fixed mobile bottom navigation bar */
+.pb-safe-bottom {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}

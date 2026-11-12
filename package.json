@@ -3,11 +3,11 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "DATABASE_URL=file:./dev.db prisma db push && prisma generate && next build",
+    "dev": "node scripts/vercel-db-setup.mjs --generate-only && next dev",
+    "build": "node scripts/vercel-db-setup.mjs && next build",
     "start": "next start",
     "lint": "next lint",
-    "db:push": "prisma db push",
+    "db:push": "node scripts/vercel-db-setup.mjs",
     "db:seed": "tsx prisma/seed.ts",
     "scrape:test": "tsx src/scripts/test-scrape.ts"
   },

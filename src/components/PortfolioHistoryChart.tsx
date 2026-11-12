@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useId } from "react";
+import React, { useState, useId, useRef } from "react";
 import { TrendingUp, Calendar } from "lucide-react";
 
 export interface PortfolioHistoryItem {
@@ -32,19 +32,20 @@ export default function PortfolioHistoryChart({
 }: PortfolioHistoryChartProps) {
   const titleId = useId();
   const descId = useId();
+  const svgRef = useRef<SVGSVGElement | null>(null);
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
 
   if (!history || history.length === 0) {
     return (
-      <div className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-6 text-center text-slate-400">
-        No historical NAV snapshots recorded yet. Click &ldquo;Sync NAV Now&rdquo; to populate daily snapshots.
+      <div className="theme-surface rounded-2xl border p-6 text-center theme-text-secondary">
+        No historical NAV snapshots recorded yet. Tap &ldquo;Sync NAV Now&rdquo; to populate daily snapshots.
       </div>
     );
   }
 
   const width = 860;
   const height = 310;
-  const padLeft = 72;
+  const padLeft = 74;
   const padRight = 24;
   const padTop = 24;
   const padBottom = 42;
@@ -106,6 +107,18 @@ export default function PortfolioHistoryChart({
     };
   });
 
+  const handleTouchScrub = (e: React.TouchEvent<SVGSVGElement>) => {
+    const svg = svgRef.current;
+    if (!svg || history.length === 0) return;
+    const touch = e.touches[0];
+    if (!touch) return;
+    const rect = svg.getBoundingClientRect();
+    const relX = ((touch.clientX - rect.left) / rect.width) * width;
+    const ratio = Math.max(0, Math.min(1, (relX - padLeft) / (plotW || 1)));
+    const idx = Math.round(ratio * (history.length - 1));
+    setHoverIdx(idx);
+  };
+
   const activeIndex = hoverIdx !== null ? hoverIdx : history.length - 1;
   const activePoint = history[activeIndex] || history[history.length - 1];
   const activeIsPositive = activePoint.absoluteGainLoss >= 0;
@@ -113,55 +126,53 @@ export default function PortfolioHistoryChart({
   return (
     <section
       aria-labelledby="chart-section-heading"
-      className="rounded-2xl border border-slate-800/90 bg-slate-900/70 p-5 sm:p-6 shadow-xl"
+      className="theme-surface rounded-2xl border p-4 sm:p-6"
     >
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between mb-5">
+      <div className="flex flex-col gap-3.5 lg:flex-row lg:items-center lg:justify-between mb-4">
         <div>
           <div className="flex items-center gap-2">
             <TrendingUp
-              className="h-5 w-5 text-emerald-400"
+              className="h-5 w-5 status-gain-text shrink-0"
               aria-hidden="true"
             />
             <h2
               id="chart-section-heading"
-              className="text-lg font-semibold text-white"
+              className="section-title-fluid font-bold theme-text-primary"
             >
               Portfolio Value vs. Total Invested Over Time
             </h2>
           </div>
-          <p className="text-sm text-slate-400 mt-0.5">
-            Historical daily trajectory computed from scraped mutual fund NAV snapshots ({history.length} trading days tracked)
+          <p className="text-xs sm:text-sm theme-text-secondary mt-0.5">
+            Historical daily trajectory from scraped NAV snapshots ({history.length} trading days · drag or tap chart to inspect)
           </p>
         </div>
 
         {/* Active Day Inspection Pill */}
-        <div className="flex flex-wrap items-center gap-4 rounded-xl border border-slate-800 bg-slate-950/80 px-4 py-2.5 text-xs sm:text-sm">
-          <div className="flex items-center gap-1.5 text-slate-300 font-medium">
-            <Calendar className="h-4 w-4 text-sky-400" aria-hidden="true" />
+        <div className="theme-elevated flex flex-wrap items-center justify-between sm:justify-start gap-3 sm:gap-4 rounded-xl border px-3.5 py-2.5 text-xs sm:text-sm">
+          <div className="flex items-center gap-1.5 theme-text-primary font-bold">
+            <Calendar className="h-4 w-4 status-info-text" aria-hidden="true" />
             <span>{activePoint.displayDate}</span>
           </div>
-          <div className="h-4 w-px bg-slate-800 hidden sm:block" />
+          <div className="h-4 w-px bg-slate-500/25 hidden sm:block" />
           <div>
-            <span className="text-slate-400 mr-1.5">Market Value:</span>
-            <span className="font-mono font-semibold text-emerald-400">
+            <span className="theme-text-secondary mr-1">Value:</span>
+            <span className="font-mono font-bold status-gain-text">
               ৳{formatBdt(activePoint.currentMarketValue, 2)}
             </span>
           </div>
           <div>
-            <span className="text-slate-400 mr-1.5">Invested:</span>
-            <span className="font-mono font-semibold text-sky-400">
+            <span className="theme-text-secondary mr-1">Invested:</span>
+            <span className="font-mono font-bold status-info-text">
               ৳{formatBdt(activePoint.totalInvested, 0)}
             </span>
           </div>
           <div>
             <span
-              className={`font-mono font-semibold px-2 py-0.5 rounded-md ${
-                activeIsPositive
-                  ? "bg-emerald-500/15 text-emerald-300"
-                  : "bg-rose-500/15 text-rose-300"
+              className={`font-mono font-bold px-2 py-0.5 rounded-md ${
+                activeIsPositive ? "status-gain-badge" : "status-loss-badge"
               }`}
             >
-              {activeIsPositive ? "+" : ""}
+              {activeIsPositive ? "▲ +" : "▼ "}
               {activePoint.returnPct.toFixed(2)}%
             </span>
           </div>
@@ -169,43 +180,54 @@ export default function PortfolioHistoryChart({
       </div>
 
       {/* Legend */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-3 text-xs text-slate-400">
-        <div className="flex items-center gap-5">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-3 text-xs theme-text-secondary">
+        <div className="flex flex-wrap items-center gap-4">
           <span className="inline-flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 inline-block" />
-            <span className="text-slate-200 font-medium">
+            <span
+              className="h-3 w-3 rounded-full inline-block"
+              style={{ backgroundColor: "var(--gain-text)" }}
+            />
+            <span className="theme-text-primary font-semibold">
               Current Market Value (BDT)
             </span>
           </span>
           <span className="inline-flex items-center gap-2">
-            <span className="h-0.5 w-4 border-t-2 border-dashed border-sky-400 inline-block" />
-            <span className="text-slate-300">Total Invested Baseline (BDT)</span>
+            <span
+              className="h-0.5 w-4 border-t-2 border-dashed inline-block"
+              style={{ borderColor: "var(--info-text)" }}
+            />
+            <span className="theme-text-secondary font-medium">
+              Total Invested Baseline (BDT)
+            </span>
           </span>
         </div>
-        <div className="font-mono text-slate-400">
-          NAVs on {activePoint.displayDate}:{" "}
-          <span className="text-slate-200">
+        <div className="font-mono text-[11px] sm:text-xs theme-text-secondary">
+          NAVs ({activePoint.displayDate}):{" "}
+          <strong className="theme-text-primary">
             Shanta {activePoint.shantaNav?.toFixed(3) ?? "—"}
-          </span>{" "}
+          </strong>{" "}
           ·{" "}
-          <span className="text-slate-200">
+          <strong className="theme-text-primary">
             IDLC {activePoint.idlcNav?.toFixed(2) ?? "—"}
-          </span>{" "}
+          </strong>{" "}
           ·{" "}
-          <span className="text-slate-200">
+          <strong className="theme-text-primary">
             Edge {activePoint.edgeNav?.toFixed(2) ?? "—"}
-          </span>
+          </strong>
         </div>
       </div>
 
-      {/* Responsive SVG Chart */}
-      <div className="relative w-full overflow-x-auto">
+      {/* Responsive Touch-Enabled SVG Chart */}
+      <div className="relative w-full">
         <svg
+          ref={svgRef}
           viewBox={`0 0 ${width} ${height}`}
           role="img"
           aria-labelledby={`${titleId} ${descId}`}
-          className="w-full h-auto min-w-[540px] select-none"
+          className="w-full h-auto select-none touch-pan-y"
           onMouseLeave={() => setHoverIdx(null)}
+          onTouchStart={handleTouchScrub}
+          onTouchMove={handleTouchScrub}
         >
           <title id={titleId}>
             Line chart of Daily Portfolio Market Value versus Total Invested Amount in BDT
@@ -215,14 +237,14 @@ export default function PortfolioHistoryChart({
             {history[0]?.displayDate} to{" "}
             {history[history.length - 1]?.displayDate}. Latest market value is{" "}
             {formatBdt(history[history.length - 1]?.currentMarketValue, 2)} BDT
-            against {formatBdt(history[history.length - 1]?.totalInvested, 2)} BDT
-            invested.
+            against {formatBdt(history[history.length - 1]?.totalInvested, 2)}{" "}
+            BDT invested.
           </desc>
 
           <defs>
             <linearGradient id="marketAreaGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#10b981" stopOpacity="0.32" />
-              <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
+              <stop offset="0%" stopColor="#059669" stopOpacity="0.26" />
+              <stop offset="100%" stopColor="#059669" stopOpacity="0.02" />
             </linearGradient>
           </defs>
 
@@ -234,7 +256,7 @@ export default function PortfolioHistoryChart({
                 y1={t.y}
                 x2={width - padRight}
                 y2={t.y}
-                stroke="#1e293b"
+                stroke="var(--chart-grid)"
                 strokeDasharray="4 4"
                 strokeWidth="1"
               />
@@ -242,7 +264,8 @@ export default function PortfolioHistoryChart({
                 x={padLeft - 10}
                 y={t.y + 4}
                 textAnchor="end"
-                className="fill-slate-400 text-[11px] font-mono"
+                fill="var(--text-secondary)"
+                className="text-[11px] font-mono font-medium"
               >
                 ৳{formatBdt(t.val, 0)}
               </text>
@@ -256,8 +279,8 @@ export default function PortfolioHistoryChart({
           <path
             d={investedPath}
             fill="none"
-            stroke="#38bdf8"
-            strokeWidth="2"
+            stroke="var(--info-text)"
+            strokeWidth="2.25"
             strokeDasharray="6 4"
           />
 
@@ -265,15 +288,15 @@ export default function PortfolioHistoryChart({
           <path
             d={marketPath}
             fill="none"
-            stroke="#10b981"
-            strokeWidth="2.75"
+            stroke="var(--gain-text)"
+            strokeWidth="3"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
 
           {/* X-axis Date Ticks */}
           {history.map((d, i) => {
-            const step = Math.max(1, Math.ceil(history.length / 7));
+            const step = Math.max(1, Math.ceil(history.length / 6));
             const showLabel =
               i === 0 || i === history.length - 1 || i % step === 0;
             if (!showLabel) return null;
@@ -284,7 +307,8 @@ export default function PortfolioHistoryChart({
                 x={x}
                 y={height - 12}
                 textAnchor="middle"
-                className="fill-slate-400 text-[11px] font-mono"
+                fill="var(--text-secondary)"
+                className="text-[11px] font-mono font-medium"
               >
                 {d.displayDate.replace(/\s+\d{4}$/, "")}
               </text>
@@ -299,30 +323,30 @@ export default function PortfolioHistoryChart({
                 y1={padTop}
                 x2={marketPoints[activeIndex].x}
                 y2={padTop + plotH}
-                stroke="#475569"
-                strokeWidth="1"
+                stroke="var(--border-strong)"
+                strokeWidth="1.5"
                 strokeDasharray="3 3"
               />
               <circle
                 cx={investedPoints[activeIndex].x}
                 cy={investedPoints[activeIndex].y}
-                r="4.5"
-                fill="#090d16"
-                stroke="#38bdf8"
+                r="5"
+                fill="var(--bg-surface)"
+                stroke="var(--info-text)"
                 strokeWidth="2.5"
               />
               <circle
                 cx={marketPoints[activeIndex].x}
                 cy={marketPoints[activeIndex].y}
-                r="5.5"
-                fill="#10b981"
-                stroke="#090d16"
-                strokeWidth="2"
+                r="6"
+                fill="var(--gain-text)"
+                stroke="var(--bg-surface)"
+                strokeWidth="2.5"
               />
             </g>
           )}
 
-          {/* Invisible interactive hit columns for smooth scrub hover */}
+          {/* Invisible interactive hit columns for smooth mouse hover */}
           {history.map((d, i) => {
             const colWidth = plotW / Math.max(1, history.length);
             const x = getX(i) - colWidth / 2;
@@ -336,6 +360,7 @@ export default function PortfolioHistoryChart({
                 fill="transparent"
                 className="cursor-crosshair"
                 onMouseEnter={() => setHoverIdx(i)}
+                onClick={() => setHoverIdx(i)}
               />
             );
           })}
@@ -344,4 +369,3 @@ export default function PortfolioHistoryChart({
     </section>
   );
 }
-
