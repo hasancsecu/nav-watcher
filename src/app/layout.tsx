@@ -10,6 +10,16 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
     title: "NAV Watcher",
   },
+  icons: {
+    icon: [
+      { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512x512.png", sizes: "512x512", type: "image/png" },
+      { url: "/icons/icon.svg", type: "image/svg+xml" },
+    ],
+    apple: [
+      { url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
   formatDetection: {
     telephone: false,
   },
@@ -18,10 +28,16 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
   viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#059669" },
+    { media: "(prefers-color-scheme: dark)", color: "#090d16" },
+  ],
 };
 
-const foucPreventionScript = `
+const clientBootstrapScript = `
 (function() {
   try {
     var stored = localStorage.getItem("color-scheme");
@@ -41,6 +57,13 @@ const foucPreventionScript = `
       root.classList.remove("dark");
     }
   } catch (e) {}
+
+  // Register PWA service worker
+  if ("serviceWorker" in navigator && window.location.protocol === "https:") {
+    window.addEventListener("load", function() {
+      navigator.serviceWorker.register("/sw.js").catch(function() {});
+    });
+  }
 })();
 `;
 
@@ -54,11 +77,16 @@ export default function RootLayout({
       <head>
         {/* MANDATORY: Declare support for both light and dark themes & prevent FOUC (modern-web-guidance: dark-mode-toggle) */}
         <meta name="color-scheme" content="light dark" />
-        <script dangerouslySetInnerHTML={{ __html: foucPreventionScript }} />
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+        <link rel="manifest" href="/manifest.webmanifest" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <script dangerouslySetInnerHTML={{ __html: clientBootstrapScript }} />
       </head>
       <body
         suppressHydrationWarning
-        className="min-h-[100dvh] antialiased selection:bg-emerald-500/25"
+        className="min-h-[100dvh] w-full max-w-full overflow-x-clip antialiased selection:bg-emerald-500/25"
       >
         {children}
       </body>

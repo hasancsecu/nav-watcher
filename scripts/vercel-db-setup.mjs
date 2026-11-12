@@ -74,10 +74,17 @@ console.log("[DB Setup] Generating Prisma Client for PostgreSQL...");
 execSync("npx prisma generate", { stdio: "inherit", env: mergedEnv });
 
 if (!generateOnly) {
-  console.log("[DB Setup] Pushing Prisma schema to PostgreSQL database...");
-  execSync("npx prisma db push --skip-generate", {
-    stdio: "inherit",
-    env: mergedEnv,
-  });
-  console.log("[DB Setup] Schema successfully synced with PostgreSQL.");
+  try {
+    console.log("[DB Setup] Pushing Prisma schema to PostgreSQL database...");
+    execSync("npx prisma db push --skip-generate", {
+      stdio: "inherit",
+      env: mergedEnv,
+    });
+    console.log("[DB Setup] Schema successfully synced with PostgreSQL.");
+  } catch (err) {
+    console.warn(
+      "[DB Setup] Notice: Could not reach PostgreSQL server at build time. Proceeding with Next.js build.",
+      err instanceof Error ? err.message : ""
+    );
+  }
 }

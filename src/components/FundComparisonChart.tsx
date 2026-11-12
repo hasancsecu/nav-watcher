@@ -517,17 +517,23 @@ export default function FundComparisonChart({
             )}
           </div>
 
-          <div className="relative w-full">
-            <svg
-              ref={svgRef}
-              viewBox={`0 0 ${width} ${height}`}
-              role="img"
-              aria-labelledby={`${svgTitleId} ${svgDescId}`}
-              className="w-full h-auto select-none touch-pan-y"
-              onMouseLeave={() => setHoverIdx(null)}
-              onTouchStart={handleTouchScrub}
-              onTouchMove={handleTouchScrub}
-            >
+      <div className="flex items-center justify-between text-[11px] theme-text-muted mb-1.5 sm:hidden px-0.5">
+        <span>← Swipe horizontally to explore timeline →</span>
+        <span className="font-mono">{seriesPoints.length} trading days</span>
+      </div>
+
+      <div className="w-full max-w-full overflow-x-auto touch-pan-x overscroll-contain pb-2 scrollbar-thin">
+        <div className="min-w-[560px] sm:min-w-full">
+          <svg
+            ref={svgRef}
+            viewBox={`0 0 ${width} ${height}`}
+            role="img"
+            aria-labelledby={`${svgTitleId} ${svgDescId}`}
+            className="w-full h-auto select-none"
+            onMouseLeave={() => setHoverIdx(null)}
+            onTouchStart={handleTouchScrub}
+            onTouchMove={handleTouchScrub}
+          >
               <title id={svgTitleId}>
                 Multi-line historical comparison of Shanta Amanah, IDLC Shariah, and Edge Al-Amin funds
               </title>
@@ -650,6 +656,7 @@ export default function FundComparisonChart({
               })}
             </svg>
           </div>
+        </div>
         </div>
       )}
     </section>

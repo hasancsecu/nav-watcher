@@ -217,18 +217,25 @@ export default function PortfolioHistoryChart({
         </div>
       </div>
 
-      {/* Responsive Touch-Enabled SVG Chart */}
-      <div className="relative w-full">
-        <svg
-          ref={svgRef}
-          viewBox={`0 0 ${width} ${height}`}
-          role="img"
-          aria-labelledby={`${titleId} ${descId}`}
-          className="w-full h-auto select-none touch-pan-y"
-          onMouseLeave={() => setHoverIdx(null)}
-          onTouchStart={handleTouchScrub}
-          onTouchMove={handleTouchScrub}
-        >
+      {/* Mobile Swipe Hint */}
+      <div className="flex items-center justify-between text-[11px] theme-text-muted mb-1.5 sm:hidden px-0.5">
+        <span>← Swipe horizontally to scrub daily timeline →</span>
+        <span className="font-mono">{history.length} snapshots</span>
+      </div>
+
+      {/* Responsive Touch-Enabled SVG Chart with Isolated Horizontal Overflow */}
+      <div className="w-full max-w-full overflow-x-auto touch-pan-x overscroll-contain pb-2 scrollbar-thin">
+        <div className="min-w-[560px] sm:min-w-full">
+          <svg
+            ref={svgRef}
+            viewBox={`0 0 ${width} ${height}`}
+            role="img"
+            aria-labelledby={`${titleId} ${descId}`}
+            className="w-full h-auto select-none"
+            onMouseLeave={() => setHoverIdx(null)}
+            onTouchStart={handleTouchScrub}
+            onTouchMove={handleTouchScrub}
+          >
           <title id={titleId}>
             Line chart of Daily Portfolio Market Value versus Total Invested Amount in BDT
           </title>
@@ -365,6 +372,7 @@ export default function PortfolioHistoryChart({
             );
           })}
         </svg>
+        </div>
       </div>
     </section>
   );
