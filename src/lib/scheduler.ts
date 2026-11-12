@@ -7,11 +7,11 @@ const globalForScheduler = globalThis as unknown as {
   __navWatcherLastCronRunAt?: string;
 };
 
-export const CRON_SCHEDULE = "5 9 * * *";
+export const CRON_SCHEDULE = "0 0 * * *";
 export const CRON_TIMEZONE = "Asia/Dhaka";
 
 export function initDailyNavScheduler() {
-  // On Vercel serverless, scheduled runs are triggered externally at 9:05 AM Asia/Dhaka (03:05 UTC)
+  // On Vercel serverless, scheduled runs are triggered externally at midnight 12:00 AM Asia/Dhaka (18:00 UTC)
   if (process.env.VERCEL) {
     return {
       active: true,
@@ -38,10 +38,10 @@ export function initDailyNavScheduler() {
       const nowIso = new Date().toISOString();
       globalForScheduler.__navWatcherLastCronRunAt = nowIso;
       console.log(
-        `[NAV Watcher Cron] Executing scheduled daily NAV scrape at ${nowIso} (09:05 AM Asia/Dhaka)...`
+        `[NAV Watcher Cron] Executing scheduled daily NAV scrape at ${nowIso} (Midnight 12:00 AM Asia/Dhaka)...`
       );
       try {
-        const res = await syncAllFundsNav({ trigger: "CRON_905_DHAKA" });
+        const res = await syncAllFundsNav({ trigger: "CRON_MIDNIGHT_DHAKA" });
         console.log(
           `[NAV Watcher Cron] Completed daily NAV sync:`,
           res.results.map((r) => `${r.fundId}=${r.nav} (${r.sourceUsed})`).join(", ")
@@ -60,7 +60,7 @@ export function initDailyNavScheduler() {
   globalForScheduler.__navWatcherCronStartedAt = new Date().toISOString();
 
   console.log(
-    `[NAV Watcher Cron] Scheduled daily NAV scraper for "${CRON_SCHEDULE}" (${CRON_TIMEZONE} / UTC+6)`
+    `[NAV Watcher Cron] Scheduled daily NAV scraper for "${CRON_SCHEDULE}" (${CRON_TIMEZONE} / Midnight 12:00 AM / 18:00 UTC)`
   );
 
   return {
@@ -76,7 +76,7 @@ export function getSchedulerStatus() {
   return {
     active: Boolean(process.env.VERCEL || globalForScheduler.__navWatcherCronTask),
     schedule: CRON_SCHEDULE,
-    description: "Every day at 9:05 AM Asia/Dhaka (UTC+6)",
+    description: "Every day at midnight 12:00 AM Asia/Dhaka (18:00 UTC)",
     timezone: CRON_TIMEZONE,
     startedAt: globalForScheduler.__navWatcherCronStartedAt || null,
     lastCronRunAt: globalForScheduler.__navWatcherLastCronRunAt || null,

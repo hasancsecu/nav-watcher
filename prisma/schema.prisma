@@ -8,28 +8,31 @@ datasource db {
 }
 
 model Fund {
-  id               String        @id
-  slug             String        @unique
-  name             String
-  shortName        String
-  fundManager      String
-  primaryUrl       String
-  fallbackUrl      String
-  totalInvested    Float         @default(8000)
-  averageBuyPrice  Float         @default(10.0)
-  monthlySipTarget Float         @default(8000)
-  latestNav        Float?
-  buyPrice         Float?
-  sellPrice        Float?
-  navEffectiveDate String?
-  lastScrapedAt    DateTime?
-  lastScrapeSource String?
-  lastScrapeStatus String?
-  lastScrapeError  String?
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
-  snapshots        NavSnapshot[]
-  scrapeLogs       ScrapeLog[]
+  id                    String           @id
+  slug                  String           @unique
+  name                  String
+  shortName             String
+  fundManager           String
+  primaryUrl            String
+  fallbackUrl           String
+  totalInvested         Float            @default(8000)
+  averageBuyPrice       Float            @default(10.0)
+  monthlySipTarget      Float            @default(8000)
+  fractionalCashBalance Float            @default(0.0) // CIP cash remainder pending next SIP settlement
+  totalCipUnits         Int              @default(0)   // Total integer units received via CIP
+  latestNav             Float?
+  buyPrice              Float?
+  sellPrice             Float?
+  navEffectiveDate      String?
+  lastScrapedAt         DateTime?
+  lastScrapeSource      String?
+  lastScrapeStatus      String?
+  lastScrapeError       String?
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+  snapshots             NavSnapshot[]
+  scrapeLogs            ScrapeLog[]
+  cipTransactions       CipTransaction[]
 }
 
 model NavSnapshot {
@@ -77,5 +80,23 @@ model ScrapeLog {
   durationMs    Int?
   message       String?
   createdAt     DateTime @default(now())
+}
+
+model CipTransaction {
+  id                   String    @id @default(cuid())
+  fundId               String
+  fund                 Fund      @relation(fields: [fundId], references: [id], onDelete: Cascade)
+  dividendAmount       Float     // Declared dividend payout value in BDT
+  cipNav               Float     // Reinvestment NAV used
+  unitsAllotted        Int       // Strictly INTEGER units allotted
+  reinvestedAmount     Float     // unitsAllotted * cipNav
+  cashRemainder        Float     // Fractional remainder held as cash balance (BDT)
+  isSettled            Boolean   @default(false)
+  settledAt            DateTime?
+  settledWithSipAmount Float?
+  notes                String?
+  createdAt            DateTime  @default(now())
+
+  @@index([fundId])
 }
 

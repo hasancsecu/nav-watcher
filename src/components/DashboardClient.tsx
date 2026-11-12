@@ -9,7 +9,7 @@ import PortfolioHistoryChart, {
   PortfolioHistoryItem,
 } from "./PortfolioHistoryChart";
 import FundComparisonChart from "./FundComparisonChart";
-import UpdateHoldingsDialog from "./UpdateHoldingsDialog";
+import UpdateHoldingsDialog, { ModalTab } from "./UpdateHoldingsDialog";
 import {
   RefreshCw,
   Wallet,
@@ -30,6 +30,7 @@ import {
   Share2,
   X,
   PlusCircle,
+  Coins,
 } from "lucide-react";
 
 export interface ScrapeLogItem {
@@ -164,9 +165,10 @@ export default function DashboardClient({
     text: string;
   } | null>(null);
 
-  // Holdings update modal state
+  // Holdings & CIP update modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalFocusFundId, setModalFocusFundId] = useState<string | null>(null);
+  const [modalTab, setModalTab] = useState<ModalTab>("cip");
 
   // PWA install prompt state
   const [deferredPrompt, setDeferredPrompt] =
@@ -372,7 +374,11 @@ export default function DashboardClient({
     });
   };
 
-  const openHoldingsModal = (fundId: string | null = null) => {
+  const openHoldingsModal = (
+    fundId: string | null = null,
+    tab: ModalTab = "cip"
+  ) => {
+    setModalTab(tab);
     setModalFocusFundId(fundId);
     setIsModalOpen(true);
   };
@@ -411,13 +417,23 @@ export default function DashboardClient({
                       : "var(--warn-text)",
                   }}
                 />
-                <span className="truncate">Daily 9:05 AM (Dhaka UTC+6)</span>
+                <span className="truncate">Daily Midnight 12:00 AM (Dhaka UTC+6)</span>
               </p>
             </div>
           </div>
 
           {/* Action Buttons */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            {/* Desktop Only: + CIP Dividend Button */}
+            <button
+              type="button"
+              onClick={() => openHoldingsModal(null, "cip")}
+              className="status-gain-badge hidden lg:inline-flex min-h-[40px] items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold hover:opacity-90 transition shrink-0"
+            >
+              <Coins className="h-3.5 w-3.5 status-gain-text" aria-hidden="true" />
+              <span>+ CIP Dividend</span>
+            </button>
+
             {/* PWA Install Button (if not already running standalone) */}
             {!isStandalone && (
               <button
@@ -453,7 +469,7 @@ export default function DashboardClient({
             {/* Desktop Only: Update Holdings Button */}
             <button
               type="button"
-              onClick={() => openHoldingsModal(null)}
+              onClick={() => openHoldingsModal(null, "baseline")}
               className="theme-elevated hidden md:inline-flex min-h-[40px] items-center gap-1.5 rounded-xl border px-3.5 py-1.5 text-xs font-semibold theme-text-primary hover:opacity-90 transition shrink-0"
             >
               <SlidersHorizontal
@@ -660,18 +676,50 @@ export default function DashboardClient({
                         })}{" "}
                       units
                     </strong>
+                    {summary.totalCipUnits > 0 && (
+                      <span className="block text-[10px] status-gain-text font-bold">
+                        +{summary.totalCipUnits} CIP units
+                      </span>
+                    )}
                   </div>
                 </div>
 
-                {/* Mobile Quick Action Buttons on Hero Card */}
-                <div className="flex items-center gap-2 pt-1">
+                {/* Unsettled CIP Cash Remainder Callout (if any cash buffer exists) */}
+                {summary.totalFractionalCash > 0 && (
+                  <div className="status-warn-badge flex items-center justify-between gap-2 rounded-xl border p-2.5 text-xs">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Coins className="h-4 w-4 status-warn-text shrink-0" />
+                      <span className="truncate">
+                        <strong className="status-warn-text">৳{formatBdt(summary.totalFractionalCash, 2)}</strong> Unsettled CIP Cash Remainder
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => openHoldingsModal(null, "sip")}
+                      className="status-gain-badge px-2.5 py-1 rounded-lg text-[11px] font-bold shrink-0 hover:opacity-85 transition"
+                    >
+                      Settle on Next SIP →
+                    </button>
+                  </div>
+                )}
+
+                {/* Quick Action Buttons on Hero Card */}
+                <div className="grid grid-cols-2 gap-2 pt-1">
                   <button
                     type="button"
-                    onClick={() => openHoldingsModal(null)}
-                    className="btn-primary flex-1 inline-flex justify-center min-h-[44px] items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold shadow-sm"
+                    onClick={() => openHoldingsModal(null, "sip")}
+                    className="btn-primary inline-flex justify-center min-h-[44px] items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold shadow-sm"
                   >
-                    <PlusCircle className="h-4 w-4" aria-hidden="true" />
-                    <span>+ Record Monthly SIP / Edit Holdings</span>
+                    <RefreshCw className="h-4 w-4 shrink-0" aria-hidden="true" />
+                    <span>+ Monthly SIP</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => openHoldingsModal(null, "cip")}
+                    className="status-gain-badge border inline-flex justify-center min-h-[44px] items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition hover:opacity-90 shadow-sm"
+                  >
+                    <Coins className="h-4 w-4 status-gain-text shrink-0" aria-hidden="true" />
+                    <span>+ Add CIP Dividend</span>
                   </button>
                 </div>
               </div>
@@ -829,6 +877,17 @@ export default function DashboardClient({
                         </div>
                       </div>
 
+                      {/* Fund CIP Cash Balance Badge (if any) */}
+                      {fund.fractionalCashBalance > 0 && (
+                        <div className="status-warn-badge flex items-center justify-between gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-bold">
+                          <span className="flex items-center gap-1.5">
+                            <Coins className="h-3.5 w-3.5 status-warn-text" />
+                            <span>৳{fund.fractionalCashBalance.toFixed(2)} CIP Cash Buffer</span>
+                          </span>
+                          <span className="text-[10px] opacity-80">Settles on next SIP</span>
+                        </div>
+                      )}
+
                       {/* Card Footer Actions */}
                       <div className="flex items-center justify-between gap-2 border-t theme-border pt-3 text-xs">
                         <div className="flex items-center gap-1.5">
@@ -858,13 +917,23 @@ export default function DashboardClient({
                           </a>
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={() => openHoldingsModal(fund.id)}
-                          className="theme-elevated min-h-[38px] rounded-xl border px-3 py-1.5 text-xs font-bold theme-text-primary hover:opacity-85 transition"
-                        >
-                          Edit Holding
-                        </button>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => openHoldingsModal(fund.id, "cip")}
+                            className="status-gain-badge min-h-[36px] rounded-xl border px-2.5 py-1 text-xs font-bold hover:opacity-85 transition inline-flex items-center gap-1"
+                          >
+                            <Coins className="h-3 w-3 status-gain-text" />
+                            <span>+ CIP</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => openHoldingsModal(fund.id, "baseline")}
+                            className="theme-elevated min-h-[36px] rounded-xl border px-2.5 py-1 text-xs font-bold theme-text-primary hover:opacity-85 transition"
+                          >
+                            Edit
+                          </button>
+                        </div>
                       </div>
                     </article>
                   );
@@ -1192,7 +1261,7 @@ export default function DashboardClient({
                   Scraper Resilience &amp; Daily Cron Telemetry
                 </h2>
                 <p className="text-xs sm:text-sm theme-text-secondary mt-0.5">
-                  Daily cron at 9:05 AM Asia/Dhaka. Primary AMC portals are scraped first with automatic fallback to bini.com.bd.
+                  Daily cron at midnight 12:00 AM Asia/Dhaka. Primary AMC portals are scraped first with automatic fallback to bini.com.bd.
                 </p>
               </div>
               <button
@@ -1257,7 +1326,7 @@ export default function DashboardClient({
       {/* Desktop Footer */}
       <footer className="theme-elevated hidden sm:block border-t py-4 text-center text-xs font-medium theme-text-secondary">
         <div className="mx-auto max-w-7xl px-4">
-          NAV Watcher · Bangladesh Shariah Mutual Fund &amp; SIP Valuation Engine · Automated Daily Cron at 9:05 AM Asia/Dhaka
+          NAV Watcher · Bangladesh Shariah Mutual Fund &amp; SIP Valuation Engine · Automated Daily Cron at Midnight 12:00 AM Asia/Dhaka
         </div>
       </footer>
 
@@ -1448,13 +1517,23 @@ export default function DashboardClient({
         </div>
       )}
 
-      {/* Update Holdings Modal Dialog */}
+      {/* Update Holdings & CIP Dividend Modal Dialog */}
       <UpdateHoldingsDialog
         isOpen={isModalOpen}
+        initialTab={modalTab}
         initialFocusFundId={modalFocusFundId}
         funds={funds}
         onClose={() => setIsModalOpen(false)}
         onSaveHoldings={handleSaveHoldings}
+        onDataUpdated={(data) => {
+          setSummary(data.summary);
+          setFunds(data.funds);
+          setHistory(data.history);
+          setSyncBanner({
+            type: "success",
+            text: "Holdings and CIP cash balances updated successfully.",
+          });
+        }}
       />
     </div>
   );
