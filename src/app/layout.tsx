@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "NAV Watcher | Shariah Mutual Fund & SIP Tracker",
+  title: "NAV Watcher | Mutual Fund & SIP Tracker",
   description:
     "Full-stack Mutual Fund Portfolio & Monthly SIP Valuation Tracker for Shanta Amanah Shariah Fund, IDLC Shariah Fund, and Edge Al-Amin Shariah Consumer Fund.",
   appleWebApp: {
@@ -17,7 +17,11 @@ export const metadata: Metadata = {
       { url: "/icons/icon.svg", type: "image/svg+xml" },
     ],
     apple: [
-      { url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+      {
+        url: "/icons/apple-touch-icon.png",
+        sizes: "180x180",
+        type: "image/png",
+      },
     ],
   },
   formatDetection: {

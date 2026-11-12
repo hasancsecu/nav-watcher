@@ -1,17 +1,15 @@
 "use client";
 
-import React, { useState, useMemo, useId } from "react";
+import React, { useState, useMemo, useRef, useId } from "react";
 import {
   TrendingUp,
   BarChart3,
   Calendar,
   Layers,
   Sparkles,
-  Percent,
-  Coins,
-  ChevronRight,
   Eye,
   EyeOff,
+  MoveHorizontal,
 } from "lucide-react";
 
 export interface SnapshotItem {
@@ -108,6 +106,9 @@ export default function HistoricalInvestmentComparisonChart({
   snapshots,
 }: HistoricalComparisonChartProps) {
   const chartId = useId();
+  const svgRef = useRef<SVGSVGElement | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+
   const [metric, setMetric] = useState<ChartMetric>("nav");
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const [hiddenFundIds, setHiddenFundIds] = useState<Set<string>>(new Set());
@@ -246,10 +247,11 @@ export default function HistoricalInvestmentComparisonChart({
   }, [funds, snapshots]);
 
   // Chart Dimensions & Coordinate Geometry
-  const width = 840;
+  // For mobile readability, we use a wide viewBox width so data points are generously spaced
+  const width = Math.max(860, chartData.length * 36);
   const height = 300;
-  const padL = 56;
-  const padR = 24;
+  const padL = 58;
+  const padR = 30;
   const padT = 24;
   const padB = 40;
   const plotW = width - padL - padR;
@@ -381,41 +383,65 @@ export default function HistoricalInvestmentComparisonChart({
           points,
         };
       });
-  }, [metric, chartData, funds, fundColors, hiddenFundIds, minVal, maxVal]);
+  }, [metric, chartData, funds, fundColors, hiddenFundIds, minVal, maxVal, width, baselineY]);
 
   const activeHover =
     hoverIndex !== null && chartData[hoverIndex] ? chartData[hoverIndex] : null;
 
+  // Handle pointer / touch movement to track nearest date node
+  const handlePointerMove = (clientX: number) => {
+    if (!svgRef.current || chartData.length === 0) return;
+    const rect = svgRef.current.getBoundingClientRect();
+    const relativeX = clientX - rect.left;
+    const scale = width / rect.width;
+    const svgX = relativeX * scale;
+
+    let closestIdx = 0;
+    let minDiff = Infinity;
+    for (let i = 0; i < chartData.length; i++) {
+      const x = getX(i);
+      const diff = Math.abs(x - svgX);
+      if (diff < minDiff) {
+        minDiff = diff;
+        closestIdx = i;
+      }
+    }
+    setHoverIndex(closestIdx);
+  };
+
+  const activeXPos = hoverIndex !== null ? getX(hoverIndex) : 0;
+  const pctX = (activeXPos / width) * 100;
+
   return (
     <section
       aria-labelledby="historical-chart-heading"
-      className="theme-surface rounded-3xl border theme-border p-4 sm:p-6 shadow-sm space-y-4"
+      className="theme-surface rounded-3xl border theme-border p-3.5 sm:p-6 shadow-sm space-y-4"
     >
-      {/* Header & Controls */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b theme-border pb-4">
+      {/* 1. Header & Fully Responsive Segmented Metric Switcher */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b theme-border pb-3.5">
         <div>
           <div className="flex items-center gap-2">
-            <div className="p-2 rounded-xl bg-[#33c6e4]/15 text-[#155360] dark:text-[#33c6e4]">
+            <div className="p-1.5 rounded-xl bg-[#33c6e4]/15 text-[#155360] dark:text-[#33c6e4]">
               <TrendingUp className="h-4 w-4" />
             </div>
             <h3
               id="historical-chart-heading"
-              className="text-base sm:text-lg font-extrabold tracking-tight theme-text-primary"
+              className="text-sm sm:text-base font-extrabold tracking-tight theme-text-primary"
             >
               Historical Investment &amp; Performance
             </h3>
           </div>
-          <p className="text-xs theme-text-secondary mt-1">
-            Smooth multi-fund trajectory across official AMC NAV updates and SIP purchases
+          <p className="text-[11px] sm:text-xs theme-text-secondary mt-0.5">
+            Multi-fund historical trajectory across official AMC NAV updates
           </p>
         </div>
 
-        {/* Metric Selector Pills */}
-        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-100 dark:bg-slate-900 border theme-border self-start lg:self-auto overflow-x-auto scrollbar-thin">
+        {/* 100% Mobile Responsive Metric Segmented Bar */}
+        <div className="w-full sm:w-auto grid grid-cols-3 gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-900 border theme-border">
           {[
-            { key: "nav", label: "NAV Price (৳)" },
+            { key: "nav", label: "NAV Price" },
             { key: "growth", label: "Portfolio Value" },
-            { key: "return", label: "Return Rate (%)" },
+            { key: "return", label: "Return Rate" },
           ].map((m) => (
             <button
               key={m.key}
@@ -424,7 +450,7 @@ export default function HistoricalInvestmentComparisonChart({
                 setMetric(m.key as ChartMetric);
                 setHoverIndex(null);
               }}
-              className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition whitespace-nowrap min-h-[34px] ${
+              className={`py-1.5 px-2 text-center text-xs font-bold rounded-lg transition truncate ${
                 metric === m.key
                   ? "bg-[#33c6e4] text-slate-950 shadow-sm"
                   : "theme-text-secondary hover:theme-text-primary"
@@ -436,22 +462,22 @@ export default function HistoricalInvestmentComparisonChart({
         </div>
       </div>
 
-      {/* Dynamic Interactive Legend with Visibility Toggles */}
+      {/* 2. Interactive Fund Legend with Toggle Eyes */}
       <div className="flex flex-wrap items-center gap-2 text-xs">
-        <span className="text-[11px] font-bold theme-text-muted uppercase tracking-wider mr-1">
+        <span className="text-[10px] sm:text-[11px] font-bold theme-text-muted uppercase tracking-wider mr-1">
           Funds:
         </span>
         {metric === "growth" ? (
           <>
-            <div className="flex items-center gap-2 px-3 py-1 rounded-full border theme-border theme-elevated">
-              <span className="h-2.5 w-4 rounded-full bg-[#33c6e4]" />
-              <span className="font-semibold text-xs theme-text-primary">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border theme-border theme-elevated">
+              <span className="h-2 w-3.5 rounded-full bg-[#33c6e4]" />
+              <span className="font-semibold text-[11px] theme-text-primary">
                 Portfolio Market Value
               </span>
             </div>
-            <div className="flex items-center gap-2 px-3 py-1 rounded-full border theme-border theme-elevated">
-              <span className="h-0.5 w-4 border-t-2 border-dashed border-slate-400" />
-              <span className="font-semibold text-xs theme-text-secondary">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border theme-border theme-elevated">
+              <span className="h-0.5 w-3.5 border-t-2 border-dashed border-slate-400" />
+              <span className="font-semibold text-[11px] theme-text-secondary">
                 Total Invested Capital
               </span>
             </div>
@@ -466,17 +492,17 @@ export default function HistoricalInvestmentComparisonChart({
                 key={fKey}
                 type="button"
                 onClick={() => toggleFundVisibility(fKey)}
-                className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-semibold transition ${
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-semibold transition ${
                   isHidden
                     ? "opacity-40 border-dashed theme-border theme-text-muted hover:opacity-75"
                     : "theme-border theme-elevated theme-text-primary shadow-xs"
                 }`}
               >
                 <span
-                  className="h-2.5 w-2.5 rounded-full shrink-0"
+                  className="h-2 w-2 rounded-full shrink-0"
                   style={{ backgroundColor: isHidden ? "#94a3b8" : color }}
                 />
-                <span className="truncate max-w-[150px] sm:max-w-[200px]">
+                <span className="truncate max-w-[130px] sm:max-w-[200px]">
                   {f.shortName || f.name}
                 </span>
                 {isHidden ? (
@@ -490,236 +516,310 @@ export default function HistoricalInvestmentComparisonChart({
         )}
       </div>
 
-      {/* SVG Chart Graphic with Spline Curves & Gradient Glow */}
-      <div className="relative w-full overflow-hidden rounded-2xl bg-gradient-to-b from-slate-50/70 to-slate-100/40 dark:from-slate-900/60 dark:to-slate-950/60 border theme-border pt-3 pb-2 shadow-inner">
-        <svg
-          viewBox={`0 0 ${width} ${height}`}
-          className="w-full h-auto max-h-[340px] select-none touch-pan-x"
-          onMouseLeave={() => setHoverIndex(null)}
-          onTouchEnd={() => setHoverIndex(null)}
+      {/* Mobile Scroll Indicator */}
+      <div className="flex items-center justify-between text-[11px] theme-text-muted sm:hidden px-1">
+        <span className="flex items-center gap-1 font-medium">
+          <MoveHorizontal className="h-3.5 w-3.5 text-[#33c6e4]" />
+          <span>Swipe chart horizontally to inspect history</span>
+        </span>
+        <span className="text-[10px] font-mono text-slate-400">
+          {chartData.length} entries
+        </span>
+      </div>
+
+      {/* 3. Horizontally Scrollable Chart Graphic Container on Mobile */}
+      <div
+        ref={scrollContainerRef}
+        className="relative w-full overflow-x-auto scrollbar-thin rounded-2xl bg-gradient-to-b from-slate-50/70 to-slate-100/40 dark:from-slate-900/60 dark:to-slate-950/60 border theme-border pt-3 pb-3 shadow-inner touch-pan-x"
+      >
+        <div
+          className="relative min-w-[720px] sm:min-w-full w-full"
+          style={{ width: `${width}px`, maxWidth: "100%" }}
         >
-          <defs>
-            {/* Luminous Glow Filter */}
-            <filter id={`${chartId}-glow`} x="-20%" y="-20%" width="140%" height="140%">
-              <feGaussianBlur stdDeviation="3" result="blur" />
-              <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
+          {/* Floating Tooltip positioned directly above active crosshair */}
+          {activeHover && (
+            <div
+              className="absolute z-30 pointer-events-none transition-all duration-75"
+              style={{
+                left: `${pctX}%`,
+                top: "12px",
+                transform:
+                  pctX > 75
+                    ? "translateX(-88%)"
+                    : pctX < 25
+                    ? "translateX(-12%)"
+                    : "translateX(-50%)",
+              }}
+            >
+              <div className="bg-slate-950/95 dark:bg-[#070b14]/95 text-white backdrop-blur-md rounded-xl p-2.5 shadow-2xl border border-[#33c6e4]/30 min-w-[190px] max-w-[260px] text-xs space-y-1.5 animate-in fade-in zoom-in-95">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-1 text-[11px] font-bold text-[#33c6e4]">
+                  <span>{activeHover.displayDate}</span>
+                  <span className="text-slate-400 font-mono text-[10px]">
+                    {activeHover.dateKey}
+                  </span>
+                </div>
 
-            {/* Area Gradients for each series */}
-            {seriesPaths.map((series) => (
-              <linearGradient
-                key={`grad-${series.key}`}
-                id={`${chartId}-grad-${series.key}`}
-                x1="0"
-                y1="0"
-                x2="0"
-                y2="1"
-              >
-                <stop offset="0%" stopColor={series.color} stopOpacity="0.25" />
-                <stop offset="80%" stopColor={series.color} stopOpacity="0.04" />
-                <stop offset="100%" stopColor={series.color} stopOpacity="0" />
-              </linearGradient>
-            ))}
-          </defs>
-
-          {/* Subtle Horizontal Grid lines & Y-Axis Labels */}
-          {[0, 0.25, 0.5, 0.75, 1].map((pct, i) => {
-            const yPos = padT + plotH * pct;
-            const gridVal = maxVal - pct * (maxVal - minVal);
-            return (
-              <g key={i} opacity="0.4">
-                <line
-                  x1={padL}
-                  y1={yPos}
-                  x2={width - padR}
-                  y2={yPos}
-                  stroke="currentColor"
-                  strokeDasharray="4 6"
-                  className="theme-text-muted"
-                  strokeWidth="1"
-                />
-                <text
-                  x={padL - 10}
-                  y={yPos + 4}
-                  textAnchor="end"
-                  className="text-[10px] font-mono font-medium fill-current theme-text-muted"
-                >
-                  {metric === "return"
-                    ? `${gridVal.toFixed(1)}%`
-                    : metric === "growth"
-                    ? `৳${formatBdt(gridVal, 0)}`
-                    : `৳${gridVal.toFixed(2)}`}
-                </text>
-              </g>
-            );
-          })}
-
-          {/* 1. Luminous Area Fills Under Curves */}
-          {seriesPaths.map(
-            (series) =>
-              series.areaD && (
-                <path
-                  key={`area-${series.key}`}
-                  d={series.areaD}
-                  fill={`url(#${chartId}-grad-${series.key})`}
-                />
-              )
-          )}
-
-          {/* 2. Smooth Cubic Bézier Spline Traces */}
-          {seriesPaths.map((series) => (
-            <path
-              key={`stroke-${series.key}`}
-              d={series.curveD}
-              fill="none"
-              stroke={series.color}
-              strokeWidth={series.dashed ? "2" : "3"}
-              strokeDasharray={series.dashed ? "6 6" : undefined}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              filter={series.dashed ? undefined : `url(#${chartId}-glow)`}
-            />
-          ))}
-
-          {/* 3. Interactive Nodes & Crosshair Triggers */}
-          {chartData.map((d, idx) => {
-            const xPos = getX(idx);
-            const isHovered = hoverIndex === idx;
-
-            return (
-              <g
-                key={d.dateKey}
-                onMouseEnter={() => setHoverIndex(idx)}
-                onTouchStart={() => setHoverIndex(idx)}
-                className="cursor-pointer"
-              >
-                {/* Touch Hit Area */}
-                <rect
-                  x={xPos - Math.max(16, plotW / chartData.length / 2)}
-                  y={padT}
-                  width={Math.max(32, plotW / chartData.length)}
-                  height={plotH}
-                  fill="transparent"
-                />
-
-                {/* X Axis Date Label */}
-                {(idx === 0 ||
-                  idx === chartData.length - 1 ||
-                  (chartData.length > 5 &&
-                    idx % Math.floor(chartData.length / 4) === 0)) && (
-                  <text
-                    x={xPos}
-                    y={height - 14}
-                    textAnchor="middle"
-                    className="text-[10px] font-mono font-bold fill-current theme-text-muted"
-                  >
-                    {d.displayDate}
-                  </text>
-                )}
-
-                {/* Glowing Vertical Cursor on hover */}
-                {isHovered && (
-                  <>
-                    <line
-                      x1={xPos}
-                      y1={padT}
-                      x2={xPos}
-                      y2={baselineY}
-                      stroke="#33c6e4"
-                      strokeWidth="1.5"
-                      strokeDasharray="4 4"
-                    />
-
-                    {/* Circular Glowing Anchor Dots on each curve */}
-                    {seriesPaths.map((s) => {
-                      const pt = s.points[idx];
-                      if (!pt) return null;
-                      return (
-                        <g key={`dot-${s.key}`}>
-                          <circle
-                            cx={pt.x}
-                            cy={pt.y}
-                            r="6"
-                            fill={s.color}
-                            opacity="0.35"
-                          />
-                          <circle
-                            cx={pt.x}
-                            cy={pt.y}
-                            r="3.5"
-                            fill="#ffffff"
-                            stroke={s.color}
-                            strokeWidth="2"
-                          />
-                        </g>
-                      );
-                    })}
-                  </>
-                )}
-              </g>
-            );
-          })}
-        </svg>
-
-        {/* Hover Information Floating Glass Card */}
-        {activeHover && (
-          <div className="mx-2 sm:mx-4 mt-3 mb-1 p-3.5 rounded-2xl border theme-border theme-elevated text-xs shadow-lg space-y-2.5 transition-all">
-            <div className="flex items-center justify-between border-b theme-border pb-2">
-              <span className="font-extrabold text-[#155360] dark:text-[#33c6e4] flex items-center gap-1.5 text-xs">
-                <Calendar className="h-3.5 w-3.5" />
-                <span>
-                  {activeHover.displayDate} ({activeHover.dateKey})
-                </span>
-              </span>
-              {metric === "growth" && (
-                <span className="font-mono font-bold text-xs theme-text-primary">
-                  Market Value: ৳{formatBdt(activeHover.totalPortfolioVal, 2)}
-                </span>
-              )}
-              {metric === "return" && (
-                <span className="font-mono font-bold text-xs status-gain-text">
-                  Portfolio Return: +{activeHover.totalReturn.toFixed(2)}%
-                </span>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-xs">
-              {funds
-                .filter((f) => !hiddenFundIds.has(f.fundId || f.id))
-                .map((f) => {
-                  const fKey = f.fundId || f.id;
-                  const dataObj = activeHover.fundValues[fKey];
-                  const color = fundColors.get(fKey) || "#33c6e4";
-
-                  return (
-                    <div
-                      key={fKey}
-                      className="flex items-center justify-between gap-3 theme-surface p-2 rounded-xl border theme-border"
-                    >
-                      <span className="font-semibold theme-text-secondary truncate flex items-center gap-1.5 min-w-0">
-                        <span
-                          className="h-2.5 w-2.5 rounded-full shrink-0"
-                          style={{ backgroundColor: color }}
-                        />
-                        <span className="truncate">{f.shortName || f.name}</span>
-                      </span>
-                      <strong className="font-mono theme-text-primary shrink-0 text-right">
-                        {metric === "nav" &&
-                          `৳${(dataObj?.nav ?? f.effectiveNav ?? 10).toFixed(3)}`}
-                        {metric === "return" &&
-                          `${(dataObj?.returnPct ?? f.returnPct ?? 0).toFixed(2)}%`}
-                        {metric === "growth" &&
-                          `৳${formatBdt(dataObj?.marketVal ?? 0, 0)}`}
+                {metric === "growth" ? (
+                  <div className="space-y-1 text-[11px]">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-slate-300">Market Value:</span>
+                      <strong className="font-mono text-[#33c6e4]">
+                        ৳{formatBdt(activeHover.totalPortfolioVal, 2)}
                       </strong>
                     </div>
-                  );
-                })}
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-slate-400">Total Invested:</span>
+                      <span className="font-mono text-slate-300">
+                        ৳{formatBdt(activeHover.totalPortfolioInv, 2)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 pt-0.5 border-t border-slate-800">
+                      <span className="text-slate-400">Net Gain:</span>
+                      <span
+                        className={`font-mono font-bold ${
+                          activeHover.totalReturn >= 0
+                            ? "text-emerald-400"
+                            : "text-rose-400"
+                        }`}
+                      >
+                        {activeHover.totalReturn >= 0 ? "+" : ""}
+                        {activeHover.totalReturn.toFixed(2)}%
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-1 text-[11px]">
+                    {funds
+                      .filter((f) => !hiddenFundIds.has(f.fundId || f.id))
+                      .map((f) => {
+                        const fKey = f.fundId || f.id;
+                        const dataObj = activeHover.fundValues[fKey];
+                        const color = fundColors.get(fKey) || "#33c6e4";
+                        return (
+                          <div
+                            key={fKey}
+                            className="flex items-center justify-between gap-2"
+                          >
+                            <span className="text-slate-300 truncate flex items-center gap-1.5 min-w-0">
+                              <span
+                                className="h-2 w-2 rounded-full shrink-0"
+                                style={{ backgroundColor: color }}
+                              />
+                              <span className="truncate">{f.shortName || f.name}</span>
+                            </span>
+                            <strong className="font-mono text-white shrink-0 text-right">
+                              {metric === "nav" &&
+                                `৳${(
+                                  dataObj?.nav ??
+                                  f.effectiveNav ??
+                                  10
+                                ).toFixed(3)}`}
+                              {metric === "return" &&
+                                `${(
+                                  dataObj?.returnPct ??
+                                  f.returnPct ??
+                                  0
+                                ).toFixed(2)}%`}
+                            </strong>
+                          </div>
+                        );
+                      })}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+
+          <svg
+            ref={svgRef}
+            viewBox={`0 0 ${width} ${height}`}
+            className="w-full h-auto max-h-[340px] select-none cursor-crosshair"
+            onMouseMove={(e) => handlePointerMove(e.clientX)}
+            onTouchMove={(e) => {
+              if (e.touches[0]) handlePointerMove(e.touches[0].clientX);
+            }}
+            onMouseLeave={() => setHoverIndex(null)}
+            onTouchEnd={() => setHoverIndex(null)}
+          >
+            <defs>
+              {/* Luminous Glow Filter */}
+              <filter
+                id={`${chartId}-glow`}
+                x="-20%"
+                y="-20%"
+                width="140%"
+                height="140%"
+              >
+                <feGaussianBlur stdDeviation="3" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+
+              {/* Area Gradients for each series */}
+              {seriesPaths.map((series) => (
+                <linearGradient
+                  key={`grad-${series.key}`}
+                  id={`${chartId}-grad-${series.key}`}
+                  x1="0"
+                  y1="0"
+                  x2="0"
+                  y2="1"
+                >
+                  <stop offset="0%" stopColor={series.color} stopOpacity="0.25" />
+                  <stop
+                    offset="80%"
+                    stopColor={series.color}
+                    stopOpacity="0.04"
+                  />
+                  <stop offset="100%" stopColor={series.color} stopOpacity="0" />
+                </linearGradient>
+              ))}
+            </defs>
+
+            {/* Subtle Horizontal Grid lines & Y-Axis Labels */}
+            {[0, 0.25, 0.5, 0.75, 1].map((pct, i) => {
+              const yPos = padT + plotH * pct;
+              const gridVal = maxVal - pct * (maxVal - minVal);
+              return (
+                <g key={i} opacity="0.4">
+                  <line
+                    x1={padL}
+                    y1={yPos}
+                    x2={width - padR}
+                    y2={yPos}
+                    stroke="currentColor"
+                    strokeDasharray="4 6"
+                    className="theme-text-muted"
+                    strokeWidth="1"
+                  />
+                  <text
+                    x={padL - 10}
+                    y={yPos + 4}
+                    textAnchor="end"
+                    className="text-[10px] font-mono font-medium fill-current theme-text-muted"
+                  >
+                    {metric === "return"
+                      ? `${gridVal.toFixed(1)}%`
+                      : metric === "growth"
+                      ? `৳${formatBdt(gridVal, 0)}`
+                      : `৳${gridVal.toFixed(2)}`}
+                  </text>
+                </g>
+              );
+            })}
+
+            {/* 1. Luminous Area Fills Under Curves */}
+            {seriesPaths.map(
+              (series) =>
+                series.areaD && (
+                  <path
+                    key={`area-${series.key}`}
+                    d={series.areaD}
+                    fill={`url(#${chartId}-grad-${series.key})`}
+                  />
+                )
+            )}
+
+            {/* 2. Smooth Cubic Bézier Spline Traces */}
+            {seriesPaths.map((series) => (
+              <path
+                key={`stroke-${series.key}`}
+                d={series.curveD}
+                fill="none"
+                stroke={series.color}
+                strokeWidth={series.dashed ? "2" : "3"}
+                strokeDasharray={series.dashed ? "6 6" : undefined}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                filter={series.dashed ? undefined : `url(#${chartId}-glow)`}
+              />
+            ))}
+
+            {/* 3. Interactive Nodes & Crosshair Triggers */}
+            {chartData.map((d, idx) => {
+              const xPos = getX(idx);
+              const isHovered = hoverIndex === idx;
+
+              return (
+                <g
+                  key={d.dateKey}
+                  onMouseEnter={() => setHoverIndex(idx)}
+                  onTouchStart={() => setHoverIndex(idx)}
+                >
+                  {/* Touch / Mouse Hit Area */}
+                  <rect
+                    x={xPos - Math.max(16, plotW / chartData.length / 2)}
+                    y={padT}
+                    width={Math.max(32, plotW / chartData.length)}
+                    height={plotH}
+                    fill="transparent"
+                  />
+
+                  {/* X Axis Date Label (nicely spaced) */}
+                  {(idx === 0 ||
+                    idx === chartData.length - 1 ||
+                    idx % Math.max(1, Math.floor(chartData.length / 7)) ===
+                      0) && (
+                    <text
+                      x={xPos}
+                      y={height - 14}
+                      textAnchor="middle"
+                      className={`text-[10px] font-mono fill-current transition ${
+                        isHovered
+                          ? "font-black text-[#155360] dark:text-[#33c6e4]"
+                          : "font-semibold theme-text-muted"
+                      }`}
+                    >
+                      {d.displayDate}
+                    </text>
+                  )}
+
+                  {/* Glowing Vertical Cursor on hover */}
+                  {isHovered && (
+                    <>
+                      <line
+                        x1={xPos}
+                        y1={padT}
+                        x2={xPos}
+                        y2={baselineY}
+                        stroke="#33c6e4"
+                        strokeWidth="1.5"
+                        strokeDasharray="4 4"
+                      />
+
+                      {/* Circular Glowing Anchor Dots on each curve */}
+                      {seriesPaths.map((s) => {
+                        const pt = s.points[idx];
+                        if (!pt) return null;
+                        return (
+                          <g key={`dot-${s.key}`}>
+                            <circle
+                              cx={pt.x}
+                              cy={pt.y}
+                              r="6"
+                              fill={s.color}
+                              opacity="0.35"
+                            />
+                            <circle
+                              cx={pt.x}
+                              cy={pt.y}
+                              r="3.5"
+                              fill="#ffffff"
+                              stroke={s.color}
+                              strokeWidth="2.5"
+                            />
+                          </g>
+                        );
+                      })}
+                    </>
+                  )}
+                </g>
+              );
+            })}
+          </svg>
+        </div>
       </div>
     </section>
   );

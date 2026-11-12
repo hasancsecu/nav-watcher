@@ -224,7 +224,7 @@
     "category": "Balanced",
     "biniUrl": "https://bini.com.bd/funds/idlc-balanced-fund-95537154",
     "defaultNav": 10,
-    "primaryUrl": "https://idlc.com/aml/funds.php",
+    "primaryUrl": "https://idlc.com/aml/nav.php",
     "fallbackUrl": "https://bini.com.bd/funds/idlc-balanced-fund-95537154"
   },
   {
@@ -236,7 +236,7 @@
     "category": "Shariah",
     "biniUrl": "https://bini.com.bd/funds/idlc-aml-shariah-fund-ffb5288f",
     "defaultNav": 10,
-    "primaryUrl": "https://idlc.com/aml/funds.php",
+    "primaryUrl": "https://idlc.com/aml/nav.php",
     "fallbackUrl": "https://bini.com.bd/funds/idlc-aml-shariah-fund-ffb5288f"
   },
   {
@@ -248,7 +248,7 @@
     "category": "Growth",
     "biniUrl": "https://bini.com.bd/funds/idlc-growth-fund-da7eea9d",
     "defaultNav": 10,
-    "primaryUrl": "https://idlc.com/aml/funds.php",
+    "primaryUrl": "https://idlc.com/aml/nav.php",
     "fallbackUrl": "https://bini.com.bd/funds/idlc-growth-fund-da7eea9d"
   },
   {
@@ -260,7 +260,7 @@
     "category": "Income",
     "biniUrl": "https://bini.com.bd/funds/idlc-income-fund-ffb51d14",
     "defaultNav": 10,
-    "primaryUrl": "https://idlc.com/aml/funds.php",
+    "primaryUrl": "https://idlc.com/aml/nav.php",
     "fallbackUrl": "https://bini.com.bd/funds/idlc-income-fund-ffb51d14"
   },
   {

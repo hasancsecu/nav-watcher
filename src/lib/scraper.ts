@@ -360,13 +360,14 @@ function escapeRegex(str: string): string {
 
 /**
  * 2. Parser for IDLC Mutual Funds Primary URL:
- * https://idlc.com/aml/funds.php or https://idlc.com/aml/nav.php
+ * https://idlc.com/aml/nav.php (Primary URL for latest NAV at Fair Value & Investor's Buy Price)
  */
 export function parseIdlcPrimaryHtml(html: string, fundName?: string): ParsedFundNavResult {
   const $ = cheerio.load(html);
   let nav: number | null = null;
   let buyPrice: number | null = null;
   let sellPrice: number | null = null;
+  let costNav: number | null = null;
   let effectiveDateRaw = "";
 
   const rawLower = (fundName || "").toLowerCase();
@@ -382,26 +383,48 @@ export function parseIdlcPrimaryHtml(html: string, fundName?: string): ParsedFun
       .toLowerCase();
   }
 
-  // Strategy 1: Table on nav.php
-  $("table tr").each((_, row) => {
-    const rowText = $(row).text().toLowerCase();
-    if (keyword && rowText.includes(keyword)) {
-      const cells = $(row).find("td");
-      if (cells.length >= 4) {
-        effectiveDateRaw = $(cells[1]).text().trim();
-        const costNav = parseNumericNav($(cells[2]).text());
-        const fairNav = parseNumericNav($(cells[3]).text());
-        const bPrice = cells.length >= 5 ? parseNumericNav($(cells[4]).text()) : fairNav;
-        const sPrice = cells.length >= 6 ? parseNumericNav($(cells[5]).text()) : fairNav;
+  // Identify table header column positions if available
+  let nameCol = 0;
+  let dateCol = 1;
+  let costNavCol = 2;
+  let fairNavCol = 3;
+  let buyPriceCol = 4;
+  let salePriceCol = 5;
 
-        nav = fairNav || costNav;
-        buyPrice = bPrice || nav;
-        sellPrice = sPrice || nav;
+  $("table thead tr td, table thead tr th").each((idx, el) => {
+    const txt = $(el).text().toLowerCase().trim();
+    if (txt.includes("fund name") || txt.includes("fund")) nameCol = idx;
+    else if (txt.includes("date")) dateCol = idx;
+    else if (txt.includes("fair")) fairNavCol = idx;
+    else if (txt.includes("cost")) costNavCol = idx;
+    else if (txt.includes("buy")) buyPriceCol = idx;
+    else if (txt.includes("sale") || txt.includes("sell")) salePriceCol = idx;
+  });
+
+  // Strategy 1: Table on nav.php
+  // Column 1: Fund Name | Column 2: NAV Date | Column 3: NAV at Cost Value | Column 4: NAV at Fair Value | Column 5: Investor's Buy Price | Column 6: Investor's Sale Price
+  $("table tr").each((_, row) => {
+    const cells = $(row).find("td");
+    if (cells.length >= 4) {
+      const rowName = $(cells[nameCol] || cells[0]).text().toLowerCase();
+      if (keyword && rowName.includes(keyword)) {
+        effectiveDateRaw = $(cells[dateCol] || cells[1]).text().trim();
+        const costVal = parseNumericNav($(cells[costNavCol] || cells[2]).text());
+        const fairVal = parseNumericNav($(cells[fairNavCol] || cells[3]).text());
+        const bPrice = cells.length > buyPriceCol ? parseNumericNav($(cells[buyPriceCol]).text()) : null;
+        const sPrice = cells.length > salePriceCol ? parseNumericNav($(cells[salePriceCol]).text()) : null;
+
+        // USER MANDATE: "take NAV at Fair Value for latest nav"
+        nav = fairVal ?? costVal ?? bPrice;
+        costNav = costVal ?? nav;
+        // USER MANDATE: "the taken filed from the table is Investor's Buy Price"
+        buyPrice = bPrice ?? fairVal ?? nav;
+        sellPrice = sPrice ?? fairVal ?? nav;
       }
     }
   });
 
-  // Strategy 2: Carousal on funds.php
+  // Strategy 2: Carousal on funds.php (legacy fallback)
   if (!nav && keyword) {
     $(".product").each((_, prod) => {
       const title = $(prod).find(".carousal-container-1-heading").text().toLowerCase();
@@ -417,7 +440,7 @@ export function parseIdlcPrimaryHtml(html: string, fundName?: string): ParsedFun
     });
   }
 
-  // Strategy 3: Regex match on nav.php or funds.php
+  // Strategy 3: Regex match on nav.php
   if (!nav && keyword) {
     const tableRegex = new RegExp(
       `<td[^>]*>[^<]*?${escapeRegex(keyword)}[^<]*?<\\/td>\\s*<td[^>]*>([^<]+)<\\/td>\\s*<td[^>]*>[^<]+<\\/td>\\s*<td[^>]*>([0-9.]+)<\\/td>`,

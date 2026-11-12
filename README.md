@@ -1,4 +1,4 @@
-# NAV Watcher — Bangladesh Shariah Mutual Fund Portfolio & SIP Tracker
+# NAV Watcher — Mutual Fund Portfolio & SIP Tracker
 
 **NAV Watcher** is a full-stack web application built with **Next.js (App Router)**, **TypeScript**, **Tailwind CSS**, **Prisma**, **SQLite**, **Cheerio**, and **node-cron** to track monthly SIP investments across three Bangladeshi Shariah-compliant open-end mutual funds.
 
@@ -8,11 +8,11 @@
 
 The scraper fetches the latest published **Net Asset Value (NAV)** (reflecting the previous trading day's valuation) from each Asset Management Company (AMC) portal, and automatically falls back to its specific **Bini.com.bd** fund page if a primary site is unreachable or fails to parse:
 
-| Mutual Fund | Fund Manager | Primary AMC URL | Fallback URL (`bini.com.bd`) |
-| :--- | :--- | :--- | :--- |
-| **Shanta Amanah Shariah Fund** | Shanta Asset Management Limited | [shanta-aml.com/.../shanta-amanah-shariah-fund](https://www.shanta-aml.com/our-funds/shanta-amanah-shariah-fund) | [bini.com.bd/.../shanta-amanah-shariah-fund-ffb52cac](https://bini.com.bd/funds/shanta-amanah-shariah-fund-ffb52cac) |
-| **IDLC Shariah Fund** | IDLC Asset Management Limited | [idlc.com/aml/shariah_fund.php](https://idlc.com/aml/shariah_fund.php) | [bini.com.bd/.../idlc-aml-shariah-fund-ffb5288f](https://bini.com.bd/funds/idlc-aml-shariah-fund-ffb5288f) |
-| **Edge Al-Amin Shariah Consumer Fund** | EDGE AMC Limited | [edgeamc.com/edge-alamin-shariah-consumer-fund](https://www.edgeamc.com/edge-alamin-shariah-consumer-fund) | [bini.com.bd/.../edge-al-amin-shariah-consumer-fund-759e11aa](https://bini.com.bd/funds/edge-al-amin-shariah-consumer-fund-759e11aa) |
+| Mutual Fund                            | Fund Manager                    | Primary AMC URL                                                                                                  | Fallback URL (`bini.com.bd`)                                                                                                         |
+| :------------------------------------- | :------------------------------ | :--------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------- |
+| **Shanta Amanah Shariah Fund**         | Shanta Asset Management Limited | [shanta-aml.com/.../shanta-amanah-shariah-fund](https://www.shanta-aml.com/our-funds/shanta-amanah-shariah-fund) | [bini.com.bd/.../shanta-amanah-shariah-fund-ffb52cac](https://bini.com.bd/funds/shanta-amanah-shariah-fund-ffb52cac)                 |
+| **IDLC Shariah Fund**                  | IDLC Asset Management Limited   | [idlc.com/aml/shariah_fund.php](https://idlc.com/aml/shariah_fund.php)                                           | [bini.com.bd/.../idlc-aml-shariah-fund-ffb5288f](https://bini.com.bd/funds/idlc-aml-shariah-fund-ffb5288f)                           |
+| **Edge Al-Amin Shariah Consumer Fund** | EDGE AMC Limited                | [edgeamc.com/edge-alamin-shariah-consumer-fund](https://www.edgeamc.com/edge-alamin-shariah-consumer-fund)       | [bini.com.bd/.../edge-al-amin-shariah-consumer-fund-759e11aa](https://bini.com.bd/funds/edge-al-amin-shariah-consumer-fund-759e11aa) |
 
 ---
 
@@ -51,25 +51,30 @@ The scraper fetches the latest published **Net Asset Value (NAV)** (reflecting t
 ## 4. Getting Started Locally
 
 ### Prerequisites
+
 - Node.js 18.18+ (or 20+) and `npm`
 
 ### Installation & Setup
 
 1. **Install dependencies**:
+
    ```bash
    npm install
    ```
 
 2. **Initialize the SQLite database schema**:
+
    ```bash
    npm run db:push
    ```
 
 3. **Run the parser verification & initial NAV seed**:
+
    ```bash
    npm run scrape:test
    ```
-   *(Optional: pass `-- --live` to fetch directly from the live AMC websites via CLI: `npm run scrape:test -- --live`)*
+
+   _(Optional: pass `-- --live` to fetch directly from the live AMC websites via CLI: `npm run scrape:test -- --live`)_
 
 4. **Start the development server**:
    ```bash
@@ -118,4 +123,3 @@ The scraper fetches the latest published **Net Asset Value (NAV)** (reflecting t
    DATABASE_URL=file:./dev.db prisma db push && prisma generate && next build
    ```
 3. `next.config.mjs` includes `outputFileTracingIncludes` to bundle the initialized SQLite database, and `src/lib/prisma.ts` automatically copies it to `/tmp/dev.db` in Vercel's serverless runtime so reads and writes work out-of-the-box without requiring external database setup.
-

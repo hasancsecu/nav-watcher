@@ -27,14 +27,16 @@ async function main() {
   const { syncAllFundsNav } = await import("../src/lib/scraper");
 
   try {
-    console.log("[Seed] Seeding default Bangladesh Shariah mutual funds...");
+    console.log("[Seed] Seeding default Bangladesh mutual funds...");
     await ensureFundsSeeded();
-    console.log("[Seed] Running initial live NAV scrape & history computation...");
+    console.log(
+      "[Seed] Running initial live NAV scrape & history computation...",
+    );
     const result = await syncAllFundsNav({ trigger: "STARTUP" });
     console.log(
       `[Seed] Completed: ${result.results
         .map((r) => `${r.fundId}=${r.nav}`)
-        .join(", ")}`
+        .join(", ")}`,
     );
   } finally {
     await prisma.$disconnect();
