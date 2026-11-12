@@ -436,12 +436,15 @@ dialog::backdrop {
 
 @container (width < 720px) {
   .responsive-fund-table,
+  .responsive-fund-table caption,
   .responsive-fund-table thead,
   .responsive-fund-table tbody,
   .responsive-fund-table tr,
   .responsive-fund-table th,
   .responsive-fund-table td {
     display: block;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .responsive-fund-table thead {
@@ -458,9 +461,8 @@ dialog::backdrop {
   }
 
   .responsive-fund-table tbody th {
-    position: sticky;
-    inset-block-start: 0;
-    z-index: 2;
+    position: static;
+    white-space: normal;
     background-color: var(--bg-elevated);
     border-bottom: 1px solid var(--border-subtle);
   }
@@ -471,6 +473,7 @@ dialog::backdrop {
     align-items: center;
     gap: 0.75rem;
     border-bottom: 1px solid var(--border-subtle);
+    text-align: right;
   }
 
   .responsive-fund-table td:last-child {

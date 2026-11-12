@@ -56,7 +56,10 @@ export default function RootLayout({
         <meta name="color-scheme" content="light dark" />
         <script dangerouslySetInnerHTML={{ __html: foucPreventionScript }} />
       </head>
-      <body className="min-h-[100dvh] antialiased selection:bg-emerald-500/25">
+      <body
+        suppressHydrationWarning
+        className="min-h-[100dvh] antialiased selection:bg-emerald-500/25"
+      >
         {children}
       </body>
     </html>

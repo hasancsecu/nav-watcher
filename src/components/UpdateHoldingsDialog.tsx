@@ -24,7 +24,7 @@ interface UpdateHoldingsDialogProps {
       totalInvested: number;
       averageBuyPrice: number;
       monthlySipTarget: number;
-    }>
+    }>,
   ) => Promise<void>;
 }
 
@@ -119,7 +119,7 @@ export default function UpdateHoldingsDialog({
   const validateField = (
     fundId: string,
     field: "totalInvested" | "averageBuyPrice",
-    value: string
+    value: string,
   ) => {
     const num = Number(value);
     if (field === "totalInvested") {
@@ -137,7 +137,7 @@ export default function UpdateHoldingsDialog({
   const handleInputChange = (
     fundId: string,
     field: "totalInvested" | "averageBuyPrice" | "monthlySipTarget",
-    value: string
+    value: string,
   ) => {
     setDrafts((prev) => {
       const current = prev[fundId] || {
@@ -165,7 +165,7 @@ export default function UpdateHoldingsDialog({
 
   const handleBlur = (
     fundId: string,
-    field: "totalInvested" | "averageBuyPrice"
+    field: "totalInvested" | "averageBuyPrice",
   ) => {
     setDrafts((prev) => {
       const current = prev[fundId];
@@ -196,7 +196,7 @@ export default function UpdateHoldingsDialog({
       curInvested,
       curAvg,
       sipAmt,
-      execNav
+      execNav,
     );
 
     setDrafts((prev) => ({
@@ -262,7 +262,7 @@ export default function UpdateHoldingsDialog({
       dialogRef.current?.close("saved");
     } catch (err) {
       setSubmitError(
-        err instanceof Error ? err.message : "Failed to save holdings"
+        err instanceof Error ? err.message : "Failed to save holdings",
       );
     } finally {
       setIsSubmitting(false);
@@ -278,8 +278,10 @@ export default function UpdateHoldingsDialog({
     <dialog
       ref={dialogRef}
       aria-labelledby={titleId}
-      {...({ closedby: "any" } as React.DialogHTMLAttributes<HTMLDialogElement>)}
-      className="theme-surface m-auto max-sm:mb-0 max-sm:mt-auto w-full sm:w-[calc(100%-2rem)] max-w-3xl rounded-t-3xl sm:rounded-2xl border p-0 shadow-2xl max-h-[92dvh] overflow-hidden"
+      {...({
+        closedby: "any",
+      } as React.DialogHTMLAttributes<HTMLDialogElement>)}
+      className="theme-surface m-auto max-sm:mb-0 max-sm:mt-auto w-full sm:w-[calc(100%-2rem)] max-w-4xl rounded-t-3xl sm:rounded-2xl border p-0 shadow-2xl max-h-[92vh] overflow-hidden"
     >
       {/* Mobile Bottom-Sheet Drag Handle Indicator */}
       <div className="sm:hidden flex justify-center pt-2.5 pb-1 theme-elevated">
@@ -295,7 +297,8 @@ export default function UpdateHoldingsDialog({
             Update Portfolio &amp; Monthly SIP Holdings
           </h2>
           <p className="text-xs sm:text-sm theme-text-secondary mt-0.5">
-            Edit your Total Invested Amount (BDT) and Average Buy Price / Cost NAV anytime, or tap &ldquo;+ Record Monthly SIP&rdquo;.
+            Edit your Total Invested Amount (BDT) and Average Buy Price / Cost
+            NAV anytime, or tap &ldquo;+ Record Monthly SIP&rdquo;.
           </p>
         </div>
         <button
@@ -396,11 +399,14 @@ export default function UpdateHoldingsDialog({
                       onClick={() => handleQuickAddSip(fund)}
                       className="status-gain-badge inline-flex min-h-[40px] items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold hover:opacity-90 transition"
                     >
-                      <PlusCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+                      <PlusCircle
+                        className="h-4 w-4 shrink-0"
+                        aria-hidden="true"
+                      />
                       <span>
                         + Record Monthly SIP (৳
                         {Number(d.monthlySipTarget || 8000).toLocaleString(
-                          "en-BD"
+                          "en-BD",
                         )}{" "}
                         @ ৳{(fund.buyPrice || fund.effectiveNav).toFixed(2)})
                       </span>
@@ -437,7 +443,7 @@ export default function UpdateHoldingsDialog({
                           handleInputChange(
                             fund.id,
                             "totalInvested",
-                            e.target.value
+                            e.target.value,
                           )
                         }
                         onBlur={() => handleBlur(fund.id, "totalInvested")}
@@ -488,7 +494,7 @@ export default function UpdateHoldingsDialog({
                           handleInputChange(
                             fund.id,
                             "averageBuyPrice",
-                            e.target.value
+                            e.target.value,
                           )
                         }
                         onBlur={() => handleBlur(fund.id, "averageBuyPrice")}
@@ -529,7 +535,7 @@ export default function UpdateHoldingsDialog({
                           handleInputChange(
                             fund.id,
                             "monthlySipTarget",
-                            e.target.value
+                            e.target.value,
                           )
                         }
                         className="form-control-input rounded-xl border px-3.5 py-2.5 font-mono font-semibold"

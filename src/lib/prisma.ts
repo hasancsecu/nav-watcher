@@ -1,43 +1,22 @@
-import fs from "node:fs";
-import path from "node:path";
 import { PrismaClient } from "@prisma/client";
 
 const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined;
+  prismaPgClientV2: PrismaClient | undefined;
 };
 
 function resolveDatabaseUrl(): string {
-  // If running on Vercel serverless, /var/task is read-only.
-  // Copy the bundled prisma/dev.db to /tmp/dev.db so SQLite is read/write out-of-the-box.
-  if (process.env.VERCEL) {
-    const tmpDbPath = "/tmp/dev.db";
-    if (!fs.existsSync(tmpDbPath)) {
-      const candidateSources = [
-        path.join(process.cwd(), "prisma", "dev.db"),
-        path.join(process.cwd(), "dev.db"),
-      ];
-      for (const src of candidateSources) {
-        if (fs.existsSync(src)) {
-          try {
-            fs.copyFileSync(src, tmpDbPath);
-            break;
-          } catch (err) {
-            console.warn(
-              "[Prisma] Failed to copy seed SQLite DB to /tmp:",
-              err,
-            );
-          }
-        }
-      }
-    }
-    return `file:${tmpDbPath}`;
-  }
+  const rawUrl =
+    process.env.DATABASE_URL ||
+    process.env.POSTGRES_URL ||
+    process.env.PRISMA_DATABASE_URL ||
+    process.env.DATABASE_URL_POOLED ||
+    "";
 
-  return process.env.DATABASE_URL || "file:./dev.db";
+  return rawUrl.trim().replace(/^["']|["']$/g, "");
 }
 
 export const prisma =
-  globalForPrisma.prisma ??
+  globalForPrisma.prismaPgClientV2 ??
   new PrismaClient({
     datasources: {
       db: {
@@ -48,7 +27,7 @@ export const prisma =
   });
 
 if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
+  globalForPrisma.prismaPgClientV2 = prisma;
 }
 
 export interface DefaultFundConfig {

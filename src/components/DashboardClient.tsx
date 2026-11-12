@@ -562,27 +562,27 @@ export default function DashboardClient({
                     />
                   )}
                 </div>
-                <div className="mt-2 sm:mt-3 flex items-baseline gap-1.5 sm:gap-2 flex-wrap">
-                  <p
-                    className={`font-mono kpi-value-fluid font-extrabold ${
-                      netPositive ? "status-gain-text" : "status-loss-text"
-                    }`}
-                  >
-                    {netPositive ? "+" : "-"}৳
-                    {formatBdt(Math.abs(summary.absoluteGainLoss), 0)}
-                  </p>
+                <p
+                  className={`mt-2 sm:mt-3 font-mono kpi-value-fluid font-extrabold ${
+                    netPositive ? "status-gain-text" : "status-loss-text"
+                  }`}
+                >
+                  {netPositive ? "+" : "-"}৳
+                  {formatBdt(Math.abs(summary.absoluteGainLoss), 0)}
+                </p>
+                <div className="mt-1.5 sm:mt-2 flex items-center gap-1.5 flex-wrap">
                   <span
-                    className={`inline-flex items-center rounded-lg px-2 py-0.5 font-mono text-[11px] sm:text-xs font-bold ${
+                    className={`inline-flex items-center rounded-md px-2 py-0.5 font-mono text-[11px] font-bold ${
                       netPositive ? "status-gain-badge" : "status-loss-badge"
                     }`}
                   >
                     {netPositive ? "▲ +" : "▼ "}
                     {summary.returnPct.toFixed(2)}%
                   </span>
+                  <span className="text-[11px] theme-text-muted hidden sm:inline">
+                    Live return
+                  </span>
                 </div>
-                <p className="mt-1.5 sm:mt-2 text-[11px] sm:text-xs theme-text-muted">
-                  Live from scraped NAVs
-                </p>
               </article>
 
               {/* Last Updated Timestamp */}
@@ -683,8 +683,8 @@ export default function DashboardClient({
                       </div>
 
                       {/* Key Metrics Grid */}
-                      <dl className="mt-4 grid grid-cols-2 gap-y-2.5 gap-x-4 text-xs">
-                        <div className="flex justify-between border-b theme-border pb-1.5">
+                      <dl className="mt-4 grid grid-cols-2 gap-2.5 text-xs">
+                        <div className="flex flex-col sm:flex-row sm:justify-between border-b theme-border pb-1.5 gap-0.5">
                           <dt className="theme-text-secondary font-medium">
                             Total Invested
                           </dt>
@@ -692,7 +692,7 @@ export default function DashboardClient({
                             ৳{formatBdt(fund.totalInvested, 2)}
                           </dd>
                         </div>
-                        <div className="flex justify-between border-b theme-border pb-1.5">
+                        <div className="flex flex-col sm:flex-row sm:justify-between border-b theme-border pb-1.5 gap-0.5">
                           <dt className="theme-text-secondary font-medium">
                             Avg Buy NAV
                           </dt>
@@ -700,7 +700,7 @@ export default function DashboardClient({
                             ৳{fund.averageBuyPrice.toFixed(4)}
                           </dd>
                         </div>
-                        <div className="flex justify-between border-b theme-border pb-1.5">
+                        <div className="flex flex-col sm:flex-row sm:justify-between border-b theme-border pb-1.5 gap-0.5">
                           <dt className="theme-text-secondary font-medium">
                             Total Units Held
                           </dt>
@@ -708,7 +708,7 @@ export default function DashboardClient({
                             {fund.totalUnitsHeld.toFixed(4)}
                           </dd>
                         </div>
-                        <div className="flex justify-between border-b theme-border pb-1.5">
+                        <div className="flex flex-col sm:flex-row sm:justify-between border-b theme-border pb-1.5 gap-0.5">
                           <dt className="theme-text-secondary font-medium">
                             Portfolio Weight
                           </dt>
@@ -781,22 +781,30 @@ export default function DashboardClient({
 
         {/* 4. Responsive Tabular Comparison (modern-web-guidance: responsive-table) */}
         {showHoldings && (
-          <section className="theme-surface rounded-2xl border p-4 sm:p-6">
+          <section
+            aria-labelledby="fund-breakdown-heading"
+            className="theme-surface rounded-2xl border p-4 sm:p-6"
+          >
+            <div className="mb-4">
+              <h2
+                id="fund-breakdown-heading"
+                className="section-title-fluid font-bold theme-text-primary"
+              >
+                Detailed SIP Valuation &amp; Formula Breakdown Table
+              </h2>
+              <p className="text-xs sm:text-sm theme-text-secondary mt-1 leading-relaxed">
+                Units = Invested ÷ Avg Buy Price · Market Value = Units × Latest NAV · Return (%) = (Gain/Loss ÷ Invested) × 100
+              </p>
+            </div>
             <div
               tabIndex={0}
               role="region"
-              aria-labelledby="fund-breakdown-caption"
+              aria-labelledby="fund-breakdown-heading"
               className="table-wrapper"
             >
               <table className="responsive-fund-table text-left text-sm">
-                <caption
-                  id="fund-breakdown-caption"
-                  className="text-left section-title-fluid font-bold theme-text-primary mb-4"
-                >
-                  Detailed SIP Valuation &amp; Formula Breakdown Table
-                  <span className="block text-xs font-normal theme-text-secondary mt-0.5">
-                    Units = Invested ÷ Avg Buy Price · Market Value = Units × Latest NAV · Return (%) = (Gain/Loss ÷ Invested) × 100
-                  </span>
+                <caption className="sr-only">
+                  Detailed SIP Valuation and Formula Breakdown Table
                 </caption>
                 <thead>
                   <tr className="theme-elevated border-b theme-border text-xs uppercase tracking-wider theme-text-secondary">
@@ -857,7 +865,7 @@ export default function DashboardClient({
                       >
                         <th
                           scope="row"
-                          className="py-3.5 px-4 font-bold theme-text-primary whitespace-nowrap"
+                          className="py-3.5 px-4 font-bold theme-text-primary sm:whitespace-nowrap"
                         >
                           <div>{fund.name}</div>
                           <div className="text-xs font-medium theme-text-muted">
