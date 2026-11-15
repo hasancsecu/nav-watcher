@@ -9,7 +9,10 @@ export async function GET() {
     await ensureFundsSeeded();
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ transactions: [], unsettledBalances: [] });
+      return NextResponse.json(
+        { error: "Unauthorized. Please log in.", isAuthRequired: true },
+        { status: 401, headers: { "Cache-Control": "private, no-cache, no-store, must-revalidate" } }
+      );
     }
 
     const userFunds = await prisma.userFund.findMany({

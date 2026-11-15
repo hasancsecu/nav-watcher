@@ -12,13 +12,13 @@ export async function GET() {
     const user = await getCurrentUser();
 
     if (!user) {
-      return NextResponse.json({
-        user: null,
-        summary: null,
-        funds: [],
-        history: [],
-        scheduler,
-      });
+      return NextResponse.json(
+        {
+          error: "Unauthorized. Please log in to view portfolio.",
+          isAuthRequired: true,
+        },
+        { status: 401, headers: { "Cache-Control": "private, no-cache, no-store, must-revalidate" } }
+      );
     }
 
     const [userFunds, recentLogs] = await Promise.all([
@@ -113,13 +113,20 @@ export async function GET() {
       lastUpdatedAt: new Date().toISOString(),
     };
 
-    return NextResponse.json({
-      user,
-      summary,
-      funds: fundsWithMetrics,
-      recentLogs,
-      scheduler,
-    });
+    return NextResponse.json(
+      {
+        user,
+        summary,
+        funds: fundsWithMetrics,
+        recentLogs,
+        scheduler,
+      },
+      {
+        headers: {
+          "Cache-Control": "private, no-cache, no-store, must-revalidate",
+        },
+      }
+    );
   } catch (error) {
     console.error("[API /api/portfolio GET] Error:", error);
     return NextResponse.json(

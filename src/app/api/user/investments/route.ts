@@ -107,10 +107,17 @@ export async function POST(req: NextRequest) {
       include: { fund: true },
     });
 
-    if (!userFund || userFund.userId !== user.id) {
+    if (!userFund) {
       return NextResponse.json(
-        { error: "Fund holding not found or does not belong to you." },
+        { error: "Fund holding not found." },
         { status: 404 },
+      );
+    }
+
+    if (userFund.userId !== user.id) {
+      return NextResponse.json(
+        { error: "Forbidden. This fund holding belongs to another user." },
+        { status: 403 },
       );
     }
 
@@ -216,10 +223,17 @@ export async function PUT(req: NextRequest) {
       include: { userFund: { include: { fund: true } } },
     });
 
-    if (!entry || entry.userId !== user.id) {
+    if (!entry) {
       return NextResponse.json(
-        { error: "Investment entry not found or unauthorized." },
+        { error: "Investment entry not found." },
         { status: 404 },
+      );
+    }
+
+    if (entry.userId !== user.id) {
+      return NextResponse.json(
+        { error: "Forbidden. This investment entry belongs to another user." },
+        { status: 403 },
       );
     }
 
@@ -306,10 +320,17 @@ export async function DELETE(req: NextRequest) {
       include: { userFund: true },
     });
 
-    if (!entry || entry.userId !== user.id) {
+    if (!entry) {
       return NextResponse.json(
         { error: "Investment entry not found." },
         { status: 404 },
+      );
+    }
+
+    if (entry.userId !== user.id) {
+      return NextResponse.json(
+        { error: "Forbidden. This investment entry belongs to another user." },
+        { status: 403 },
       );
     }
 

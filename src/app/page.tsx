@@ -5,6 +5,7 @@ import { initDailyNavScheduler } from "@/lib/scheduler";
 import DashboardClient from "@/components/DashboardClient";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function HomePage() {
   const scheduler = initDailyNavScheduler();

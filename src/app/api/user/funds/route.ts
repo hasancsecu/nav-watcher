@@ -101,11 +101,18 @@ export async function GET() {
       user,
     };
 
-    return NextResponse.json({
-      summary,
-      funds: fundsWithMetrics,
-      user,
-    });
+    return NextResponse.json(
+      {
+        summary,
+        funds: fundsWithMetrics,
+        user,
+      },
+      {
+        headers: {
+          "Cache-Control": "private, no-cache, no-store, must-revalidate",
+        },
+      }
+    );
   } catch (error) {
     console.error("[API /api/user/funds GET] Error:", error);
     return NextResponse.json(
@@ -226,10 +233,17 @@ export async function DELETE(req: NextRequest) {
       include: { fund: true },
     });
 
-    if (!userFund || userFund.userId !== user.id) {
+    if (!userFund) {
       return NextResponse.json(
-        { error: "Fund holding not found or does not belong to you." },
+        { error: "Fund holding not found." },
         { status: 404 }
+      );
+    }
+
+    if (userFund.userId !== user.id) {
+      return NextResponse.json(
+        { error: "Forbidden. This fund holding belongs to another user." },
+        { status: 403 }
       );
     }
 

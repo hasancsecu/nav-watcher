@@ -7,7 +7,16 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   try {
     const user = await getCurrentUser();
-    return NextResponse.json({ user });
+    if (!user) {
+      return NextResponse.json(
+        { error: "Unauthorized. Please log in.", user: null },
+        { status: 401, headers: { "Cache-Control": "private, no-cache, no-store, must-revalidate" } },
+      );
+    }
+    return NextResponse.json(
+      { user },
+      { headers: { "Cache-Control": "private, no-cache, no-store, must-revalidate" } },
+    );
   } catch (error) {
     console.error("[API /api/auth/me GET] Error:", error);
     return NextResponse.json(
