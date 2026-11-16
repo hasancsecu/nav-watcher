@@ -255,7 +255,9 @@ function DashboardClientContent({
   // UI state
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isDataLoading, setIsDataLoading] = useState(false);
-  const [crudLoadingMessage, setCrudLoadingMessage] = useState<string | null>(null);
+  const [crudLoadingMessage, setCrudLoadingMessage] = useState<string | null>(
+    null,
+  );
   const [syncBanner, setSyncBanner] = useState<{
     type: "success" | "error" | "info";
     text: string;
@@ -559,8 +561,8 @@ function DashboardClientContent({
         <div className="mx-auto flex max-w-7xl w-full items-center justify-between gap-2 px-3 py-2.5 sm:px-6 sm:py-3.5 lg:px-8 min-w-0">
           {/* Logo & Brand */}
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
-            <div className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl bg-[#33c6e4]/15 shadow-sm p-1.5">
-              <img src="/icons/icon.svg" alt="NAV Watcher" className="h-full w-full object-contain" />
+            <div className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl bg-[#33c6e4]/20 text-[#155360] dark:text-[#33c6e4] shadow-sm">
+              <Sparkles className="h-5 w-5" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
@@ -913,275 +915,566 @@ function DashboardClientContent({
               }
             >
               {/* Top Quick Actions Bar */}
-            <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-slate-900 border theme-border rounded-2xl p-3 sm:p-4 shadow-sm">
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPreselectedFundIdForInv(funds[0]?.id || null);
-                    setIsAddInvestmentModalOpen(true);
-                  }}
-                  className="rounded-xl bg-[#33c6e4] hover:bg-[#2eb4cf] text-slate-950 px-3.5 py-2 text-xs font-bold transition shadow-sm inline-flex items-center gap-1.5"
-                >
-                  <Calendar className="h-4 w-4" />
-                  <span>Record Monthly SIP</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setIsAddFundModalOpen(true)}
-                  className="rounded-xl border theme-border px-3.5 py-2 text-xs font-semibold theme-text-primary hover:bg-slate-50 dark:hover:bg-slate-800 transition inline-flex items-center gap-1.5"
-                >
-                  <Plus className="h-3.5 w-3.5 text-[#33c6e4]" />
-                  <span>Add Another Fund</span>
-                </button>
-              </div>
-
-              <div className="flex items-center gap-2">
-                {isDataLoading && (
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#33c6e4]/15 text-[#155360] dark:text-[#33c6e4] text-xs font-bold animate-in fade-in">
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    <span className="truncate max-w-[140px] sm:max-w-none">{crudLoadingMessage || "Updating..."}</span>
-                  </div>
-                )}
-
-                <button
-                  type="button"
-                  disabled={isRefreshing}
-                  onClick={handleManualSync}
-                  className="rounded-xl border theme-border px-3 py-2 text-xs font-semibold theme-text-secondary hover:theme-text-primary transition inline-flex items-center gap-1.5 disabled:opacity-50"
-                >
-                  <RefreshCw
-                    className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin text-[#33c6e4]" : ""}`}
-                  />
-                  <span>{isRefreshing ? "Syncing..." : "Sync Live NAV"}</span>
-                </button>
-              </div>
-            </div>
-
-            {/* 1. Hero Portfolio Summary Card */}
-            <section
-              aria-labelledby="portfolio-summary-heading"
-              className="theme-surface rounded-2xl border p-4 sm:p-6 shadow-sm space-y-4"
-            >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b theme-border pb-4">
-                <div>
-                  <span className="text-[11px] font-bold uppercase tracking-wider theme-text-muted">
-                    My Mutual Funds Portfolio
-                  </span>
-                  <h2
-                    id="portfolio-summary-heading"
-                    className="text-2xl sm:text-3xl font-black tracking-tight theme-text-primary mt-0.5"
+              <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-slate-900 border theme-border rounded-2xl p-3 sm:p-4 shadow-sm">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPreselectedFundIdForInv(funds[0]?.id || null);
+                      setIsAddInvestmentModalOpen(true);
+                    }}
+                    className="rounded-xl bg-[#33c6e4] hover:bg-[#2eb4cf] text-slate-950 px-3.5 py-2 text-xs font-bold transition shadow-sm inline-flex items-center gap-1.5"
                   >
-                    ৳{formatBdt(summary.currentMarketValue, 2)}
-                  </h2>
+                    <Calendar className="h-4 w-4" />
+                    <span>Record Monthly SIP</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsAddFundModalOpen(true)}
+                    className="rounded-xl border theme-border px-3.5 py-2 text-xs font-semibold theme-text-primary hover:bg-slate-50 dark:hover:bg-slate-800 transition inline-flex items-center gap-1.5"
+                  >
+                    <Plus className="h-3.5 w-3.5 text-[#33c6e4]" />
+                    <span>Add Another Fund</span>
+                  </button>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span
-                    className={`inline-flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs sm:text-sm font-bold font-mono ${
-                      isNetGain ? "status-gain-badge" : "status-loss-badge"
-                    }`}
+                  {isDataLoading && (
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#33c6e4]/15 text-[#155360] dark:text-[#33c6e4] text-xs font-bold animate-in fade-in">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      <span className="truncate max-w-[140px] sm:max-w-none">
+                        {crudLoadingMessage || "Updating..."}
+                      </span>
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    disabled={isRefreshing}
+                    onClick={handleManualSync}
+                    className="rounded-xl border theme-border px-3 py-2 text-xs font-semibold theme-text-secondary hover:theme-text-primary transition inline-flex items-center gap-1.5 disabled:opacity-50"
                   >
-                    {isNetGain ? (
-                      <TrendingUp className="h-4 w-4 shrink-0 status-gain-text" />
-                    ) : (
-                      <TrendingDown className="h-4 w-4 shrink-0 status-loss-text" />
-                    )}
-                    <span>
-                      {isNetGain ? "+" : "-"}৳
-                      {formatBdt(Math.abs(summary.absoluteGainLoss), 2)} (
-                      {isNetGain ? "+" : ""}
-                      {summary.returnPct.toFixed(2)}%)
+                    <RefreshCw
+                      className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin text-[#33c6e4]" : ""}`}
+                    />
+                    <span>{isRefreshing ? "Syncing..." : "Sync Live NAV"}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* 1. Hero Portfolio Summary Card */}
+              <section
+                aria-labelledby="portfolio-summary-heading"
+                className="theme-surface rounded-2xl border p-4 sm:p-6 shadow-sm space-y-4"
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b theme-border pb-4">
+                  <div>
+                    <span className="text-[11px] font-bold uppercase tracking-wider theme-text-muted">
+                      My Mutual Funds Portfolio
                     </span>
-                  </span>
-                </div>
-              </div>
-
-              {/* 3 Key Metrics */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                <div className="theme-elevated rounded-xl border p-3">
-                  <span className="theme-text-muted block text-[11px]">
-                    Total Invested Capital
-                  </span>
-                  <strong className="font-mono text-sm sm:text-base font-bold theme-text-primary">
-                    ৳{formatBdt(summary.totalInvested, 2)}
-                  </strong>
-                </div>
-
-                <div className="theme-elevated rounded-xl border p-3">
-                  <span className="theme-text-muted block text-[11px]">
-                    Total Units Held
-                  </span>
-                  <strong className="font-mono text-sm sm:text-base font-bold text-[#155360] dark:text-[#33c6e4]">
-                    {Math.floor(
-                      summary.totalUnitsHeld ??
-                        funds.reduce(
-                          (acc, f) => acc + (f.totalUnitsHeld || 0),
-                          0,
-                        ),
-                    ).toLocaleString("en-BD")}{" "}
-                    units
-                  </strong>
-                  <span className="block text-[10px] theme-text-muted mt-0.5">
-                    Strictly Plain Integer
-                  </span>
-                </div>
-
-                <div className="theme-elevated rounded-xl border p-3">
-                  <span className="theme-text-muted block text-[11px]">
-                    Unallotted Cash Buffer
-                  </span>
-                  <strong className="font-mono text-sm sm:text-base font-bold text-amber-600 dark:text-amber-400">
-                    ৳{formatBdt(summary.totalFractionalCash, 2)}
-                  </strong>
-                  <span className="block text-[10px] theme-text-muted mt-0.5">
-                    Rolls to next SIP
-                  </span>
-                </div>
-
-                <div className="theme-elevated rounded-xl border p-3">
-                  <span className="theme-text-muted block text-[11px]">
-                    Funds Tracked
-                  </span>
-                  <strong className="font-mono text-sm sm:text-base font-bold theme-text-primary">
-                    {summary.fundsCount} Funds
-                  </strong>
-                  <span className="block text-[10px] theme-text-muted mt-0.5">
-                    In Portfolio
-                  </span>
-                </div>
-              </div>
-            </section>
-
-            {/* 2. User Fund Asset Cards */}
-            <section aria-labelledby="user-funds-heading" className="space-y-4">
-              <div className="flex items-center justify-between px-1">
-                <h3
-                  id="user-funds-heading"
-                  className="text-base font-bold theme-text-primary flex items-center gap-2"
-                >
-                  <span>My Mutual Funds</span>
-                  <span className="text-xs font-normal theme-text-muted">
-                    ({funds.length})
-                  </span>
-                </h3>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {funds.map((fund) => {
-                  const isGain = fund.absoluteGainLoss >= 0;
-                  const isExpanded = expandedInvestmentsFundId === fund.id;
-
-                  return (
-                    <div
-                      key={fund.id}
-                      className="rounded-2xl border theme-border theme-surface p-4 space-y-3.5 shadow-sm hover:border-[#33c6e4]/40 transition flex flex-col justify-between"
+                    <h2
+                      id="portfolio-summary-heading"
+                      className="text-2xl sm:text-3xl font-black tracking-tight theme-text-primary mt-0.5"
                     >
-                      <div className="space-y-3">
-                        {/* Fund Header */}
-                        <div className="flex items-start justify-between gap-2 border-b theme-border pb-3">
-                          <div className="min-w-0">
+                      ৳{formatBdt(summary.currentMarketValue, 2)}
+                    </h2>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs sm:text-sm font-bold font-mono ${
+                        isNetGain ? "status-gain-badge" : "status-loss-badge"
+                      }`}
+                    >
+                      {isNetGain ? (
+                        <TrendingUp className="h-4 w-4 shrink-0 status-gain-text" />
+                      ) : (
+                        <TrendingDown className="h-4 w-4 shrink-0 status-loss-text" />
+                      )}
+                      <span>
+                        {isNetGain ? "+" : "-"}৳
+                        {formatBdt(Math.abs(summary.absoluteGainLoss), 2)} (
+                        {isNetGain ? "+" : ""}
+                        {summary.returnPct.toFixed(2)}%)
+                      </span>
+                    </span>
+                  </div>
+                </div>
+
+                {/* 3 Key Metrics */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                  <div className="theme-elevated rounded-xl border p-3">
+                    <span className="theme-text-muted block text-[11px]">
+                      Total Invested Capital
+                    </span>
+                    <strong className="font-mono text-sm sm:text-base font-bold theme-text-primary">
+                      ৳{formatBdt(summary.totalInvested, 2)}
+                    </strong>
+                  </div>
+
+                  <div className="theme-elevated rounded-xl border p-3">
+                    <span className="theme-text-muted block text-[11px]">
+                      Total Units Held
+                    </span>
+                    <strong className="font-mono text-sm sm:text-base font-bold text-[#155360] dark:text-[#33c6e4]">
+                      {Math.floor(
+                        summary.totalUnitsHeld ??
+                          funds.reduce(
+                            (acc, f) => acc + (f.totalUnitsHeld || 0),
+                            0,
+                          ),
+                      ).toLocaleString("en-BD")}{" "}
+                      units
+                    </strong>
+                    <span className="block text-[10px] theme-text-muted mt-0.5">
+                      Strictly Plain Integer
+                    </span>
+                  </div>
+
+                  <div className="theme-elevated rounded-xl border p-3">
+                    <span className="theme-text-muted block text-[11px]">
+                      Unallotted Cash Buffer
+                    </span>
+                    <strong className="font-mono text-sm sm:text-base font-bold text-amber-600 dark:text-amber-400">
+                      ৳{formatBdt(summary.totalFractionalCash, 2)}
+                    </strong>
+                    <span className="block text-[10px] theme-text-muted mt-0.5">
+                      Rolls to next SIP
+                    </span>
+                  </div>
+
+                  <div className="theme-elevated rounded-xl border p-3">
+                    <span className="theme-text-muted block text-[11px]">
+                      Funds Tracked
+                    </span>
+                    <strong className="font-mono text-sm sm:text-base font-bold theme-text-primary">
+                      {summary.fundsCount} Funds
+                    </strong>
+                    <span className="block text-[10px] theme-text-muted mt-0.5">
+                      In Portfolio
+                    </span>
+                  </div>
+                </div>
+              </section>
+
+              {/* 2. User Fund Asset Cards */}
+              <section
+                aria-labelledby="user-funds-heading"
+                className="space-y-4"
+              >
+                <div className="flex items-center justify-between px-1">
+                  <h3
+                    id="user-funds-heading"
+                    className="text-base font-bold theme-text-primary flex items-center gap-2"
+                  >
+                    <span>My Mutual Funds</span>
+                    <span className="text-xs font-normal theme-text-muted">
+                      ({funds.length})
+                    </span>
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {funds.map((fund) => {
+                    const isGain = fund.absoluteGainLoss >= 0;
+                    const isExpanded = expandedInvestmentsFundId === fund.id;
+
+                    return (
+                      <div
+                        key={fund.id}
+                        className="rounded-2xl border theme-border theme-surface p-4 space-y-3.5 shadow-sm hover:border-[#33c6e4]/40 transition flex flex-col justify-between"
+                      >
+                        <div className="space-y-3">
+                          {/* Fund Header */}
+                          <div className="flex items-start justify-between gap-2 border-b theme-border pb-3">
+                            <div className="min-w-0">
+                              <span
+                                className={`inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-bold mb-1 ${
+                                  fund.category === "Shariah"
+                                    ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                                    : fund.category === "Income"
+                                      ? "bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 border border-sky-200 dark:border-sky-800"
+                                      : "bg-[#ebf9fc] text-[#155360] dark:bg-slate-800 dark:text-[#33c6e4] border border-[#c0edf7] dark:border-slate-700"
+                                }`}
+                              >
+                                {fund.category}
+                              </span>
+                              <h4 className="text-sm font-bold theme-text-primary truncate">
+                                {fund.name}
+                              </h4>
+                              <p className="text-[11px] theme-text-muted truncate mt-0.5">
+                                {fund.fundManager}
+                              </p>
+                            </div>
+
+                            <a
+                              href={fund.biniUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              title="View Fund Details"
+                              className="p-1.5 rounded-lg border theme-border text-slate-400 hover:text-[#33c6e4] transition shrink-0"
+                            >
+                              <ExternalLink className="h-3.5 w-3.5" />
+                            </a>
+                          </div>
+
+                          {/* NAV Badge */}
+                          <div className="flex items-center justify-between text-xs rounded-xl bg-slate-50 dark:bg-slate-800/50 p-2 border theme-border">
+                            <span className="theme-text-muted">
+                              Latest Scraped NAV:
+                            </span>
+                            <span className="font-mono font-bold status-gain-text">
+                              ৳{fund.effectiveNav.toFixed(3)}
+                            </span>
+                          </div>
+
+                          {/* Financial Stats */}
+                          <div className="grid grid-cols-2 gap-2 text-xs pt-1">
+                            <div>
+                              <span className="text-[10px] theme-text-muted block">
+                                Invested Capital
+                              </span>
+                              <strong className="font-mono text-xs font-bold theme-text-primary">
+                                ৳{formatBdt(fund.totalInvested, 2)}
+                              </strong>
+                            </div>
+                            <div className="text-right">
+                              <span className="text-[10px] theme-text-muted block">
+                                Market Value
+                              </span>
+                              <strong className="font-mono text-xs font-bold theme-text-primary">
+                                ৳{formatBdt(fund.currentMarketValue, 2)}
+                              </strong>
+                            </div>
+                            <div>
+                              <span className="text-[10px] theme-text-muted block">
+                                Integer Units Held
+                              </span>
+                              <strong className="font-mono text-xs font-bold text-[#155360] dark:text-[#33c6e4]">
+                                {Math.floor(fund.totalUnitsHeld).toLocaleString(
+                                  "en-BD",
+                                )}{" "}
+                                units
+                              </strong>
+                            </div>
+                            <div className="text-right">
+                              <span className="text-[10px] theme-text-muted block">
+                                Cash Buffer
+                              </span>
+                              <strong className="font-mono text-xs font-bold text-amber-600 dark:text-amber-400">
+                                ৳{formatBdt(fund.fractionalCashBalance, 2)}
+                              </strong>
+                            </div>
+                          </div>
+
+                          {/* Return Badge */}
+                          <div className="flex items-center justify-between text-xs border-t theme-border pt-2.5">
+                            <span className="theme-text-muted text-[11px]">
+                              Net Gain / Loss
+                            </span>
                             <span
-                              className={`inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-bold mb-1 ${
-                                fund.category === "Shariah"
-                                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
-                                  : fund.category === "Income"
-                                    ? "bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 border border-sky-200 dark:border-sky-800"
-                                    : "bg-[#ebf9fc] text-[#155360] dark:bg-slate-800 dark:text-[#33c6e4] border border-[#c0edf7] dark:border-slate-700"
+                              className={`font-mono text-xs font-bold px-2 py-0.5 rounded-md ${
+                                isGain
+                                  ? "status-gain-badge"
+                                  : "status-loss-badge"
                               }`}
                             >
-                              {fund.category}
+                              {isGain ? "+" : "-"}৳
+                              {formatBdt(Math.abs(fund.absoluteGainLoss), 2)} (
+                              {isGain ? "+" : ""}
+                              {fund.returnPct.toFixed(2)}%)
                             </span>
-                            <h4 className="text-sm font-bold theme-text-primary truncate">
+                          </div>
+                        </div>
+
+                        {/* Card Action Buttons */}
+                        <div className="pt-3 border-t theme-border space-y-2">
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setPreselectedFundIdForInv(fund.id);
+                                setIsAddInvestmentModalOpen(true);
+                              }}
+                              className="flex-1 rounded-xl bg-[#33c6e4] hover:bg-[#2eb4cf] text-slate-950 py-2.5 px-3 text-xs font-bold transition shadow-sm inline-flex items-center justify-center gap-1.5"
+                            >
+                              <Calendar className="h-3.5 w-3.5" />
+                              <span>Add Investment</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleDeleteFund(fund.id, fund.name)
+                              }
+                              title="Remove fund from portfolio"
+                              className="rounded-xl border border-rose-200 dark:border-rose-900/60 p-2.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition shrink-0"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+
+                          {/* View Investments History Toggle */}
+                          {fund.investments && fund.investments.length > 0 && (
+                            <div>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setExpandedInvestmentsFundId((prev) =>
+                                    prev === fund.id ? null : fund.id,
+                                  )
+                                }
+                                className="w-full text-center text-[11px] theme-text-secondary hover:theme-text-primary py-1 font-semibold flex items-center justify-center gap-1"
+                              >
+                                <span>
+                                  {isExpanded ? "Hide" : "View"}{" "}
+                                  {fund.investments.length} logged investments
+                                </span>
+                                {isExpanded ? (
+                                  <ChevronUp className="h-3 w-3" />
+                                ) : (
+                                  <ChevronDown className="h-3 w-3" />
+                                )}
+                              </button>
+
+                              {/* Investment Entries List Drawer */}
+                              {isExpanded && (
+                                <div className="mt-2 space-y-1.5 rounded-xl border theme-border p-2 bg-slate-50/50 dark:bg-slate-900/50 text-[11px] max-h-48 overflow-y-auto">
+                                  {fund.investments.map((inv: any) => (
+                                    <div
+                                      key={inv.id}
+                                      className="flex items-center justify-between border-b theme-border pb-1.5 last:border-b-0"
+                                    >
+                                      <div>
+                                        <span className="font-bold theme-text-primary block">
+                                          {inv.calendarMonth} ({inv.type})
+                                        </span>
+                                        <span className="theme-text-muted">
+                                          ৳{formatBdt(inv.cashInvested, 0)} @ ৳
+                                          {inv.executionNav.toFixed(3)}
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="font-mono font-bold text-[#155360] dark:text-[#33c6e4]">
+                                          +{inv.unitsAllotted} units
+                                        </span>
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            handleOpenEditInvestment(inv, fund)
+                                          }
+                                          title="Edit investment record"
+                                          className="p-1 rounded-md text-slate-400 hover:text-[#33c6e4] hover:bg-slate-200/60 dark:hover:bg-slate-800 transition"
+                                        >
+                                          <Pencil className="h-3.5 w-3.5" />
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            handleDeleteInvestment(
+                                              inv.id,
+                                              inv.calendarMonth,
+                                            )
+                                          }
+                                          title="Delete investment"
+                                          className="p-1 rounded-md text-rose-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
+                                        >
+                                          <Trash2 className="h-3.5 w-3.5" />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            </div>
+
+            {/* TAB 2: CHARTS (Historical Investment & Performance Comparison Chart) */}
+            <div
+              className={mobileTab === "charts" ? "block" : "hidden sm:block"}
+            >
+              {funds.length > 0 && (
+                <HistoricalInvestmentComparisonChart
+                  funds={funds}
+                  snapshots={snapshots}
+                />
+              )}
+            </div>
+
+            {/* TAB 3: COMPARE (Invested Funds Comparison Section) */}
+            <div
+              className={mobileTab === "compare" ? "block" : "hidden sm:block"}
+            >
+              {funds.length > 0 && (
+                <FundComparisonSection
+                  funds={funds}
+                  totalPortfolioInvested={summary.totalInvested}
+                  totalPortfolioValue={summary.currentMarketValue}
+                />
+              )}
+            </div>
+
+            {/* TAB 4: BREAKDOWN (Detailed SIP Valuation & Formula Breakdown) */}
+            <div
+              className={
+                mobileTab === "breakdown" ? "block" : "hidden sm:block"
+              }
+            >
+              {/* 3. Detailed SIP Valuation Breakdown Section */}
+              <section
+                aria-labelledby="fund-breakdown-heading"
+                className="theme-surface rounded-2xl border p-4 sm:p-6 shadow-sm space-y-4"
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h3
+                      id="fund-breakdown-heading"
+                      className="text-sm sm:text-lg font-extrabold tracking-tight theme-text-primary"
+                    >
+                      Detailed SIP Valuation &amp; Formula Breakdown
+                    </h3>
+                    <p className="text-xs sm:text-sm theme-text-secondary mt-0.5 leading-relaxed">
+                      Units = ⌊Invested ÷ Avg Price⌋ · Market Value = Units ×
+                      Latest NAV · Unallotted remainder stays in cash buffer
+                    </p>
+                  </div>
+
+                  {/* Mobile View Toggle: Cards View vs Wide Table */}
+                  <div className="flex sm:hidden items-center p-1 rounded-xl theme-elevated border theme-border shrink-0 self-start">
+                    <button
+                      type="button"
+                      onClick={() => setMobileBreakdownMode("cards")}
+                      className={`px-3 py-1.5 text-xs font-bold rounded-lg transition ${
+                        mobileBreakdownMode === "cards"
+                          ? "bg-[#33c6e4] text-slate-950 shadow-sm"
+                          : "theme-text-secondary hover:theme-text-primary"
+                      }`}
+                    >
+                      Cards View
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setMobileBreakdownMode("table")}
+                      className={`px-3 py-1.5 text-xs font-bold rounded-lg transition ${
+                        mobileBreakdownMode === "table"
+                          ? "bg-[#33c6e4] text-slate-950 shadow-sm"
+                          : "theme-text-secondary hover:theme-text-primary"
+                      }`}
+                    >
+                      Wide Table
+                    </button>
+                  </div>
+                </div>
+
+                {/* Mobile Cards View */}
+                <div
+                  className={`${
+                    mobileBreakdownMode === "cards"
+                      ? "flex flex-col gap-3 sm:hidden"
+                      : "hidden"
+                  }`}
+                >
+                  {funds.map((fund) => {
+                    const isGain = fund.absoluteGainLoss >= 0;
+                    return (
+                      <article
+                        key={fund.id}
+                        className="theme-elevated rounded-2xl border theme-border p-4 space-y-3 overflow-hidden shadow-sm"
+                      >
+                        <div className="flex items-start justify-between gap-2 border-b theme-border pb-2.5 min-w-0">
+                          <div className="min-w-0 flex-1">
+                            <h4
+                              className="text-sm font-extrabold theme-text-primary truncate"
+                              title={fund.name}
+                            >
                               {fund.name}
                             </h4>
-                            <p className="text-[11px] theme-text-muted truncate mt-0.5">
-                              {fund.fundManager}
+                            <p className="text-[11px] theme-text-muted mt-0.5 truncate">
+                              NAV Date: {fund.navEffectiveDate || "Latest Day"}{" "}
+                              · {fund.fundManager}
                             </p>
                           </div>
-
-                          <a
-                            href={fund.biniUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            title="View Fund Details"
-                            className="p-1.5 rounded-lg border theme-border text-slate-400 hover:text-[#33c6e4] transition shrink-0"
-                          >
-                            <ExternalLink className="h-3.5 w-3.5" />
-                          </a>
-                        </div>
-
-                        {/* NAV Badge */}
-                        <div className="flex items-center justify-between text-xs rounded-xl bg-slate-50 dark:bg-slate-800/50 p-2 border theme-border">
-                          <span className="theme-text-muted">
-                            Latest Scraped NAV:
-                          </span>
-                          <span className="font-mono font-bold status-gain-text">
-                            ৳{fund.effectiveNav.toFixed(3)}
+                          <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-md bg-[#33c6e4]/15 text-[#155360] dark:text-[#33c6e4] shrink-0 whitespace-nowrap">
+                            {fund.category}
                           </span>
                         </div>
 
-                        {/* Financial Stats */}
-                        <div className="grid grid-cols-2 gap-2 text-xs pt-1">
-                          <div>
-                            <span className="text-[10px] theme-text-muted block">
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div className="theme-surface rounded-lg border p-2.5">
+                            <span className="text-[10px] theme-text-muted uppercase font-bold block">
                               Invested Capital
                             </span>
-                            <strong className="font-mono text-xs font-bold theme-text-primary">
+                            <span className="font-mono text-sm font-bold theme-text-primary">
                               ৳{formatBdt(fund.totalInvested, 2)}
-                            </strong>
-                          </div>
-                          <div className="text-right">
-                            <span className="text-[10px] theme-text-muted block">
-                              Market Value
                             </span>
-                            <strong className="font-mono text-xs font-bold theme-text-primary">
-                              ৳{formatBdt(fund.currentMarketValue, 2)}
-                            </strong>
                           </div>
-                          <div>
-                            <span className="text-[10px] theme-text-muted block">
+                          <div className="theme-surface rounded-lg border p-2.5">
+                            <span className="text-[10px] theme-text-muted uppercase font-bold block">
+                              Avg Buy Cost
+                            </span>
+                            <span className="font-mono text-sm font-bold theme-text-primary">
+                              ৳{fund.averageBuyPrice.toFixed(4)}
+                            </span>
+                          </div>
+                          <div className="theme-surface rounded-lg border p-2.5">
+                            <span className="text-[10px] theme-text-muted uppercase font-bold block">
                               Integer Units Held
                             </span>
-                            <strong className="font-mono text-xs font-bold text-[#155360] dark:text-[#33c6e4]">
+                            <span className="font-mono text-sm font-bold text-[#155360] dark:text-[#33c6e4]">
                               {Math.floor(fund.totalUnitsHeld).toLocaleString(
                                 "en-BD",
                               )}{" "}
                               units
-                            </strong>
+                            </span>
+                          </div>
+                          <div className="theme-surface rounded-lg border p-2.5">
+                            <span className="text-[10px] theme-text-muted uppercase font-bold block">
+                              Current Scraped NAV
+                            </span>
+                            <span className="font-mono text-sm font-bold status-gain-text">
+                              ৳{fund.effectiveNav.toFixed(3)}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="theme-surface flex items-center justify-between rounded-lg border p-3">
+                          <div>
+                            <span className="text-[10px] theme-text-muted uppercase font-bold block">
+                              Current Market Value
+                            </span>
+                            <span className="font-mono text-base font-black theme-text-primary">
+                              ৳{formatBdt(fund.currentMarketValue, 2)}
+                            </span>
                           </div>
                           <div className="text-right">
-                            <span className="text-[10px] theme-text-muted block">
-                              Cash Buffer
+                            <span className="text-[10px] theme-text-muted uppercase font-bold block">
+                              Net Gain / Loss
                             </span>
-                            <strong className="font-mono text-xs font-bold text-amber-600 dark:text-amber-400">
-                              ৳{formatBdt(fund.fractionalCashBalance, 2)}
-                            </strong>
+                            <span
+                              className={`inline-flex items-center rounded-md px-2 py-0.5 font-mono text-xs font-bold mt-0.5 ${
+                                isGain
+                                  ? "status-gain-badge"
+                                  : "status-loss-badge"
+                              }`}
+                            >
+                              {isGain ? "+" : "-"}৳
+                              {formatBdt(Math.abs(fund.absoluteGainLoss), 2)} (
+                              {isGain ? "+" : ""}
+                              {fund.returnPct.toFixed(2)}%)
+                            </span>
                           </div>
                         </div>
 
-                        {/* Return Badge */}
-                        <div className="flex items-center justify-between text-xs border-t theme-border pt-2.5">
-                          <span className="theme-text-muted text-[11px]">
-                            Net Gain / Loss
-                          </span>
-                          <span
-                            className={`font-mono text-xs font-bold px-2 py-0.5 rounded-md ${
-                              isGain ? "status-gain-badge" : "status-loss-badge"
-                            }`}
-                          >
-                            {isGain ? "+" : "-"}৳
-                            {formatBdt(Math.abs(fund.absoluteGainLoss), 2)} (
-                            {isGain ? "+" : ""}
-                            {fund.returnPct.toFixed(2)}%)
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Card Action Buttons */}
-                      <div className="pt-3 border-t theme-border space-y-2">
-                        <div className="flex items-center gap-2">
+                        {/* Card Action Buttons at bottom - 100% contained, zero horizontal overflow */}
+                        <div className="pt-2.5 border-t theme-border flex items-center gap-2">
                           <button
                             type="button"
                             onClick={() => {
@@ -1203,553 +1496,282 @@ function DashboardClientContent({
                             <Trash2 className="h-4 w-4" />
                           </button>
                         </div>
-
-                        {/* View Investments History Toggle */}
-                        {fund.investments && fund.investments.length > 0 && (
-                          <div>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setExpandedInvestmentsFundId((prev) =>
-                                  prev === fund.id ? null : fund.id,
-                                )
-                              }
-                              className="w-full text-center text-[11px] theme-text-secondary hover:theme-text-primary py-1 font-semibold flex items-center justify-center gap-1"
-                            >
-                              <span>
-                                {isExpanded ? "Hide" : "View"}{" "}
-                                {fund.investments.length} logged investments
-                              </span>
-                              {isExpanded ? (
-                                <ChevronUp className="h-3 w-3" />
-                              ) : (
-                                <ChevronDown className="h-3 w-3" />
-                              )}
-                            </button>
-
-                            {/* Investment Entries List Drawer */}
-                            {isExpanded && (
-                              <div className="mt-2 space-y-1.5 rounded-xl border theme-border p-2 bg-slate-50/50 dark:bg-slate-900/50 text-[11px] max-h-48 overflow-y-auto">
-                                {fund.investments.map((inv: any) => (
-                                  <div
-                                    key={inv.id}
-                                    className="flex items-center justify-between border-b theme-border pb-1.5 last:border-b-0"
-                                  >
-                                    <div>
-                                      <span className="font-bold theme-text-primary block">
-                                        {inv.calendarMonth} ({inv.type})
-                                      </span>
-                                      <span className="theme-text-muted">
-                                        ৳{formatBdt(inv.cashInvested, 0)} @ ৳
-                                        {inv.executionNav.toFixed(3)}
-                                      </span>
-                                    </div>
-                                    <div className="flex items-center gap-1.5">
-                                      <span className="font-mono font-bold text-[#155360] dark:text-[#33c6e4]">
-                                        +{inv.unitsAllotted} units
-                                      </span>
-                                      <button
-                                        type="button"
-                                        onClick={() =>
-                                          handleOpenEditInvestment(inv, fund)
-                                        }
-                                        title="Edit investment record"
-                                        className="p-1 rounded-md text-slate-400 hover:text-[#33c6e4] hover:bg-slate-200/60 dark:hover:bg-slate-800 transition"
-                                      >
-                                        <Pencil className="h-3.5 w-3.5" />
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() =>
-                                          handleDeleteInvestment(
-                                            inv.id,
-                                            inv.calendarMonth,
-                                          )
-                                        }
-                                        title="Delete investment"
-                                        className="p-1 rounded-md text-rose-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
-                                      >
-                                        <Trash2 className="h-3.5 w-3.5" />
-                                      </button>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-          </div>
-
-          {/* TAB 2: CHARTS (Historical Investment & Performance Comparison Chart) */}
-          <div className={mobileTab === "charts" ? "block" : "hidden sm:block"}>
-            {funds.length > 0 && (
-              <HistoricalInvestmentComparisonChart
-                funds={funds}
-                snapshots={snapshots}
-              />
-            )}
-          </div>
-
-          {/* TAB 3: COMPARE (Invested Funds Comparison Section) */}
-          <div className={mobileTab === "compare" ? "block" : "hidden sm:block"}>
-            {funds.length > 0 && (
-              <FundComparisonSection
-                funds={funds}
-                totalPortfolioInvested={summary.totalInvested}
-                totalPortfolioValue={summary.currentMarketValue}
-              />
-            )}
-          </div>
-
-          {/* TAB 4: BREAKDOWN (Detailed SIP Valuation & Formula Breakdown) */}
-          <div className={mobileTab === "breakdown" ? "block" : "hidden sm:block"}>
-            {/* 3. Detailed SIP Valuation Breakdown Section */}
-            <section
-              aria-labelledby="fund-breakdown-heading"
-              className="theme-surface rounded-2xl border p-4 sm:p-6 shadow-sm space-y-4"
-            >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <h3
-                    id="fund-breakdown-heading"
-                    className="text-sm sm:text-lg font-extrabold tracking-tight theme-text-primary"
-                  >
-                    Detailed SIP Valuation &amp; Formula Breakdown
-                  </h3>
-                  <p className="text-xs sm:text-sm theme-text-secondary mt-0.5 leading-relaxed">
-                    Units = ⌊Invested ÷ Avg Price⌋ · Market Value = Units ×
-                    Latest NAV · Unallotted remainder stays in cash buffer
-                  </p>
+                      </article>
+                    );
+                  })}
                 </div>
 
-                {/* Mobile View Toggle: Cards View vs Wide Table */}
-                <div className="flex sm:hidden items-center p-1 rounded-xl theme-elevated border theme-border shrink-0 self-start">
-                  <button
-                    type="button"
-                    onClick={() => setMobileBreakdownMode("cards")}
-                    className={`px-3 py-1.5 text-xs font-bold rounded-lg transition ${
-                      mobileBreakdownMode === "cards"
-                        ? "bg-[#33c6e4] text-slate-950 shadow-sm"
-                        : "theme-text-secondary hover:theme-text-primary"
-                    }`}
-                  >
-                    Cards View
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setMobileBreakdownMode("table")}
-                    className={`px-3 py-1.5 text-xs font-bold rounded-lg transition ${
-                      mobileBreakdownMode === "table"
-                        ? "bg-[#33c6e4] text-slate-950 shadow-sm"
-                        : "theme-text-secondary hover:theme-text-primary"
-                    }`}
-                  >
-                    Wide Table
-                  </button>
-                </div>
-              </div>
-
-              {/* Mobile Cards View */}
-              <div
-                className={`${
-                  mobileBreakdownMode === "cards"
-                    ? "flex flex-col gap-3 sm:hidden"
-                    : "hidden"
-                }`}
-              >
-                {funds.map((fund) => {
-                  const isGain = fund.absoluteGainLoss >= 0;
-                  return (
-                    <article
-                      key={fund.id}
-                      className="theme-elevated rounded-2xl border theme-border p-4 space-y-3 overflow-hidden shadow-sm"
-                    >
-                      <div className="flex items-start justify-between gap-2 border-b theme-border pb-2.5 min-w-0">
-                        <div className="min-w-0 flex-1">
-                          <h4
-                            className="text-sm font-extrabold theme-text-primary truncate"
-                            title={fund.name}
+                {/* Desktop / Wide Table View */}
+                <div
+                  className={`${
+                    mobileBreakdownMode === "table"
+                      ? "block"
+                      : "hidden sm:block"
+                  }`}
+                >
+                  <div className="table-wrapper scrollbar-thin rounded-xl border theme-border">
+                    <table className="responsive-fund-table text-left text-xs sm:text-sm min-w-[760px] w-full">
+                      <thead>
+                        <tr className="theme-elevated border-b theme-border text-xs uppercase tracking-wider theme-text-secondary">
+                          <th scope="col" className="py-3 px-3.5 font-bold">
+                            Mutual Fund
+                          </th>
+                          <th
+                            scope="col"
+                            className="py-3 px-3.5 font-bold text-right"
                           >
-                            {fund.name}
-                          </h4>
-                          <p className="text-[11px] theme-text-muted mt-0.5 truncate">
-                            NAV Date: {fund.navEffectiveDate || "Latest Day"} ·{" "}
-                            {fund.fundManager}
-                          </p>
-                        </div>
-                        <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-md bg-[#33c6e4]/15 text-[#155360] dark:text-[#33c6e4] shrink-0 whitespace-nowrap">
-                          {fund.category}
-                        </span>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div className="theme-surface rounded-lg border p-2.5">
-                          <span className="text-[10px] theme-text-muted uppercase font-bold block">
-                            Invested Capital
-                          </span>
-                          <span className="font-mono text-sm font-bold theme-text-primary">
-                            ৳{formatBdt(fund.totalInvested, 2)}
-                          </span>
-                        </div>
-                        <div className="theme-surface rounded-lg border p-2.5">
-                          <span className="text-[10px] theme-text-muted uppercase font-bold block">
-                            Avg Buy Cost
-                          </span>
-                          <span className="font-mono text-sm font-bold theme-text-primary">
-                            ৳{fund.averageBuyPrice.toFixed(4)}
-                          </span>
-                        </div>
-                        <div className="theme-surface rounded-lg border p-2.5">
-                          <span className="text-[10px] theme-text-muted uppercase font-bold block">
-                            Integer Units Held
-                          </span>
-                          <span className="font-mono text-sm font-bold text-[#155360] dark:text-[#33c6e4]">
-                            {Math.floor(fund.totalUnitsHeld).toLocaleString(
-                              "en-BD",
-                            )}{" "}
-                            units
-                          </span>
-                        </div>
-                        <div className="theme-surface rounded-lg border p-2.5">
-                          <span className="text-[10px] theme-text-muted uppercase font-bold block">
-                            Current Scraped NAV
-                          </span>
-                          <span className="font-mono text-sm font-bold status-gain-text">
-                            ৳{fund.effectiveNav.toFixed(3)}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="theme-surface flex items-center justify-between rounded-lg border p-3">
-                        <div>
-                          <span className="text-[10px] theme-text-muted uppercase font-bold block">
-                            Current Market Value
-                          </span>
-                          <span className="font-mono text-base font-black theme-text-primary">
-                            ৳{formatBdt(fund.currentMarketValue, 2)}
-                          </span>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-[10px] theme-text-muted uppercase font-bold block">
-                            Net Gain / Loss
-                          </span>
-                          <span
-                            className={`inline-flex items-center rounded-md px-2 py-0.5 font-mono text-xs font-bold mt-0.5 ${
-                              isGain ? "status-gain-badge" : "status-loss-badge"
-                            }`}
+                            Current NAV
+                          </th>
+                          <th
+                            scope="col"
+                            className="py-3 px-3.5 font-bold text-right"
                           >
-                            {isGain ? "+" : "-"}৳
-                            {formatBdt(Math.abs(fund.absoluteGainLoss), 2)} (
-                            {isGain ? "+" : ""}
-                            {fund.returnPct.toFixed(2)}%)
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Card Action Buttons at bottom - 100% contained, zero horizontal overflow */}
-                      <div className="pt-2.5 border-t theme-border flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setPreselectedFundIdForInv(fund.id);
-                            setIsAddInvestmentModalOpen(true);
-                          }}
-                          className="flex-1 rounded-xl bg-[#33c6e4] hover:bg-[#2eb4cf] text-slate-950 py-2.5 px-3 text-xs font-bold transition shadow-sm inline-flex items-center justify-center gap-1.5"
-                        >
-                          <Calendar className="h-3.5 w-3.5" />
-                          <span>Add Investment</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteFund(fund.id, fund.name)}
-                          title="Remove fund from portfolio"
-                          className="rounded-xl border border-rose-200 dark:border-rose-900/60 p-2.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition shrink-0"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </article>
-                  );
-                })}
-              </div>
-
-              {/* Desktop / Wide Table View */}
-              <div
-                className={`${
-                  mobileBreakdownMode === "table" ? "block" : "hidden sm:block"
-                }`}
-              >
-                <div className="table-wrapper scrollbar-thin rounded-xl border theme-border">
-                  <table className="responsive-fund-table text-left text-xs sm:text-sm min-w-[760px] w-full">
-                    <thead>
-                      <tr className="theme-elevated border-b theme-border text-xs uppercase tracking-wider theme-text-secondary">
-                        <th scope="col" className="py-3 px-3.5 font-bold">
-                          Mutual Fund
-                        </th>
-                        <th
-                          scope="col"
-                          className="py-3 px-3.5 font-bold text-right"
-                        >
-                          Current NAV
-                        </th>
-                        <th
-                          scope="col"
-                          className="py-3 px-3.5 font-bold text-right"
-                        >
-                          Avg Buy Price
-                        </th>
-                        <th
-                          scope="col"
-                          className="py-3 px-3.5 font-bold text-right"
-                        >
-                          Units (Integer)
-                        </th>
-                        <th
-                          scope="col"
-                          className="py-3 px-3.5 font-bold text-right"
-                        >
-                          Invested (BDT)
-                        </th>
-                        <th
-                          scope="col"
-                          className="py-3 px-3.5 font-bold text-right"
-                        >
-                          Current Value
-                        </th>
-                        <th
-                          scope="col"
-                          className="py-3 px-3.5 font-bold text-right"
-                        >
-                          Gain / Loss
-                        </th>
-                        <th
-                          scope="col"
-                          className="py-3 px-3.5 font-bold text-right"
-                        >
-                          Action
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-500/15">
-                      {funds.map((fund) => {
-                        const isGain = fund.absoluteGainLoss >= 0;
-                        return (
-                          <tr
-                            key={fund.id}
-                            className="hover:bg-slate-500/5 transition"
+                            Avg Buy Price
+                          </th>
+                          <th
+                            scope="col"
+                            className="py-3 px-3.5 font-bold text-right"
                           >
-                            <th
-                              scope="row"
-                              className="py-3 px-3.5 font-bold theme-text-primary whitespace-nowrap"
+                            Units (Integer)
+                          </th>
+                          <th
+                            scope="col"
+                            className="py-3 px-3.5 font-bold text-right"
+                          >
+                            Invested (BDT)
+                          </th>
+                          <th
+                            scope="col"
+                            className="py-3 px-3.5 font-bold text-right"
+                          >
+                            Current Value
+                          </th>
+                          <th
+                            scope="col"
+                            className="py-3 px-3.5 font-bold text-right"
+                          >
+                            Gain / Loss
+                          </th>
+                          <th
+                            scope="col"
+                            className="py-3 px-3.5 font-bold text-right"
+                          >
+                            Action
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-500/15">
+                        {funds.map((fund) => {
+                          const isGain = fund.absoluteGainLoss >= 0;
+                          return (
+                            <tr
+                              key={fund.id}
+                              className="hover:bg-slate-500/5 transition"
                             >
-                              <div>{fund.name}</div>
-                              <div className="text-[11px] font-medium theme-text-muted mt-0.5">
-                                {fund.category} · {fund.fundManager}
-                              </div>
-                            </th>
-                            <td className="py-3 px-3.5 font-mono text-right status-gain-text font-bold whitespace-nowrap">
-                              ৳{fund.effectiveNav.toFixed(3)}
-                            </td>
-                            <td className="py-3 px-3.5 font-mono text-right font-semibold theme-text-primary whitespace-nowrap">
-                              ৳{fund.averageBuyPrice.toFixed(4)}
-                            </td>
-                            <td className="py-3 px-3.5 font-mono text-right font-bold text-[#155360] dark:text-[#33c6e4] whitespace-nowrap">
-                              <div>
-                                {Math.floor(fund.totalUnitsHeld).toLocaleString(
-                                  "en-BD",
-                                )}
-                              </div>
-                              {fund.fractionalCashBalance > 0 && (
-                                <div className="text-[10px] text-amber-600 dark:text-amber-400 font-normal">
-                                  +৳{formatBdt(fund.fractionalCashBalance, 2)}{" "}
-                                  buffer
-                                </div>
-                              )}
-                            </td>
-                            <td className="py-3 px-3.5 font-mono text-right font-semibold theme-text-primary whitespace-nowrap">
-                              ৳{formatBdt(fund.totalInvested, 2)}
-                            </td>
-                            <td className="py-3 px-3.5 font-mono text-right font-extrabold theme-text-primary whitespace-nowrap">
-                              ৳{formatBdt(fund.currentMarketValue, 2)}
-                            </td>
-                            <td className="py-3 px-3.5 font-mono text-right whitespace-nowrap">
-                              <span
-                                className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-bold font-mono ${
-                                  isGain
-                                    ? "status-gain-badge"
-                                    : "status-loss-badge"
-                                }`}
+                              <th
+                                scope="row"
+                                className="py-3 px-3.5 font-bold theme-text-primary whitespace-nowrap"
                               >
-                                {isGain ? "+" : "-"}৳
-                                {formatBdt(Math.abs(fund.absoluteGainLoss), 2)}{" "}
-                                ({isGain ? "+" : ""}
-                                {fund.returnPct.toFixed(2)}%)
-                              </span>
-                            </td>
-                            <td className="py-3 px-3.5 text-right whitespace-nowrap">
-                              <div className="inline-flex items-center gap-1.5">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setPreselectedFundIdForInv(fund.id);
-                                    setIsAddInvestmentModalOpen(true);
-                                  }}
-                                  className="rounded-lg bg-[#33c6e4] hover:bg-[#2eb4cf] text-slate-950 px-3 py-1.5 text-xs font-bold transition shadow-sm inline-flex items-center gap-1"
+                                <div>{fund.name}</div>
+                                <div className="text-[11px] font-medium theme-text-muted mt-0.5">
+                                  {fund.category} · {fund.fundManager}
+                                </div>
+                              </th>
+                              <td className="py-3 px-3.5 font-mono text-right status-gain-text font-bold whitespace-nowrap">
+                                ৳{fund.effectiveNav.toFixed(3)}
+                              </td>
+                              <td className="py-3 px-3.5 font-mono text-right font-semibold theme-text-primary whitespace-nowrap">
+                                ৳{fund.averageBuyPrice.toFixed(4)}
+                              </td>
+                              <td className="py-3 px-3.5 font-mono text-right font-bold text-[#155360] dark:text-[#33c6e4] whitespace-nowrap">
+                                <div>
+                                  {Math.floor(
+                                    fund.totalUnitsHeld,
+                                  ).toLocaleString("en-BD")}
+                                </div>
+                                {fund.fractionalCashBalance > 0 && (
+                                  <div className="text-[10px] text-amber-600 dark:text-amber-400 font-normal">
+                                    +৳{formatBdt(fund.fractionalCashBalance, 2)}{" "}
+                                    buffer
+                                  </div>
+                                )}
+                              </td>
+                              <td className="py-3 px-3.5 font-mono text-right font-semibold theme-text-primary whitespace-nowrap">
+                                ৳{formatBdt(fund.totalInvested, 2)}
+                              </td>
+                              <td className="py-3 px-3.5 font-mono text-right font-extrabold theme-text-primary whitespace-nowrap">
+                                ৳{formatBdt(fund.currentMarketValue, 2)}
+                              </td>
+                              <td className="py-3 px-3.5 font-mono text-right whitespace-nowrap">
+                                <span
+                                  className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-bold font-mono ${
+                                    isGain
+                                      ? "status-gain-badge"
+                                      : "status-loss-badge"
+                                  }`}
                                 >
-                                  <Calendar className="h-3 w-3" />
-                                  <span>Add Investment</span>
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    handleDeleteFund(fund.id, fund.name)
-                                  }
-                                  title="Delete fund"
-                                  className="text-rose-500 hover:text-rose-700 p-1"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                                  {isGain ? "+" : "-"}৳
+                                  {formatBdt(
+                                    Math.abs(fund.absoluteGainLoss),
+                                    2,
+                                  )}{" "}
+                                  ({isGain ? "+" : ""}
+                                  {fund.returnPct.toFixed(2)}%)
+                                </span>
+                              </td>
+                              <td className="py-3 px-3.5 text-right whitespace-nowrap">
+                                <div className="inline-flex items-center gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setPreselectedFundIdForInv(fund.id);
+                                      setIsAddInvestmentModalOpen(true);
+                                    }}
+                                    className="rounded-lg bg-[#33c6e4] hover:bg-[#2eb4cf] text-slate-950 px-3 py-1.5 text-xs font-bold transition shadow-sm inline-flex items-center gap-1"
+                                  >
+                                    <Calendar className="h-3 w-3" />
+                                    <span>Add Investment</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleDeleteFund(fund.id, fund.name)
+                                    }
+                                    title="Delete fund"
+                                    className="text-rose-500 hover:text-rose-700 p-1"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              </div>
-            </section>
+              </section>
+            </div>
           </div>
-        </div>
-      )}
-    </main>
+        )}
+      </main>
 
-    {/* ------------------------------------------------------------- */}
-    {/* MOBILE BOTTOM NAVIGATION DOCK (sm:hidden) */}
-    {/* ------------------------------------------------------------- */}
-    {user && funds.length > 0 && (
-      <nav
-        aria-label="Mobile Navigation"
-        className="sm:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 dark:bg-[#090d16]/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] pb-[env(safe-area-inset-bottom)]"
-      >
-        <div className="grid grid-cols-4 h-16 items-center px-1">
-          <button
-            type="button"
-            onClick={() => {
-              setMobileTab("portfolio");
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }}
-            className={`flex flex-col items-center justify-center gap-1 h-full py-1 transition relative ${
-              mobileTab === "portfolio"
-                ? "text-[#155360] dark:text-[#33c6e4] font-bold"
-                : "theme-text-muted hover:theme-text-secondary"
-            }`}
-          >
-            <div
-              className={`p-1 rounded-xl transition ${
+      {/* ------------------------------------------------------------- */}
+      {/* MOBILE BOTTOM NAVIGATION DOCK (sm:hidden) */}
+      {/* ------------------------------------------------------------- */}
+      {user && funds.length > 0 && (
+        <nav
+          aria-label="Mobile Navigation"
+          className="sm:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 dark:bg-[#090d16]/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] pb-[env(safe-area-inset-bottom)]"
+        >
+          <div className="grid grid-cols-4 h-16 items-center px-1">
+            <button
+              type="button"
+              onClick={() => {
+                setMobileTab("portfolio");
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+              className={`flex flex-col items-center justify-center gap-1 h-full py-1 transition relative ${
                 mobileTab === "portfolio"
-                  ? "bg-[#33c6e4]/20"
-                  : "bg-transparent"
+                  ? "text-[#155360] dark:text-[#33c6e4] font-bold"
+                  : "theme-text-muted hover:theme-text-secondary"
               }`}
             >
-              <Wallet className="h-5 w-5" />
-            </div>
-            <span className="text-[10px] tracking-tight">Portfolio</span>
-            {mobileTab === "portfolio" && (
-              <span className="absolute bottom-1 w-6 h-0.5 rounded-full bg-[#33c6e4]" />
-            )}
-          </button>
+              <div
+                className={`p-1 rounded-xl transition ${
+                  mobileTab === "portfolio"
+                    ? "bg-[#33c6e4]/20"
+                    : "bg-transparent"
+                }`}
+              >
+                <Wallet className="h-5 w-5" />
+              </div>
+              <span className="text-[10px] tracking-tight">Portfolio</span>
+              {mobileTab === "portfolio" && (
+                <span className="absolute bottom-1 w-6 h-0.5 rounded-full bg-[#33c6e4]" />
+              )}
+            </button>
 
-          <button
-            type="button"
-            onClick={() => {
-              setMobileTab("charts");
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }}
-            className={`flex flex-col items-center justify-center gap-1 h-full py-1 transition relative ${
-              mobileTab === "charts"
-                ? "text-[#155360] dark:text-[#33c6e4] font-bold"
-                : "theme-text-muted hover:theme-text-secondary"
-            }`}
-          >
-            <div
-              className={`p-1 rounded-xl transition ${
+            <button
+              type="button"
+              onClick={() => {
+                setMobileTab("charts");
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+              className={`flex flex-col items-center justify-center gap-1 h-full py-1 transition relative ${
                 mobileTab === "charts"
-                  ? "bg-[#33c6e4]/20"
-                  : "bg-transparent"
+                  ? "text-[#155360] dark:text-[#33c6e4] font-bold"
+                  : "theme-text-muted hover:theme-text-secondary"
               }`}
             >
-              <BarChart3 className="h-5 w-5" />
-            </div>
-            <span className="text-[10px] tracking-tight">Charts</span>
-            {mobileTab === "charts" && (
-              <span className="absolute bottom-1 w-6 h-0.5 rounded-full bg-[#33c6e4]" />
-            )}
-          </button>
+              <div
+                className={`p-1 rounded-xl transition ${
+                  mobileTab === "charts" ? "bg-[#33c6e4]/20" : "bg-transparent"
+                }`}
+              >
+                <BarChart3 className="h-5 w-5" />
+              </div>
+              <span className="text-[10px] tracking-tight">Charts</span>
+              {mobileTab === "charts" && (
+                <span className="absolute bottom-1 w-6 h-0.5 rounded-full bg-[#33c6e4]" />
+              )}
+            </button>
 
-          <button
-            type="button"
-            onClick={() => {
-              setMobileTab("compare");
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }}
-            className={`flex flex-col items-center justify-center gap-1 h-full py-1 transition relative ${
-              mobileTab === "compare"
-                ? "text-[#155360] dark:text-[#33c6e4] font-bold"
-                : "theme-text-muted hover:theme-text-secondary"
-            }`}
-          >
-            <div
-              className={`p-1 rounded-xl transition ${
+            <button
+              type="button"
+              onClick={() => {
+                setMobileTab("compare");
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+              className={`flex flex-col items-center justify-center gap-1 h-full py-1 transition relative ${
                 mobileTab === "compare"
-                  ? "bg-[#33c6e4]/20"
-                  : "bg-transparent"
+                  ? "text-[#155360] dark:text-[#33c6e4] font-bold"
+                  : "theme-text-muted hover:theme-text-secondary"
               }`}
             >
-              <Layers className="h-5 w-5" />
-            </div>
-            <span className="text-[10px] tracking-tight">Compare</span>
-            {mobileTab === "compare" && (
-              <span className="absolute bottom-1 w-6 h-0.5 rounded-full bg-[#33c6e4]" />
-            )}
-          </button>
+              <div
+                className={`p-1 rounded-xl transition ${
+                  mobileTab === "compare" ? "bg-[#33c6e4]/20" : "bg-transparent"
+                }`}
+              >
+                <Layers className="h-5 w-5" />
+              </div>
+              <span className="text-[10px] tracking-tight">Compare</span>
+              {mobileTab === "compare" && (
+                <span className="absolute bottom-1 w-6 h-0.5 rounded-full bg-[#33c6e4]" />
+              )}
+            </button>
 
-          <button
-            type="button"
-            onClick={() => {
-              setMobileTab("breakdown");
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }}
-            className={`flex flex-col items-center justify-center gap-1 h-full py-1 transition relative ${
-              mobileTab === "breakdown"
-                ? "text-[#155360] dark:text-[#33c6e4] font-bold"
-                : "theme-text-muted hover:theme-text-secondary"
-            }`}
-          >
-            <div
-              className={`p-1 rounded-xl transition ${
+            <button
+              type="button"
+              onClick={() => {
+                setMobileTab("breakdown");
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+              className={`flex flex-col items-center justify-center gap-1 h-full py-1 transition relative ${
                 mobileTab === "breakdown"
-                  ? "bg-[#33c6e4]/20"
-                  : "bg-transparent"
+                  ? "text-[#155360] dark:text-[#33c6e4] font-bold"
+                  : "theme-text-muted hover:theme-text-secondary"
               }`}
             >
-              <Coins className="h-5 w-5" />
-            </div>
-            <span className="text-[10px] tracking-tight">Breakdown</span>
-            {mobileTab === "breakdown" && (
-              <span className="absolute bottom-1 w-6 h-0.5 rounded-full bg-[#33c6e4]" />
-            )}
-          </button>
-        </div>
-      </nav>
-    )}
+              <div
+                className={`p-1 rounded-xl transition ${
+                  mobileTab === "breakdown"
+                    ? "bg-[#33c6e4]/20"
+                    : "bg-transparent"
+                }`}
+              >
+                <Coins className="h-5 w-5" />
+              </div>
+              <span className="text-[10px] tracking-tight">Breakdown</span>
+              {mobileTab === "breakdown" && (
+                <span className="absolute bottom-1 w-6 h-0.5 rounded-full bg-[#33c6e4]" />
+              )}
+            </button>
+          </div>
+        </nav>
+      )}
 
       {/* ------------------------------------------------------------- */}
       {/* 4. MODALS */}
