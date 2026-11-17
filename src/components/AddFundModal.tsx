@@ -166,7 +166,7 @@ export default function AddFundModal({
                   Add Mutual Funds
                 </h2>
                 <p className="text-xs theme-text-secondary">
-                  Select mutual funds to track in your personal portfolio · 28 Funds Available
+                  Select mutual funds to track in your personal portfolio
                 </p>
               </div>
             </div>
