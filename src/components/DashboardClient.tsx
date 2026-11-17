@@ -1159,55 +1159,83 @@ function DashboardClientContent({
                   : "hidden sm:block sm:space-y-6"
               }
             >
-              {/* Top Quick Actions Bar */}
+              {/* Top Quick Actions Bar (Mobile-First 2-Row / Desktop Flex) */}
               <div className="space-y-2.5">
-                <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-slate-900 border theme-border rounded-2xl p-3 sm:p-4 shadow-sm">
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setPreselectedFundIdForInv(funds[0]?.id || null);
-                        setIsAddInvestmentModalOpen(true);
-                      }}
-                      className="rounded-xl bg-[#33c6e4] hover:bg-[#2eb4cf] text-slate-950 px-3.5 py-2 text-xs font-bold transition shadow-sm inline-flex items-center gap-1.5"
-                    >
-                      <Calendar className="h-4 w-4" />
-                      <span>Record Monthly SIP</span>
-                    </button>
+                <div className="bg-white dark:bg-slate-900 border theme-border rounded-2xl p-3 sm:p-3.5 shadow-sm space-y-2 sm:space-y-0">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
+                    {/* On Mobile: Row 1 is full-width primary button. On Desktop: inline left button */}
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-2.5 flex-1">
+                      {/* 1. Primary Hero: Record Investment */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPreselectedFundIdForInv(funds[0]?.id || null);
+                          setIsAddInvestmentModalOpen(true);
+                        }}
+                        className="w-full sm:w-auto rounded-xl bg-[#33c6e4] hover:bg-[#2eb4cf] text-slate-950 px-4 py-2.5 sm:py-2 text-xs font-bold transition shadow-sm inline-flex items-center justify-center gap-1.5 min-h-[40px] sm:min-h-[36px] whitespace-nowrap active:scale-[0.98]"
+                      >
+                        <Calendar className="h-4 w-4 shrink-0" />
+                        <span>Record Investment</span>
+                      </button>
 
-                    <button
-                      type="button"
-                      onClick={() => setIsAddFundModalOpen(true)}
-                      className="rounded-xl border theme-border px-3.5 py-2 text-xs font-semibold theme-text-primary hover:bg-slate-50 dark:hover:bg-slate-800 transition inline-flex items-center gap-1.5"
-                    >
-                      <Plus className="h-3.5 w-3.5 text-[#33c6e4]" />
-                      <span>Add Another Fund</span>
-                    </button>
-                  </div>
+                      {/* On Mobile: Row 2 is a balanced 50/50 split of [Add Fund] and [Sync Live NAV] */}
+                      <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-2.5 flex-1">
+                        {/* 2. Add Fund Button */}
+                        <button
+                          type="button"
+                          onClick={() => setIsAddFundModalOpen(true)}
+                          className="w-full sm:w-auto rounded-xl border theme-border px-3 py-2.5 sm:py-2 text-xs font-semibold theme-text-primary hover:bg-slate-50 dark:hover:bg-slate-800 transition inline-flex items-center justify-center gap-1.5 min-h-[40px] sm:min-h-[36px] whitespace-nowrap active:scale-[0.98]"
+                        >
+                          <Plus className="h-3.5 w-3.5 text-[#33c6e4] shrink-0" />
+                          <span>Add Fund</span>
+                        </button>
 
-                  <div className="flex items-center gap-2">
-                    {isDataLoading && (
-                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#33c6e4]/15 text-[#155360] dark:text-[#33c6e4] text-xs font-bold animate-in fade-in">
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        <span className="truncate max-w-[140px] sm:max-w-none">
-                          {crudLoadingMessage || "Updating..."}
-                        </span>
+                        {/* 3. Sync Live NAV Button (Mobile: right 50% / Desktop: hidden here, shown on right side) */}
+                        <button
+                          type="button"
+                          disabled={isRefreshing}
+                          onClick={handleManualSync}
+                          className="sm:hidden w-full rounded-xl border theme-border px-3 py-2.5 text-xs font-semibold theme-text-secondary hover:theme-text-primary hover:bg-slate-50 dark:hover:bg-slate-800 transition inline-flex items-center justify-center gap-1.5 min-h-[40px] whitespace-nowrap disabled:opacity-50 active:scale-[0.98]"
+                        >
+                          <RefreshCw
+                            className={`h-3.5 w-3.5 shrink-0 ${
+                              isRefreshing ? "animate-spin text-[#33c6e4]" : ""
+                            }`}
+                          />
+                          <span>
+                            {isRefreshing ? "Syncing..." : "Sync NAV"}
+                          </span>
+                        </button>
                       </div>
-                    )}
+                    </div>
 
-                    <button
-                      type="button"
-                      disabled={isRefreshing}
-                      onClick={handleManualSync}
-                      className="rounded-xl border theme-border px-3 py-2 text-xs font-semibold theme-text-secondary hover:theme-text-primary transition inline-flex items-center gap-1.5 disabled:opacity-50"
-                    >
-                      <RefreshCw
-                        className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin text-[#33c6e4]" : ""}`}
-                      />
-                      <span>
-                        {isRefreshing ? "Syncing..." : "Sync Live NAV"}
-                      </span>
-                    </button>
+                    {/* Desktop Right Side: Sync NAV & Loading indicator */}
+                    <div className="hidden sm:flex items-center gap-2 shrink-0">
+                      {isDataLoading && (
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#33c6e4]/15 text-[#155360] dark:text-[#33c6e4] text-xs font-bold animate-in fade-in">
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          <span className="truncate max-w-[140px]">
+                            {crudLoadingMessage || "Updating..."}
+                          </span>
+                        </div>
+                      )}
+
+                      <button
+                        type="button"
+                        disabled={isRefreshing}
+                        onClick={handleManualSync}
+                        className="rounded-xl border theme-border px-3.5 py-2 text-xs font-semibold theme-text-secondary hover:theme-text-primary hover:bg-slate-50 dark:hover:bg-slate-800 transition inline-flex items-center gap-1.5 min-h-[36px] whitespace-nowrap disabled:opacity-50 active:scale-[0.98]"
+                      >
+                        <RefreshCw
+                          className={`h-3.5 w-3.5 shrink-0 ${
+                            isRefreshing ? "animate-spin text-[#33c6e4]" : ""
+                          }`}
+                        />
+                        <span>
+                          {isRefreshing ? "Syncing..." : "Sync Live NAV"}
+                        </span>
+                      </button>
+                    </div>
                   </div>
                 </div>
 
