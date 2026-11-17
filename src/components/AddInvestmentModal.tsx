@@ -8,10 +8,12 @@ import {
   Calculator,
   CheckCircle2,
   AlertCircle,
+  AlertTriangle,
   ArrowRight,
   RefreshCw,
   SlidersHorizontal,
   Loader2,
+  ChevronDown,
 } from "lucide-react";
 import MonthYearDatePicker from "./MonthYearDatePicker";
 
@@ -28,6 +30,7 @@ interface UserFundOption {
   averageBuyPrice: number;
   fractionalCashBalance: number;
   monthlySipTarget: number;
+  investments?: any[];
 }
 
 interface AddInvestmentModalProps {
@@ -174,6 +177,24 @@ export default function AddInvestmentModal({
       ? Number((previewNewTotalInvested / previewNewTotalUnits).toFixed(4))
       : numNav;
 
+  const selectedMonthStr = `${MONTH_NAMES[selectedMonthIdx]} ${selectedYear}`;
+  const selectedMonthKey = `${MONTH_NAMES[selectedMonthIdx].toLowerCase()}-${selectedYear}`;
+
+  // Check if an investment of this type has already been logged for this fund in this month
+  const existingInvestmentConflict = useMemo(() => {
+    if (!activeFund?.investments || !Array.isArray(activeFund.investments)) return null;
+    return activeFund.investments.find((inv: any) => {
+      const matchType = (inv.type || "SIP").toUpperCase() === investmentType.toUpperCase();
+      const invMonthKey =
+        inv.monthKey?.toLowerCase() ||
+        inv.calendarMonth?.toLowerCase().replace(/[^a-z0-9]/g, "-");
+      const matchMonth =
+        invMonthKey === selectedMonthKey ||
+        (inv.calendarMonth && inv.calendarMonth.trim().toLowerCase() === selectedMonthStr.toLowerCase());
+      return matchType && matchMonth;
+    });
+  }, [activeFund, investmentType, selectedMonthKey, selectedMonthStr]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeFund) return;
@@ -275,17 +296,22 @@ export default function AddInvestmentModal({
             <label className="text-xs font-semibold theme-text-primary">
               Target Mutual Fund
             </label>
-            <select
-              value={selectedUserFundId}
-              onChange={(e) => handleFundChange(e.target.value)}
-              className="form-control-input w-full rounded-xl border px-3.5 py-2.5 text-xs font-semibold"
-            >
-              {funds.map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.name} ({f.category})
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                value={selectedUserFundId}
+                onChange={(e) => handleFundChange(e.target.value)}
+                className="form-control-input w-full appearance-none rounded-xl border pl-3.5 pr-9 py-2.5 text-xs font-semibold cursor-pointer"
+              >
+                {funds.map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.name} ({f.category})
+                  </option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
+                <ChevronDown className="h-4 w-4" />
+              </div>
+            </div>
           </div>
 
           {/* Calendar Month & Year DatePicker */}
@@ -423,6 +449,24 @@ export default function AddInvestmentModal({
             </div>
           </div>
 
+          {/* Existing Investment Warning */}
+          {existingInvestmentConflict && (
+            <div className="rounded-xl border border-amber-300 dark:border-amber-700/60 bg-amber-50 dark:bg-amber-950/40 p-3 text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2.5">
+              <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+              <div className="space-y-1">
+                <div className="font-bold">
+                  {investmentType} Already Recorded for {selectedMonthStr}
+                </div>
+                <p className="text-[11px] opacity-90 leading-relaxed">
+                  For <strong>{activeFund?.name}</strong>, only one investment of each type (SIP, CIP, or Lumpsum) can be added per month. A {investmentType} entry (৳{existingInvestmentConflict.cashInvested?.toLocaleString("en-BD")} @ ৳{Number(existingInvestmentConflict.executionNav).toFixed(3)}) is already logged for this month.
+                </p>
+                <div className="text-[11px] text-amber-700 dark:text-amber-400 font-semibold pt-0.5">
+                  Tip: To modify this installment, edit the existing entry from the dashboard instead.
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Optional Notes */}
           <div className="space-y-1">
             <label className="text-xs font-semibold theme-text-primary">
@@ -449,7 +493,11 @@ export default function AddInvestmentModal({
           </button>
           <button
             type="submit"
-            disabled={isLoading || previewUnitsAllotted <= 0}
+            disabled={
+              isLoading ||
+              previewUnitsAllotted <= 0 ||
+              Boolean(existingInvestmentConflict)
+            }
             className="rounded-xl bg-[#33c6e4] hover:bg-[#2eb4cf] text-slate-950 px-5 py-2 text-xs font-bold shadow-sm transition disabled:opacity-50 min-h-[40px] inline-flex items-center gap-2"
           >
             {isLoading ? (

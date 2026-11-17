@@ -10,7 +10,6 @@ import {
 import { PortfolioHistoryItem } from "./PortfolioHistoryChart";
 import {
   X,
-  PlusCircle,
   Calculator,
   CheckCircle2,
   AlertCircle,

@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useId } from "react";
-import { Calendar, ChevronLeft, ChevronRight, Check } from "lucide-react";
+import React, { useState, useRef, useEffect } from "react";
+import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 
 export interface MonthYearValue {
   monthIndex: number; // 0-11
@@ -133,15 +133,13 @@ export default function MonthYearDatePicker({
   return (
     <div ref={containerRef} className="space-y-1 relative">
       <div className="flex items-center justify-between">
-        <label className="text-xs font-bold theme-text-primary">
-          {label}
-        </label>
+        <label className="text-xs font-bold theme-text-primary">{label}</label>
         <span className="text-[11px] font-bold text-[#155360] dark:text-[#33c6e4]">
           {isCurrentSelection
             ? "Current Month"
             : isPreviousMonthSelection
-            ? "Previous Month"
-            : `${MONTHS_FULL[selectedMonth]} ${selectedYear}`}
+              ? "Previous Month"
+              : `${MONTHS_FULL[selectedMonth]} ${selectedYear}`}
         </span>
       </div>
 
@@ -213,8 +211,8 @@ export default function MonthYearDatePicker({
                     isSelected
                       ? "bg-[#33c6e4] text-slate-950 shadow-md font-black"
                       : isThisMonth
-                      ? "border border-[#33c6e4] theme-text-primary hover:bg-[#33c6e4]/10"
-                      : "theme-surface theme-text-secondary hover:theme-text-primary hover:bg-slate-100 dark:hover:bg-slate-800"
+                        ? "border border-[#33c6e4] theme-text-primary hover:bg-[#33c6e4]/10"
+                        : "theme-surface theme-text-secondary hover:theme-text-primary hover:bg-slate-100 dark:hover:bg-slate-800"
                   }`}
                 >
                   <span>{name}</span>
@@ -240,7 +238,8 @@ export default function MonthYearDatePicker({
               type="button"
               onClick={() => {
                 const prevM = currentMonth === 0 ? 11 : currentMonth - 1;
-                const prevY = currentMonth === 0 ? currentYear - 1 : currentYear;
+                const prevY =
+                  currentMonth === 0 ? currentYear - 1 : currentYear;
                 handleSelect(prevM, prevY);
               }}
               className="font-bold theme-text-muted hover:theme-text-primary"

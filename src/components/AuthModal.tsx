@@ -9,7 +9,6 @@ import {
   Phone,
   MapPin,
   ArrowRight,
-  CheckCircle2,
   AlertCircle,
   Sparkles,
   Eye,

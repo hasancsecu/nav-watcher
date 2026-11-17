@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useId } from "react";
-import { AlertTriangle, Trash2, X, HelpCircle, Loader2 } from "lucide-react";
+import {  Trash2, HelpCircle, Loader2 } from "lucide-react";
 
 interface ConfirmDialogProps {
   isOpen: boolean;

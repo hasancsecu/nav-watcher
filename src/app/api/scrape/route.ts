@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
 
     const scheduler = initDailyNavScheduler();
     const syncOutcome = await syncAllFundsNav({
-      trigger: isCronAuthorized ? "VERCEL_SCHEDULE_905_DHAKA" : "API_GET_SYNC",
+      trigger: isCronAuthorized ? "VERCEL_SCHEDULE_MIDNIGHT_DHAKA" : "API_GET_SYNC",
     });
 
     const recentLogs = await prisma.scrapeLog.findMany({

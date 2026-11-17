@@ -4,6 +4,65 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
+const MONTH_NAMES = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+/**
+ * Standardizes calendar month formatting and generates a predictable monthKey.
+ * E.g., "November 2026", "nov 2026", or date object -> { monthKey: "november-2026", calendarMonth: "November 2026", invDate }
+ */
+function normalizeMonth(
+  calendarMonth?: string,
+  investmentDate?: Date | string | null,
+): { monthKey: string; calendarMonth: string; invDate: Date } {
+  let year: number;
+  let monthIdx: number;
+
+  if (calendarMonth && calendarMonth.trim()) {
+    const parts = calendarMonth.trim().split(/\s+/);
+    if (parts.length === 2) {
+      const mIdx = MONTH_NAMES.findIndex((m) =>
+        m.toLowerCase().startsWith(parts[0].toLowerCase().slice(0, 3)),
+      );
+      const yVal = parseInt(parts[1], 10);
+      if (mIdx !== -1 && !isNaN(yVal)) {
+        monthIdx = mIdx;
+        year = yVal;
+        return {
+          monthKey: `${MONTH_NAMES[monthIdx].toLowerCase()}-${year}`,
+          calendarMonth: `${MONTH_NAMES[monthIdx]} ${year}`,
+          invDate: investmentDate
+            ? new Date(investmentDate)
+            : new Date(year, monthIdx, 1),
+        };
+      }
+    }
+  }
+
+  const d = investmentDate ? new Date(investmentDate) : new Date();
+  const validD = isNaN(d.getTime()) ? new Date() : d;
+  year = validD.getFullYear();
+  monthIdx = validD.getMonth();
+
+  return {
+    monthKey: `${MONTH_NAMES[monthIdx].toLowerCase()}-${year}`,
+    calendarMonth: `${MONTH_NAMES[monthIdx]} ${year}`,
+    invDate: validD,
+  };
+}
+
 /**
  * Rechains all investments for a user fund in chronological sequence.
  * Enforces:
@@ -74,6 +133,192 @@ async function rechainUserFundInvestments(userFundId: string) {
   return updatedUserFund;
 }
 
+/**
+ * GET /api/user/investments
+ * Server-side filtering, searching, and pagination of user investments.
+ */
+export async function GET(req: NextRequest) {
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json(
+        { error: "Unauthorized. Please log in.", isAuthRequired: true },
+        {
+          status: 401,
+          headers: {
+            "Cache-Control":
+              "private, no-cache, no-store, max-age=0, must-revalidate",
+          },
+        },
+      );
+    }
+
+    const { searchParams } = new URL(req.url);
+    const pageParam = parseInt(searchParams.get("page") || "1", 10);
+    const limitParam = parseInt(
+      searchParams.get("limit") || searchParams.get("pageSize") || "10",
+      10,
+    );
+    const fundId = searchParams.get("fundId");
+    const type = searchParams.get("type");
+    const monthKey = searchParams.get("monthKey");
+    const calendarMonth = searchParams.get("calendarMonth");
+    const search = searchParams.get("search");
+
+    const page = Math.max(1, isNaN(pageParam) ? 1 : pageParam);
+    const limit = Math.min(
+      100,
+      Math.max(1, isNaN(limitParam) ? 10 : limitParam),
+    );
+    const skip = (page - 1) * limit;
+
+    // Build filter query strictly scoped to authenticated user
+    const conditions: any[] = [{ userId: user.id }];
+
+    if (fundId && fundId !== "ALL") {
+      conditions.push({
+        OR: [{ userFundId: fundId }, { userFund: { fundId } }],
+      });
+    }
+
+    if (type && type !== "ALL") {
+      conditions.push({
+        type: type.trim().toUpperCase(),
+      });
+    }
+
+    if (monthKey && monthKey !== "ALL") {
+      conditions.push({
+        monthKey: monthKey.toLowerCase(),
+      });
+    } else if (calendarMonth && calendarMonth !== "ALL") {
+      const norm = normalizeMonth(calendarMonth);
+      conditions.push({
+        monthKey: norm.monthKey,
+      });
+    }
+
+    if (search && search.trim()) {
+      const q = search.trim();
+      conditions.push({
+        OR: [
+          { notes: { contains: q, mode: "insensitive" } },
+          { calendarMonth: { contains: q, mode: "insensitive" } },
+          {
+            userFund: { fund: { name: { contains: q, mode: "insensitive" } } },
+          },
+          {
+            userFund: {
+              fund: { shortName: { contains: q, mode: "insensitive" } },
+            },
+          },
+        ],
+      });
+    }
+
+    const whereClause = { AND: conditions };
+
+    // Execute queries in parallel
+    const [totalCount, filteredEntries, aggregateData] = await Promise.all([
+      prisma.investmentEntry.count({
+        where: whereClause,
+      }),
+      prisma.investmentEntry.findMany({
+        where: whereClause,
+        include: {
+          userFund: {
+            include: {
+              fund: true,
+            },
+          },
+        },
+        orderBy: [{ investmentDate: "desc" }, { createdAt: "desc" }],
+        skip,
+        take: limit,
+      }),
+      prisma.investmentEntry.aggregate({
+        where: whereClause,
+        _sum: {
+          cashInvested: true,
+          unitsAllotted: true,
+          unitsCost: true,
+        },
+      }),
+    ]);
+
+    const totalPages = Math.max(1, Math.ceil(totalCount / limit));
+
+    const investments = filteredEntries.map((inv) => ({
+      id: inv.id,
+      userFundId: inv.userFundId,
+      fundId: inv.userFund.fundId,
+      fundName: inv.userFund.fund.name,
+      fundShortName: inv.userFund.fund.shortName,
+      fundManager: inv.userFund.fund.fundManager,
+      calendarMonth: inv.calendarMonth,
+      monthKey: inv.monthKey,
+      investmentDate: inv.investmentDate.toISOString(),
+      cashInvested: inv.cashInvested,
+      cashBufferUsed: inv.cashBufferUsed,
+      executionNav: inv.executionNav,
+      unitsAllotted: inv.unitsAllotted,
+      unitsCost: inv.unitsCost,
+      cashRemainder: inv.cashRemainder,
+      type: inv.type,
+      notes: inv.notes,
+      createdAt: inv.createdAt.toISOString(),
+      fund: {
+        id: inv.userFund.id,
+        userFundId: inv.userFund.id,
+        fundId: inv.userFund.fundId,
+        name: inv.userFund.fund.name,
+        shortName: inv.userFund.fund.shortName,
+        fundManager: inv.userFund.fund.fundManager,
+        category: inv.userFund.fund.category,
+        latestNav: inv.userFund.fund.latestNav,
+        effectiveNav:
+          inv.userFund.fund.latestNav || inv.userFund.averageBuyPrice,
+      },
+    }));
+
+    return NextResponse.json(
+      {
+        investments,
+        pagination: {
+          currentPage: page,
+          pageSize: limit,
+          totalCount,
+          totalPages,
+          hasNextPage: page < totalPages,
+          hasPrevPage: page > 1,
+        },
+        summary: {
+          filteredCount: totalCount,
+          totalCashInvested: Number(
+            (aggregateData._sum.cashInvested || 0).toFixed(2),
+          ),
+          totalUnitsAllotted: aggregateData._sum.unitsAllotted || 0,
+          totalUnitsCost: Number(
+            (aggregateData._sum.unitsCost || 0).toFixed(2),
+          ),
+        },
+      },
+      {
+        headers: {
+          "Cache-Control":
+            "private, no-cache, no-store, max-age=0, must-revalidate",
+        },
+      },
+    );
+  } catch (error) {
+    console.error("[API /api/user/investments GET] Error:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch user investments", details: String(error) },
+      { status: 500 },
+    );
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const user = await getCurrentUser();
@@ -134,30 +379,47 @@ export async function POST(req: NextRequest) {
         ? Number(executionNav)
         : userFund.fund.latestNav || userFund.fund.defaultNav || 10.0;
 
-    const monthStr =
-      calendarMonth ||
-      new Date().toLocaleString("en-US", { month: "long", year: "numeric" });
-    const monthKey = monthStr.toLowerCase().replace(/[^a-z0-9]/g, "-");
-    const invDate = investmentDate ? new Date(investmentDate) : new Date();
+    const norm = normalizeMonth(calendarMonth, investmentDate);
+    const invType = String(type || "SIP").trim().toUpperCase();
+
+    // Enforce: For the same fund and same month, an investment type (SIP, CIP, LUMPSUM) can only be added once!
+    const existingSameType = await prisma.investmentEntry.findFirst({
+      where: {
+        userFundId: userFund.id,
+        monthKey: norm.monthKey,
+        type: invType,
+      },
+    });
+
+    if (existingSameType) {
+      return NextResponse.json(
+        {
+          error: `A ${invType} investment for ${userFund.fund.name} has already been recorded for ${norm.calendarMonth}. For any given month, only one investment of each type (SIP, CIP, or Lumpsum) can be added. You can edit the existing entry if you need to update its amount or execution NAV.`,
+          code: "DUPLICATE_MONTH_TYPE_INVESTMENT",
+          existingInvestmentId: existingSameType.id,
+        },
+        { status: 409 },
+      );
+    }
 
     // Create entry initially with base values
     const newEntry = await prisma.investmentEntry.create({
       data: {
         userId: user.id,
         userFundId: userFund.id,
-        monthKey,
-        calendarMonth: monthStr,
-        investmentDate: invDate,
+        monthKey: norm.monthKey,
+        calendarMonth: norm.calendarMonth,
+        investmentDate: norm.invDate,
         cashInvested: safeCash,
         cashBufferUsed: 0,
         executionNav: safeNav,
         unitsAllotted: 0,
         unitsCost: 0,
         cashRemainder: 0,
-        type,
+        type: invType,
         notes:
           notes ||
-          `${type} Investment for ${monthStr}: Cash ৳${safeCash} @ ৳${safeNav.toFixed(3)}.`,
+          `${invType} Investment for ${norm.calendarMonth}: Cash ৳${safeCash} @ ৳${safeNav.toFixed(3)}.`,
       },
     });
 
@@ -169,7 +431,7 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({
-      message: `Successfully recorded ${type} investment of ৳${safeCash.toLocaleString("en-BD")} for ${monthStr}.`,
+      message: `Successfully recorded ${invType} investment of ৳${safeCash.toLocaleString("en-BD")} for ${norm.calendarMonth}.`,
       investment: recomputedEntry,
       userFund: updatedFund,
       summary: {
@@ -253,20 +515,40 @@ export async function PUT(req: NextRequest) {
         ? Number(executionNav)
         : entry.executionNav;
 
-    const monthStr = calendarMonth || entry.calendarMonth;
-    const monthKey = monthStr.toLowerCase().replace(/[^a-z0-9]/g, "-");
-    const invDate = investmentDate
-      ? new Date(investmentDate)
-      : entry.investmentDate;
-    const invType = type || entry.type;
+    const norm = normalizeMonth(
+      calendarMonth || entry.calendarMonth,
+      investmentDate || entry.investmentDate,
+    );
+    const invType = String(type || entry.type).trim().toUpperCase();
+
+    // Prevent updating to a month & type that already has an entry for this fund
+    const existingSameType = await prisma.investmentEntry.findFirst({
+      where: {
+        userFundId: entry.userFundId,
+        monthKey: norm.monthKey,
+        type: invType,
+        id: { not: investmentId },
+      },
+    });
+
+    if (existingSameType) {
+      return NextResponse.json(
+        {
+          error: `Another ${invType} investment for ${entry.userFund.fund.name} has already been recorded for ${norm.calendarMonth}. For any given month, only one investment of each type (SIP, CIP, or Lumpsum) can exist.`,
+          code: "DUPLICATE_MONTH_TYPE_INVESTMENT",
+          existingInvestmentId: existingSameType.id,
+        },
+        { status: 409 },
+      );
+    }
 
     // Update targeted investment entry
     await prisma.investmentEntry.update({
       where: { id: investmentId },
       data: {
-        calendarMonth: monthStr,
-        monthKey,
-        investmentDate: invDate,
+        calendarMonth: norm.calendarMonth,
+        monthKey: norm.monthKey,
+        investmentDate: norm.invDate,
         cashInvested: safeCash,
         executionNav: safeNav,
         type: invType,
@@ -282,7 +564,7 @@ export async function PUT(req: NextRequest) {
     });
 
     return NextResponse.json({
-      message: `Successfully updated ${invType} investment for ${monthStr}.`,
+      message: `Successfully updated ${invType} investment for ${norm.calendarMonth}.`,
       investment: recomputedEntry,
       userFund: updatedFund,
     });

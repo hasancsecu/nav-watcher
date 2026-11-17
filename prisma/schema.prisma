@@ -86,6 +86,7 @@ model InvestmentEntry {
   notes          String?
   createdAt      DateTime  @default(now())
 
+  @@unique([userFundId, monthKey, type])
   @@index([userId, monthKey])
 }
 

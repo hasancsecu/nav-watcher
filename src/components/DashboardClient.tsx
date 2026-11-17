@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   FundValuationMetrics,
   PortfolioSummaryMetrics,
@@ -19,6 +19,7 @@ import FundComparisonSection from "./FundComparisonSection";
 import HistoricalInvestmentComparisonChart, {
   SnapshotItem,
 } from "./HistoricalInvestmentComparisonChart";
+import InsertedInvestmentsSection from "./InsertedInvestmentsSection";
 import { ToastProvider, useToast } from "./Toast";
 import {
   RefreshCw,
@@ -92,7 +93,12 @@ interface DashboardClientProps {
   initialScheduler: SchedulerInfo;
 }
 
-type MobileTab = "portfolio" | "charts" | "compare" | "breakdown";
+type MobileTab =
+  | "portfolio"
+  | "investments"
+  | "charts"
+  | "compare"
+  | "breakdown";
 
 const FUND_BRAND_CONFIG: Record<
   string,
@@ -247,10 +253,81 @@ function DashboardClientContent({
   // User menu dropdown toggle
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
-  // Accordion for viewing investments per fund
-  const [expandedInvestmentsFundId, setExpandedInvestmentsFundId] = useState<
-    string | null
-  >(null);
+  // Total logged investments count
+  const totalInvestmentsCount = useMemo(() => {
+    return funds.reduce((acc, f) => acc + (f.investments?.length || 0), 0);
+  }, [funds]);
+
+  // Information on when NAV was last synced & next scheduled sync
+  const syncInfo = useMemo(() => {
+    let latestTime: Date | null = null;
+
+    if (logs.length > 0 && logs[0].createdAt) {
+      latestTime = new Date(logs[0].createdAt);
+    }
+
+    for (const f of funds) {
+      if (f.lastScrapedAt) {
+        const d = new Date(f.lastScrapedAt);
+        if (!latestTime || d.getTime() > latestTime.getTime()) {
+          latestTime = d;
+        }
+      }
+    }
+
+    if (!latestTime && summary?.lastUpdatedAt) {
+      latestTime = new Date(summary.lastUpdatedAt);
+    }
+
+    const effectiveDates = funds
+      .map((f) => f.navEffectiveDate)
+      .filter((d): d is string => Boolean(d && d !== "Latest Day"));
+    const latestEffectiveDate = effectiveDates[0] || "Latest Market Session";
+
+    if (!latestTime) {
+      return {
+        timestamp: null,
+        formattedTime: "Pending initial sync",
+        relativeTime: "Not synced yet",
+        effectiveDate: latestEffectiveDate,
+        scheduleNote: "Auto-syncs daily at 12:00 AM BST",
+      };
+    }
+
+    const now = Date.now();
+    const diffMs = Math.max(0, now - latestTime.getTime());
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMins / 60);
+
+    let relativeTime = "";
+    if (diffMins < 1) {
+      relativeTime = "Just now";
+    } else if (diffMins < 60) {
+      relativeTime = `${diffMins}m ago`;
+    } else if (diffHours < 24) {
+      relativeTime = `${diffHours}h ago`;
+    } else {
+      const days = Math.floor(diffHours / 24);
+      relativeTime = `${days}d ago`;
+    }
+
+    const formattedTime = latestTime.toLocaleString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+
+    return {
+      timestamp: latestTime,
+      formattedTime,
+      relativeTime,
+      effectiveDate: latestEffectiveDate,
+      scheduleNote: "Auto-syncs daily at 12:00 AM BST",
+    };
+  }, [logs, funds, summary?.lastUpdatedAt]);
 
   // UI state
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -516,8 +593,19 @@ function DashboardClientContent({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to sync NAVs.");
 
+      if (data.recentLogs && Array.isArray(data.recentLogs)) {
+        setLogs(data.recentLogs);
+      }
+
       await refreshUserData("Syncing live NAVs from AMCs...");
-      toast.success("Latest NAVs scraped & updated successfully.");
+      const syncTimeStr = new Date().toLocaleTimeString("en-GB", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      });
+      toast.success(
+        `Latest NAVs scraped & updated successfully at ${syncTimeStr}. Next auto-sync: 12:00 AM BST.`,
+      );
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to sync NAVs.");
     } finally {
@@ -589,6 +677,22 @@ function DashboardClientContent({
                 <Download className="h-4 w-4 text-[#33c6e4]" />
                 <span className="hidden sm:inline">Install App</span>
               </button>
+            )}
+
+            {/* Sync Timestamp Info (Desktop) */}
+            {user && (
+              <div
+                title={`Last synced: ${syncInfo.formattedTime}. Next auto-sync: 12:00 AM BST.`}
+                className="hidden lg:flex flex-col text-right pr-1 cursor-default select-none"
+              >
+                <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center justify-end gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>Synced {syncInfo.relativeTime}</span>
+                </span>
+                <span className="text-[9px] theme-text-muted">
+                  {syncInfo.formattedTime}
+                </span>
+              </div>
             )}
 
             {/* Manual Sync NAVs Button */}
@@ -915,51 +1019,90 @@ function DashboardClientContent({
               }
             >
               {/* Top Quick Actions Bar */}
-              <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-slate-900 border theme-border rounded-2xl p-3 sm:p-4 shadow-sm">
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPreselectedFundIdForInv(funds[0]?.id || null);
-                      setIsAddInvestmentModalOpen(true);
-                    }}
-                    className="rounded-xl bg-[#33c6e4] hover:bg-[#2eb4cf] text-slate-950 px-3.5 py-2 text-xs font-bold transition shadow-sm inline-flex items-center gap-1.5"
-                  >
-                    <Calendar className="h-4 w-4" />
-                    <span>Record Monthly SIP</span>
-                  </button>
+              <div className="space-y-2.5">
+                <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-slate-900 border theme-border rounded-2xl p-3 sm:p-4 shadow-sm">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPreselectedFundIdForInv(funds[0]?.id || null);
+                        setIsAddInvestmentModalOpen(true);
+                      }}
+                      className="rounded-xl bg-[#33c6e4] hover:bg-[#2eb4cf] text-slate-950 px-3.5 py-2 text-xs font-bold transition shadow-sm inline-flex items-center gap-1.5"
+                    >
+                      <Calendar className="h-4 w-4" />
+                      <span>Record Monthly SIP</span>
+                    </button>
 
-                  <button
-                    type="button"
-                    onClick={() => setIsAddFundModalOpen(true)}
-                    className="rounded-xl border theme-border px-3.5 py-2 text-xs font-semibold theme-text-primary hover:bg-slate-50 dark:hover:bg-slate-800 transition inline-flex items-center gap-1.5"
-                  >
-                    <Plus className="h-3.5 w-3.5 text-[#33c6e4]" />
-                    <span>Add Another Fund</span>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsAddFundModalOpen(true)}
+                      className="rounded-xl border theme-border px-3.5 py-2 text-xs font-semibold theme-text-primary hover:bg-slate-50 dark:hover:bg-slate-800 transition inline-flex items-center gap-1.5"
+                    >
+                      <Plus className="h-3.5 w-3.5 text-[#33c6e4]" />
+                      <span>Add Another Fund</span>
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {isDataLoading && (
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#33c6e4]/15 text-[#155360] dark:text-[#33c6e4] text-xs font-bold animate-in fade-in">
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        <span className="truncate max-w-[140px] sm:max-w-none">
+                          {crudLoadingMessage || "Updating..."}
+                        </span>
+                      </div>
+                    )}
+
+                    <button
+                      type="button"
+                      disabled={isRefreshing}
+                      onClick={handleManualSync}
+                      className="rounded-xl border theme-border px-3 py-2 text-xs font-semibold theme-text-secondary hover:theme-text-primary transition inline-flex items-center gap-1.5 disabled:opacity-50"
+                    >
+                      <RefreshCw
+                        className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin text-[#33c6e4]" : ""}`}
+                      />
+                      <span>{isRefreshing ? "Syncing..." : "Sync Live NAV"}</span>
+                    </button>
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  {isDataLoading && (
-                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#33c6e4]/15 text-[#155360] dark:text-[#33c6e4] text-xs font-bold animate-in fade-in">
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      <span className="truncate max-w-[140px] sm:max-w-none">
-                        {crudLoadingMessage || "Updating..."}
+                {/* NAV Sync Status Card (Mobile-First) */}
+                <div className="rounded-xl border border-emerald-500/25 bg-emerald-50/70 dark:bg-emerald-950/25 p-2.5 sm:px-3.5 sm:py-2 text-xs shadow-xs space-y-1.5">
+                  {/* Top Row: Live status dot & primary timestamp */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0 animate-pulse" />
+                      <span className="font-bold text-slate-900 dark:text-white shrink-0 text-xs">
+                        Live NAVs Synced:
+                      </span>
+                      <span className="font-mono text-emerald-800 dark:text-emerald-300 font-bold truncate text-[11px] sm:text-xs">
+                        {syncInfo.formattedTime}
                       </span>
                     </div>
-                  )}
 
-                  <button
-                    type="button"
-                    disabled={isRefreshing}
-                    onClick={handleManualSync}
-                    className="rounded-xl border theme-border px-3 py-2 text-xs font-semibold theme-text-secondary hover:theme-text-primary transition inline-flex items-center gap-1.5 disabled:opacity-50"
-                  >
-                    <RefreshCw
-                      className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin text-[#33c6e4]" : ""}`}
-                    />
-                    <span>{isRefreshing ? "Syncing..." : "Sync Live NAV"}</span>
-                  </button>
+                    <span className="shrink-0 text-[10px] font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-500/15 dark:bg-emerald-500/20 px-1.5 py-0.5 rounded-md">
+                      {syncInfo.relativeTime}
+                    </span>
+                  </div>
+
+                  {/* Bottom Row: Market Session & Auto-sync Schedule */}
+                  <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-emerald-500/15 text-[10px] sm:text-[11px] text-slate-600 dark:text-slate-400">
+                    <div className="flex items-center gap-1 truncate">
+                      <span>Market:</span>
+                      <strong className="text-slate-900 dark:text-slate-200 font-semibold truncate">
+                        {syncInfo.effectiveDate}
+                      </strong>
+                    </div>
+
+                    <div className="flex items-center gap-1 shrink-0 text-right">
+                      <span>Auto-sync:</span>
+                      <strong className="text-slate-900 dark:text-slate-200 font-semibold">
+                        Daily at 12:00 AM BST
+                      </strong>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -1078,7 +1221,6 @@ function DashboardClientContent({
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {funds.map((fund) => {
                     const isGain = fund.absoluteGainLoss >= 0;
-                    const isExpanded = expandedInvestmentsFundId === fund.id;
 
                     return (
                       <div
@@ -1215,86 +1357,31 @@ function DashboardClientContent({
                             </button>
                           </div>
 
-                          {/* View Investments History Toggle */}
-                          {fund.investments && fund.investments.length > 0 && (
-                            <div>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setExpandedInvestmentsFundId((prev) =>
-                                    prev === fund.id ? null : fund.id,
-                                  )
-                                }
-                                className="w-full text-center text-[11px] theme-text-secondary hover:theme-text-primary py-1 font-semibold flex items-center justify-center gap-1"
-                              >
-                                <span>
-                                  {isExpanded ? "Hide" : "View"}{" "}
-                                  {fund.investments.length} logged investments
-                                </span>
-                                {isExpanded ? (
-                                  <ChevronUp className="h-3 w-3" />
-                                ) : (
-                                  <ChevronDown className="h-3 w-3" />
-                                )}
-                              </button>
-
-                              {/* Investment Entries List Drawer */}
-                              {isExpanded && (
-                                <div className="mt-2 space-y-1.5 rounded-xl border theme-border p-2 bg-slate-50/50 dark:bg-slate-900/50 text-[11px] max-h-48 overflow-y-auto">
-                                  {fund.investments.map((inv: any) => (
-                                    <div
-                                      key={inv.id}
-                                      className="flex items-center justify-between border-b theme-border pb-1.5 last:border-b-0"
-                                    >
-                                      <div>
-                                        <span className="font-bold theme-text-primary block">
-                                          {inv.calendarMonth} ({inv.type})
-                                        </span>
-                                        <span className="theme-text-muted">
-                                          ৳{formatBdt(inv.cashInvested, 0)} @ ৳
-                                          {inv.executionNav.toFixed(3)}
-                                        </span>
-                                      </div>
-                                      <div className="flex items-center gap-1.5">
-                                        <span className="font-mono font-bold text-[#155360] dark:text-[#33c6e4]">
-                                          +{inv.unitsAllotted} units
-                                        </span>
-                                        <button
-                                          type="button"
-                                          onClick={() =>
-                                            handleOpenEditInvestment(inv, fund)
-                                          }
-                                          title="Edit investment record"
-                                          className="p-1 rounded-md text-slate-400 hover:text-[#33c6e4] hover:bg-slate-200/60 dark:hover:bg-slate-800 transition"
-                                        >
-                                          <Pencil className="h-3.5 w-3.5" />
-                                        </button>
-                                        <button
-                                          type="button"
-                                          onClick={() =>
-                                            handleDeleteInvestment(
-                                              inv.id,
-                                              inv.calendarMonth,
-                                            )
-                                          }
-                                          title="Delete investment"
-                                          className="p-1 rounded-md text-rose-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
-                                        >
-                                          <Trash2 className="h-3.5 w-3.5" />
-                                        </button>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          )}
                         </div>
                       </div>
                     );
                   })}
                 </div>
               </section>
+            </div>
+
+            {/* TAB: INSERTED INVESTMENTS (Filterable, Paginated Investment Log) */}
+            <div
+              className={
+                mobileTab === "investments" ? "block" : "hidden sm:block"
+              }
+            >
+              {funds.length > 0 && (
+                <InsertedInvestmentsSection
+                  funds={funds}
+                  onEditInvestment={handleOpenEditInvestment}
+                  onDeleteInvestment={handleDeleteInvestment}
+                  onAddInvestment={() => {
+                    setPreselectedFundIdForInv(funds[0]?.id || null);
+                    setIsAddInvestmentModalOpen(true);
+                  }}
+                />
+              )}
             </div>
 
             {/* TAB 2: CHARTS (Historical Investment & Performance Comparison Chart) */}
@@ -1665,34 +1752,41 @@ function DashboardClientContent({
           aria-label="Mobile Navigation"
           className="sm:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 dark:bg-[#090d16]/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] pb-[env(safe-area-inset-bottom)]"
         >
-          <div className="grid grid-cols-4 h-16 items-center px-1">
+          <div className="grid grid-cols-5 h-16 items-center px-1">
+            {/* 1. Investments Tab */}
             <button
               type="button"
               onClick={() => {
-                setMobileTab("portfolio");
+                setMobileTab("investments");
                 window.scrollTo({ top: 0, behavior: "smooth" });
               }}
               className={`flex flex-col items-center justify-center gap-1 h-full py-1 transition relative ${
-                mobileTab === "portfolio"
+                mobileTab === "investments"
                   ? "text-[#155360] dark:text-[#33c6e4] font-bold"
                   : "theme-text-muted hover:theme-text-secondary"
               }`}
             >
               <div
-                className={`p-1 rounded-xl transition ${
-                  mobileTab === "portfolio"
+                className={`p-1 rounded-xl transition relative ${
+                  mobileTab === "investments"
                     ? "bg-[#33c6e4]/20"
                     : "bg-transparent"
                 }`}
               >
-                <Wallet className="h-5 w-5" />
+                <Calendar className="h-5 w-5" />
+                {totalInvestmentsCount > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-[#33c6e4] text-[9px] font-black text-slate-950 shadow-xs">
+                    {totalInvestmentsCount}
+                  </span>
+                )}
               </div>
-              <span className="text-[10px] tracking-tight">Portfolio</span>
-              {mobileTab === "portfolio" && (
+              <span className="text-[10px] tracking-tight">Investments</span>
+              {mobileTab === "investments" && (
                 <span className="absolute bottom-1 w-6 h-0.5 rounded-full bg-[#33c6e4]" />
               )}
             </button>
 
+            {/* 2. Charts Tab */}
             <button
               type="button"
               onClick={() => {
@@ -1718,6 +1812,40 @@ function DashboardClientContent({
               )}
             </button>
 
+            {/* 3. CENTER HIGHLIGHTED PORTFOLIO TAB */}
+            <button
+              type="button"
+              onClick={() => {
+                setMobileTab("portfolio");
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+              className="flex flex-col items-center justify-center -translate-y-2.5 transition-transform active:scale-95 relative group"
+            >
+              <div
+                className={`flex items-center justify-center h-12 w-12 rounded-full transition-all duration-200 shadow-md ${
+                  mobileTab === "portfolio"
+                    ? "bg-[#33c6e4] text-slate-950 shadow-[#33c6e4]/50 ring-4 ring-white dark:ring-[#090d16] scale-105"
+                    : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-2 border-[#33c6e4]/50 ring-4 ring-white dark:ring-[#090d16]"
+                }`}
+              >
+                <Wallet
+                  className={`h-5 w-5 ${
+                    mobileTab === "portfolio" ? "stroke-[2.5]" : ""
+                  }`}
+                />
+              </div>
+              <span
+                className={`text-[10px] tracking-tight mt-0.5 font-extrabold ${
+                  mobileTab === "portfolio"
+                    ? "text-[#155360] dark:text-[#33c6e4]"
+                    : "theme-text-secondary"
+                }`}
+              >
+                Portfolio
+              </span>
+            </button>
+
+            {/* 4. Compare Tab */}
             <button
               type="button"
               onClick={() => {
@@ -1743,6 +1871,7 @@ function DashboardClientContent({
               )}
             </button>
 
+            {/* 5. Breakdown Tab */}
             <button
               type="button"
               onClick={() => {

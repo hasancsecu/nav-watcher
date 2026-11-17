@@ -8,9 +8,6 @@ import {
   Check,
   ExternalLink,
   Building2,
-  Sparkles,
-  TrendingUp,
-  ShieldCheck,
   Layers,
   Loader2,
 } from "lucide-react";

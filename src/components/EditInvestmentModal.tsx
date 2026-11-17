@@ -10,6 +10,7 @@ import {
   AlertCircle,
   Loader2,
   ArrowRight,
+  ChevronDown,
 } from "lucide-react";
 import MonthYearDatePicker from "./MonthYearDatePicker";
 
@@ -242,15 +243,20 @@ export default function EditInvestmentModal({
               <label className="text-xs font-bold theme-text-secondary block mb-1">
                 Type
               </label>
-              <select
-                value={invType}
-                onChange={(e) => setInvType(e.target.value)}
-                className="w-full rounded-xl border theme-border theme-surface px-3 py-2.5 text-xs font-medium theme-text-primary focus:outline-none focus:ring-2 focus:ring-[#33c6e4]"
-              >
-                <option value="SIP">Monthly SIP</option>
-                <option value="LUMPSUM">Lump-sum</option>
-                <option value="CIP">CIP Dividend</option>
-              </select>
+              <div className="relative">
+                <select
+                  value={invType}
+                  onChange={(e) => setInvType(e.target.value)}
+                  className="w-full appearance-none rounded-xl border theme-border theme-surface pl-3 pr-9 py-2.5 text-xs font-medium theme-text-primary focus:outline-none focus:ring-2 focus:ring-[#33c6e4] cursor-pointer"
+                >
+                  <option value="SIP">Monthly SIP</option>
+                  <option value="LUMPSUM">Lump-sum</option>
+                  <option value="CIP">CIP Dividend</option>
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
+                  <ChevronDown className="h-4 w-4" />
+                </div>
+              </div>
             </div>
 
             <div>

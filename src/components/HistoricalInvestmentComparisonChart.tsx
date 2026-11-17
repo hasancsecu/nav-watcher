@@ -3,13 +3,19 @@
 import React, { useState, useMemo, useRef, useId } from "react";
 import {
   TrendingUp,
-  BarChart3,
-  Calendar,
-  Layers,
-  Sparkles,
   Eye,
   EyeOff,
   MoveHorizontal,
+  Calendar,
+  Sparkles,
+  Award,
+  Maximize2,
+  Pin,
+  X,
+  Target,
+  Clock,
+  Layers,
+  Coins,
 } from "lucide-react";
 
 export interface SnapshotItem {
@@ -29,7 +35,9 @@ export interface InvestmentItem {
   executionNav: number;
   unitsAllotted: number;
   unitsCost: number;
+  cashRemainder?: number;
   type: string;
+  notes?: string | null;
 }
 
 export interface UserFundWithInvestments {
@@ -55,6 +63,7 @@ interface HistoricalComparisonChartProps {
 }
 
 type ChartMetric = "nav" | "growth" | "return";
+type TimeRange = "1M" | "3M" | "6M" | "1Y" | "ALL";
 
 const FUND_PALETTE = [
   "#33c6e4", // Brand Cyan
@@ -109,9 +118,24 @@ export default function HistoricalInvestmentComparisonChart({
   const svgRef = useRef<SVGSVGElement | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
+  // ---------------------------------------------------------------------------
+  // 1. Interactive Controls State
+  // ---------------------------------------------------------------------------
   const [metric, setMetric] = useState<ChartMetric>("nav");
+  const [timeRange, setTimeRange] = useState<TimeRange>("ALL");
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+  const [pinnedIndex, setPinnedIndex] = useState<number | null>(null);
   const [hiddenFundIds, setHiddenFundIds] = useState<Set<string>>(new Set());
+  const [focusedFundId, setFocusedFundId] = useState<string | null>(null);
+  const [showMilestones, setShowMilestones] = useState<boolean>(true);
+  const [activeMilestone, setActiveMilestone] = useState<{
+    dateKey: string;
+    fundName: string;
+    type: string;
+    amount: number;
+    units: number;
+    nav: number;
+  } | null>(null);
 
   // Assign a consistent distinct color to each user fund
   const fundColors = useMemo(() => {
@@ -128,7 +152,6 @@ export default function HistoricalInvestmentComparisonChart({
       if (next.has(fundKey)) {
         next.delete(fundKey);
       } else {
-        // Keep at least one visible
         if (next.size < funds.length - 1) {
           next.add(fundKey);
         }
@@ -137,8 +160,14 @@ export default function HistoricalInvestmentComparisonChart({
     });
   };
 
-  // Aggregate unified historical time series data
-  const chartData = useMemo(() => {
+  const handleFundSoloToggle = (fundKey: string) => {
+    setFocusedFundId((prev) => (prev === fundKey ? null : fundKey));
+  };
+
+  // ---------------------------------------------------------------------------
+  // 2. Timeline Aggregation with Cumulative Holdings & Investment Events
+  // ---------------------------------------------------------------------------
+  const fullTimeline = useMemo(() => {
     if (!funds || funds.length === 0) return [];
 
     const dateMap = new Map<string, { displayDate: string; navs: Record<string, number> }>();
@@ -157,7 +186,7 @@ export default function HistoricalInvestmentComparisonChart({
     // 2. Add current date as latest point if not present
     const today = new Date();
     const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-    const todayDisplay = today.toLocaleDateString("en-GB", {
+    const todayDisplay = today.toLocaleDateString("en-BD", {
       day: "2-digit",
       month: "short",
     });
@@ -177,22 +206,44 @@ export default function HistoricalInvestmentComparisonChart({
     // Sort date keys chronologically
     const sortedKeys = Array.from(dateMap.keys()).sort();
 
-    // Cumulative investment progression per fund
-    const fundCumulativeMap = new Map<
+    // Collect all logged investment events across funds
+    const milestoneEventsByDate = new Map<
       string,
-      { totalUnits: number; totalInvested: number; avgCost: number }
+      Array<{
+        fundId: string;
+        fundName: string;
+        type: string;
+        amount: number;
+        units: number;
+        nav: number;
+      }>
     >();
+
     funds.forEach((f) => {
-      fundCumulativeMap.set(f.fundId || f.id, {
-        totalUnits: 0,
-        totalInvested: 0,
-        avgCost: 10.0,
+      const invs = f.investments || [];
+      invs.forEach((inv) => {
+        const invDateObj = new Date(inv.investmentDate);
+        if (!isNaN(invDateObj.getTime())) {
+          const invKey = `${invDateObj.getFullYear()}-${String(invDateObj.getMonth() + 1).padStart(2, "0")}-${String(invDateObj.getDate()).padStart(2, "0")}`;
+          if (!milestoneEventsByDate.has(invKey)) {
+            milestoneEventsByDate.set(invKey, []);
+          }
+          milestoneEventsByDate.get(invKey)!.push({
+            fundId: f.fundId || f.id,
+            fundName: f.shortName || f.name,
+            type: inv.type || "SIP",
+            amount: inv.cashInvested,
+            units: inv.unitsAllotted,
+            nav: inv.executionNav,
+          });
+        }
       });
     });
 
-    // Build timeline points with simulated progression
+    // Build timeline points with exact cumulative progression
     const timeline = sortedKeys.map((k) => {
       const entry = dateMap.get(k)!;
+      const kDate = new Date(k);
 
       let totalPortfolioVal = 0;
       let totalPortfolioInv = 0;
@@ -210,8 +261,23 @@ export default function HistoricalInvestmentComparisonChart({
       funds.forEach((f) => {
         const fKey = f.fundId || f.id;
         const nav = entry.navs[fKey] ?? f.effectiveNav ?? 10.0;
-        const units = f.totalUnitsHeld;
-        const invested = f.totalInvested;
+
+        // Calculate cumulative units and invested up to this date
+        const invs = f.investments || [];
+        let cumUnits = 0;
+        let cumInvested = 0;
+
+        invs.forEach((inv) => {
+          const invD = new Date(inv.investmentDate);
+          if (invD <= kDate) {
+            cumUnits += inv.unitsAllotted;
+            cumInvested += inv.unitsCost || inv.cashInvested;
+          }
+        });
+
+        // If no prior investments or tracking all holdings
+        const units = cumUnits > 0 ? cumUnits : f.totalUnitsHeld;
+        const invested = cumInvested > 0 ? cumInvested : f.totalInvested;
         const marketVal = units > 0 ? units * nav : invested;
         const returnPct =
           invested > 0 ? ((marketVal - invested) / invested) * 100 : 0;
@@ -233,6 +299,8 @@ export default function HistoricalInvestmentComparisonChart({
           ? ((totalPortfolioVal - totalPortfolioInv) / totalPortfolioInv) * 100
           : 0;
 
+      const milestones = milestoneEventsByDate.get(k) || [];
+
       return {
         dateKey: k,
         displayDate: entry.displayDate,
@@ -240,16 +308,41 @@ export default function HistoricalInvestmentComparisonChart({
         totalPortfolioVal,
         totalPortfolioInv,
         totalReturn,
+        milestones,
       };
     });
 
     return timeline;
   }, [funds, snapshots]);
 
-  // Chart Dimensions & Coordinate Geometry
-  // For mobile readability, we use a wide viewBox width so data points are generously spaced
-  const width = Math.max(860, chartData.length * 36);
-  const height = 300;
+  // ---------------------------------------------------------------------------
+  // 3. Filter Timeline based on Active Time Range
+  // ---------------------------------------------------------------------------
+  const chartData = useMemo(() => {
+    if (fullTimeline.length <= 2 || timeRange === "ALL") {
+      return fullTimeline;
+    }
+
+    const latestDateKey = fullTimeline[fullTimeline.length - 1].dateKey;
+    const latestDate = new Date(latestDateKey);
+
+    let daysToSubtract = 30;
+    if (timeRange === "1M") daysToSubtract = 30;
+    else if (timeRange === "3M") daysToSubtract = 90;
+    else if (timeRange === "6M") daysToSubtract = 180;
+    else if (timeRange === "1Y") daysToSubtract = 365;
+
+    const cutoffDate = new Date(latestDate.getTime() - daysToSubtract * 24 * 60 * 60 * 1000);
+
+    const filtered = fullTimeline.filter((d) => new Date(d.dateKey) >= cutoffDate);
+    return filtered.length >= 2 ? filtered : fullTimeline.slice(-5);
+  }, [fullTimeline, timeRange]);
+
+  // ---------------------------------------------------------------------------
+  // 4. Chart Geometry & Coordinate Mapping
+  // ---------------------------------------------------------------------------
+  const width = Math.max(860, chartData.length * 38);
+  const height = 310;
   const padL = 58;
   const padR = 30;
   const padT = 24;
@@ -309,7 +402,7 @@ export default function HistoricalInvestmentComparisonChart({
     return padT + plotH - ratio * plotH;
   };
 
-  // Build smooth cubic Bézier SVG paths and glowing area fills
+  // Build series paths
   const seriesPaths = useMemo(() => {
     if (metric === "growth") {
       const invPoints = chartData.map((d, i) => ({
@@ -324,7 +417,6 @@ export default function HistoricalInvestmentComparisonChart({
       const invCurve = getCurvedPath(invPoints);
       const valCurve = getCurvedPath(valPoints);
 
-      // Area under market value curve down to baseline
       const lastX = valPoints[valPoints.length - 1]?.x ?? width - padR;
       const firstX = valPoints[0]?.x ?? padL;
       const areaD = `${valCurve} L ${lastX},${baselineY} L ${firstX},${baselineY} Z`;
@@ -338,6 +430,7 @@ export default function HistoricalInvestmentComparisonChart({
           curveD: invCurve,
           areaD: "",
           points: invPoints,
+          isDimmed: false,
         },
         {
           key: "marketVal",
@@ -347,6 +440,7 @@ export default function HistoricalInvestmentComparisonChart({
           curveD: valCurve,
           areaD,
           points: valPoints,
+          isDimmed: false,
         },
       ];
     }
@@ -357,6 +451,8 @@ export default function HistoricalInvestmentComparisonChart({
       .map((f) => {
         const fKey = f.fundId || f.id;
         const color = fundColors.get(fKey) || "#33c6e4";
+        const isDimmed = focusedFundId !== null && focusedFundId !== fKey;
+
         const points = chartData.map((d, i) => {
           const metricVal =
             metric === "nav"
@@ -381,16 +477,32 @@ export default function HistoricalInvestmentComparisonChart({
           curveD,
           areaD,
           points,
+          isDimmed,
         };
       });
-  }, [metric, chartData, funds, fundColors, hiddenFundIds, minVal, maxVal, width, baselineY]);
+  }, [
+    metric,
+    chartData,
+    funds,
+    fundColors,
+    hiddenFundIds,
+    focusedFundId,
+    minVal,
+    maxVal,
+    width,
+    baselineY,
+  ]);
 
-  const activeHover =
-    hoverIndex !== null && chartData[hoverIndex] ? chartData[hoverIndex] : null;
+  // Determine active inspect node (pinned node takes precedence over hover)
+  const activeInspectIndex = pinnedIndex !== null ? pinnedIndex : hoverIndex;
+  const activeInspect =
+    activeInspectIndex !== null && chartData[activeInspectIndex]
+      ? chartData[activeInspectIndex]
+      : null;
 
   // Handle pointer / touch movement to track nearest date node
   const handlePointerMove = (clientX: number) => {
-    if (!svgRef.current || chartData.length === 0) return;
+    if (!svgRef.current || chartData.length === 0 || pinnedIndex !== null) return;
     const rect = svgRef.current.getBoundingClientRect();
     const relativeX = clientX - rect.left;
     const scale = width / rect.width;
@@ -409,60 +521,216 @@ export default function HistoricalInvestmentComparisonChart({
     setHoverIndex(closestIdx);
   };
 
-  const activeXPos = hoverIndex !== null ? getX(hoverIndex) : 0;
+  // Click/tap to pin or unpin
+  const handleSvgClick = (clientX: number) => {
+    if (!svgRef.current || chartData.length === 0) return;
+    const rect = svgRef.current.getBoundingClientRect();
+    const relativeX = clientX - rect.left;
+    const scale = width / rect.width;
+    const svgX = relativeX * scale;
+
+    let closestIdx = 0;
+    let minDiff = Infinity;
+    for (let i = 0; i < chartData.length; i++) {
+      const x = getX(i);
+      const diff = Math.abs(x - svgX);
+      if (diff < minDiff) {
+        minDiff = diff;
+        closestIdx = i;
+      }
+    }
+
+    if (pinnedIndex === closestIdx) {
+      setPinnedIndex(null);
+    } else {
+      setPinnedIndex(closestIdx);
+    }
+  };
+
+  const activeXPos = activeInspectIndex !== null ? getX(activeInspectIndex) : 0;
   const pctX = (activeXPos / width) * 100;
+
+  // ---------------------------------------------------------------------------
+  // 5. Dynamic Period Summary Metrics
+  // ---------------------------------------------------------------------------
+  const periodStats = useMemo(() => {
+    if (chartData.length === 0) return null;
+    const firstPoint = chartData[0];
+    const lastPoint = chartData[chartData.length - 1];
+
+    let startVal = 0;
+    let endVal = 0;
+
+    if (metric === "growth") {
+      startVal = firstPoint.totalPortfolioVal;
+      endVal = lastPoint.totalPortfolioVal;
+    } else {
+      let fCount = 0;
+      funds.forEach((f) => {
+        const fKey = f.fundId || f.id;
+        if (!hiddenFundIds.has(fKey)) {
+          startVal += firstPoint.fundValues[fKey]?.nav ?? f.effectiveNav ?? 10;
+          endVal += lastPoint.fundValues[fKey]?.nav ?? f.effectiveNav ?? 10;
+          fCount++;
+        }
+      });
+      if (fCount > 0) {
+        startVal /= fCount;
+        endVal /= fCount;
+      }
+    }
+
+    const netChange = endVal - startVal;
+    const pctChange = startVal > 0 ? (netChange / startVal) * 100 : 0;
+
+    return {
+      startDate: firstPoint.displayDate,
+      endDate: lastPoint.displayDate,
+      startVal,
+      endVal,
+      netChange,
+      pctChange,
+      highVal: rawMax,
+      lowVal: rawMin,
+    };
+  }, [chartData, metric, funds, hiddenFundIds, rawMax, rawMin]);
 
   return (
     <section
       aria-labelledby="historical-chart-heading"
-      className="theme-surface rounded-3xl border theme-border p-3.5 sm:p-6 shadow-sm space-y-4"
+      className="theme-surface rounded-2xl sm:rounded-3xl border theme-border p-3.5 sm:p-6 shadow-sm space-y-4"
     >
-      {/* 1. Header & Fully Responsive Segmented Metric Switcher */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b theme-border pb-3.5">
-        <div>
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-xl bg-[#33c6e4]/15 text-[#155360] dark:text-[#33c6e4]">
-              <TrendingUp className="h-4 w-4" />
+      {/* ------------------------------------------------------------- */}
+      {/* 1. Header & Metric Controls                                   */}
+      {/* ------------------------------------------------------------- */}
+      <div className="flex flex-col gap-3 border-b theme-border pb-3.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded-xl bg-[#33c6e4]/15 text-[#155360] dark:text-[#33c6e4]">
+                <TrendingUp className="h-4 w-4" />
+              </div>
+              <h3
+                id="historical-chart-heading"
+                className="text-sm sm:text-base font-extrabold tracking-tight theme-text-primary"
+              >
+                Interactive Investment &amp; NAV Trajectory
+              </h3>
             </div>
-            <h3
-              id="historical-chart-heading"
-              className="text-sm sm:text-base font-extrabold tracking-tight theme-text-primary"
-            >
-              Historical Investment &amp; Performance
-            </h3>
+            <p className="text-[11px] sm:text-xs theme-text-secondary mt-0.5">
+              Scrub, zoom time horizons, and inspect official AMC NAVs alongside logged investment buys.
+            </p>
           </div>
-          <p className="text-[11px] sm:text-xs theme-text-secondary mt-0.5">
-            Multi-fund historical trajectory across official AMC NAV updates
-          </p>
+
+          {/* Metric Selector Bar */}
+          <div className="w-full sm:w-auto grid grid-cols-3 gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-900 border theme-border">
+            {[
+              { key: "nav", label: "NAV Price" },
+              { key: "growth", label: "Portfolio Value" },
+              { key: "return", label: "Return Rate" },
+            ].map((m) => (
+              <button
+                key={m.key}
+                type="button"
+                onClick={() => {
+                  setMetric(m.key as ChartMetric);
+                  setHoverIndex(null);
+                  setPinnedIndex(null);
+                }}
+                className={`py-1.5 px-2 text-center text-xs font-bold rounded-lg transition truncate ${
+                  metric === m.key
+                    ? "bg-[#33c6e4] text-slate-950 shadow-sm"
+                    : "theme-text-secondary hover:theme-text-primary"
+                }`}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* 100% Mobile Responsive Metric Segmented Bar */}
-        <div className="w-full sm:w-auto grid grid-cols-3 gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-900 border theme-border">
-          {[
-            { key: "nav", label: "NAV Price" },
-            { key: "growth", label: "Portfolio Value" },
-            { key: "return", label: "Return Rate" },
-          ].map((m) => (
-            <button
-              key={m.key}
-              type="button"
-              onClick={() => {
-                setMetric(m.key as ChartMetric);
-                setHoverIndex(null);
-              }}
-              className={`py-1.5 px-2 text-center text-xs font-bold rounded-lg transition truncate ${
-                metric === m.key
-                  ? "bg-[#33c6e4] text-slate-950 shadow-sm"
-                  : "theme-text-secondary hover:theme-text-primary"
-              }`}
-            >
-              {m.label}
-            </button>
-          ))}
+        {/* Dynamic Period Horizon Filter & Investment Buys Toggle */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs">
+          {/* Time Range Pills */}
+          <div className="flex items-center gap-1 overflow-x-auto scrollbar-thin">
+            <span className="text-[10px] font-bold theme-text-muted uppercase tracking-wider mr-1">
+              Period:
+            </span>
+            {(["1M", "3M", "6M", "1Y", "ALL"] as TimeRange[]).map((tr) => (
+              <button
+                key={tr}
+                type="button"
+                onClick={() => {
+                  setTimeRange(tr);
+                  setPinnedIndex(null);
+                  setHoverIndex(null);
+                }}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition min-h-[30px] ${
+                  timeRange === tr
+                    ? "bg-[#33c6e4] text-slate-950 shadow-xs font-black"
+                    : "theme-surface theme-border border text-slate-500 hover:theme-text-primary"
+                }`}
+              >
+                {tr}
+              </button>
+            ))}
+          </div>
+
+          {/* Show Buys Toggle */}
+          <button
+            type="button"
+            onClick={() => setShowMilestones((prev) => !prev)}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-bold transition ${
+              showMilestones
+                ? "bg-amber-500/15 border-amber-500/40 text-amber-700 dark:text-amber-400"
+                : "theme-surface theme-border text-slate-400"
+            }`}
+            title="Toggle historical investment buy points on the chart"
+          >
+            <Coins className="h-3.5 w-3.5 text-amber-500" />
+            <span>Show Buys ({funds.reduce((acc, f) => acc + (f.investments?.length || 0), 0)})</span>
+          </button>
         </div>
+
+        {/* Dynamic Range Statistics Summary Strip */}
+        {periodStats && (
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t theme-border text-[11px] font-mono">
+            <span className="text-slate-500 dark:text-slate-400">
+              {periodStats.startDate} → {periodStats.endDate}
+            </span>
+            <div className="flex items-center gap-3">
+              <span>
+                Range:{" "}
+                <strong className="theme-text-primary font-bold">
+                  {metric === "growth" ? `৳${formatBdt(periodStats.lowVal, 0)}` : `৳${periodStats.lowVal.toFixed(2)}`}
+                </strong>{" "}
+                –{" "}
+                <strong className="theme-text-primary font-bold">
+                  {metric === "growth" ? `৳${formatBdt(periodStats.highVal, 0)}` : `৳${periodStats.highVal.toFixed(2)}`}
+                </strong>
+              </span>
+              <span>·</span>
+              <span>
+                Change:{" "}
+                <strong
+                  className={
+                    periodStats.pctChange >= 0
+                      ? "status-gain-text font-bold"
+                      : "status-loss-text font-bold"
+                  }
+                >
+                  {periodStats.pctChange >= 0 ? "+" : ""}
+                  {periodStats.pctChange.toFixed(2)}%
+                </strong>
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* 2. Interactive Fund Legend with Toggle Eyes */}
+      {/* ------------------------------------------------------------- */}
+      {/* 2. Interactive Fund Legend with Solo & Visibility             */}
+      {/* ------------------------------------------------------------- */}
       <div className="flex flex-wrap items-center gap-2 text-xs">
         <span className="text-[10px] sm:text-[11px] font-bold theme-text-muted uppercase tracking-wider mr-1">
           Funds:
@@ -486,48 +754,87 @@ export default function HistoricalInvestmentComparisonChart({
           funds.map((f) => {
             const fKey = f.fundId || f.id;
             const isHidden = hiddenFundIds.has(fKey);
+            const isSolo = focusedFundId === fKey;
             const color = fundColors.get(fKey) || "#33c6e4";
             return (
-              <button
+              <div
                 key={fKey}
-                type="button"
-                onClick={() => toggleFundVisibility(fKey)}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-semibold transition ${
+                className={`inline-flex items-center rounded-full border text-[11px] font-semibold transition ${
                   isHidden
-                    ? "opacity-40 border-dashed theme-border theme-text-muted hover:opacity-75"
+                    ? "opacity-40 border-dashed theme-border theme-text-muted"
+                    : isSolo
+                    ? "ring-2 ring-[#33c6e4] border-[#33c6e4] bg-[#33c6e4]/10 theme-text-primary"
                     : "theme-border theme-elevated theme-text-primary shadow-xs"
                 }`}
               >
-                <span
-                  className="h-2 w-2 rounded-full shrink-0"
-                  style={{ backgroundColor: isHidden ? "#94a3b8" : color }}
-                />
-                <span className="truncate max-w-[130px] sm:max-w-[200px]">
-                  {f.shortName || f.name}
-                </span>
-                {isHidden ? (
-                  <EyeOff className="h-3 w-3 text-slate-400" />
-                ) : (
-                  <Eye className="h-3 w-3 text-[#33c6e4]" />
-                )}
-              </button>
+                {/* Clicking name solos/focuses this fund */}
+                <button
+                  type="button"
+                  onClick={() => handleFundSoloToggle(fKey)}
+                  className="inline-flex items-center gap-1.5 py-1 pl-2.5 pr-1.5"
+                  title="Click to solo / focus this fund's line"
+                >
+                  <span
+                    className="h-2 w-2 rounded-full shrink-0"
+                    style={{ backgroundColor: isHidden ? "#94a3b8" : color }}
+                  />
+                  <span className="truncate max-w-[120px] sm:max-w-[180px]">
+                    {f.shortName || f.name}
+                  </span>
+                </button>
+
+                {/* Visibility Eye button */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleFundVisibility(fKey);
+                  }}
+                  className="py-1 pr-2 pl-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                  title={isHidden ? "Show fund" : "Hide fund"}
+                >
+                  {isHidden ? (
+                    <EyeOff className="h-3 w-3" />
+                  ) : (
+                    <Eye className="h-3 w-3 text-[#33c6e4]" />
+                  )}
+                </button>
+              </div>
             );
           })
         )}
+
+        {focusedFundId && (
+          <button
+            type="button"
+            onClick={() => setFocusedFundId(null)}
+            className="text-[10px] font-bold text-[#33c6e4] hover:underline ml-1"
+          >
+            Show All Funds
+          </button>
+        )}
       </div>
 
-      {/* Mobile Scroll Indicator */}
-      <div className="flex items-center justify-between text-[11px] theme-text-muted sm:hidden px-1">
+      {/* Mobile Scroll & Pin Hint */}
+      <div className="flex items-center justify-between text-[11px] theme-text-muted px-1">
         <span className="flex items-center gap-1 font-medium">
           <MoveHorizontal className="h-3.5 w-3.5 text-[#33c6e4]" />
-          <span>Swipe chart horizontally to inspect history</span>
+          <span>Swipe horizontally. Tap anywhere to pin inspection.</span>
         </span>
-        <span className="text-[10px] font-mono text-slate-400">
-          {chartData.length} entries
-        </span>
+        {pinnedIndex !== null && (
+          <button
+            type="button"
+            onClick={() => setPinnedIndex(null)}
+            className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-500 hover:text-amber-600"
+          >
+            <Pin className="h-3 w-3" /> Pinned (Click to Unpin)
+          </button>
+        )}
       </div>
 
-      {/* 3. Horizontally Scrollable Chart Graphic Container on Mobile */}
+      {/* ------------------------------------------------------------- */}
+      {/* 3. Horizontally Scrollable Chart Graphic                      */}
+      {/* ------------------------------------------------------------- */}
       <div
         ref={scrollContainerRef}
         className="relative w-full overflow-x-auto scrollbar-thin rounded-2xl bg-gradient-to-b from-slate-50/70 to-slate-100/40 dark:from-slate-900/60 dark:to-slate-950/60 border theme-border pt-3 pb-3 shadow-inner touch-pan-x"
@@ -536,54 +843,76 @@ export default function HistoricalInvestmentComparisonChart({
           className="relative min-w-[720px] sm:min-w-full w-full"
           style={{ width: `${width}px`, maxWidth: "100%" }}
         >
-          {/* Floating Tooltip positioned directly above active crosshair */}
-          {activeHover && (
+          {/* Floating / Pinned Inspection Tooltip */}
+          {activeInspect && (
             <div
               className="absolute z-30 pointer-events-none transition-all duration-75"
               style={{
                 left: `${pctX}%`,
-                top: "12px",
+                top: "10px",
                 transform:
                   pctX > 75
-                    ? "translateX(-88%)"
+                    ? "translateX(-90%)"
                     : pctX < 25
-                    ? "translateX(-12%)"
+                    ? "translateX(-10%)"
                     : "translateX(-50%)",
               }}
             >
-              <div className="bg-slate-950/95 dark:bg-[#070b14]/95 text-white backdrop-blur-md rounded-xl p-2.5 shadow-2xl border border-[#33c6e4]/30 min-w-[190px] max-w-[260px] text-xs space-y-1.5 animate-in fade-in zoom-in-95">
+              <div className="bg-slate-950/95 dark:bg-[#070b14]/95 text-white backdrop-blur-md rounded-xl p-2.5 shadow-2xl border border-[#33c6e4]/40 min-w-[200px] max-w-[270px] text-xs space-y-1.5 animate-in fade-in zoom-in-95 pointer-events-auto">
                 <div className="flex items-center justify-between border-b border-slate-800 pb-1 text-[11px] font-bold text-[#33c6e4]">
-                  <span>{activeHover.displayDate}</span>
-                  <span className="text-slate-400 font-mono text-[10px]">
-                    {activeHover.dateKey}
-                  </span>
+                  <span>{activeInspect.displayDate}</span>
+                  <div className="flex items-center gap-1.5">
+                    {pinnedIndex !== null && (
+                      <span className="rounded bg-amber-500/20 px-1 py-0.2 text-[9px] font-black text-amber-400">
+                        PINNED
+                      </span>
+                    )}
+                    <span className="text-slate-400 font-mono text-[10px]">
+                      {activeInspect.dateKey}
+                    </span>
+                  </div>
                 </div>
+
+                {/* Milestone events at this date (if any) */}
+                {activeInspect.milestones && activeInspect.milestones.length > 0 && (
+                  <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-1.5 space-y-1 text-[10px]">
+                    <div className="flex items-center gap-1 text-amber-400 font-bold">
+                      <Coins className="h-3 w-3" />
+                      <span>Investment Recorded on this Date:</span>
+                    </div>
+                    {activeInspect.milestones.map((m, mi) => (
+                      <div key={mi} className="text-slate-200 font-mono">
+                        <strong className="text-white">{m.type}</strong>: ৳{formatBdt(m.amount, 0)} → +{m.units} units @ ৳{m.nav.toFixed(3)}
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 {metric === "growth" ? (
                   <div className="space-y-1 text-[11px]">
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-slate-300">Market Value:</span>
                       <strong className="font-mono text-[#33c6e4]">
-                        ৳{formatBdt(activeHover.totalPortfolioVal, 2)}
+                        ৳{formatBdt(activeInspect.totalPortfolioVal, 2)}
                       </strong>
                     </div>
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-slate-400">Total Invested:</span>
                       <span className="font-mono text-slate-300">
-                        ৳{formatBdt(activeHover.totalPortfolioInv, 2)}
+                        ৳{formatBdt(activeInspect.totalPortfolioInv, 2)}
                       </span>
                     </div>
                     <div className="flex items-center justify-between gap-2 pt-0.5 border-t border-slate-800">
                       <span className="text-slate-400">Net Gain:</span>
                       <span
                         className={`font-mono font-bold ${
-                          activeHover.totalReturn >= 0
+                          activeInspect.totalReturn >= 0
                             ? "text-emerald-400"
                             : "text-rose-400"
                         }`}
                       >
-                        {activeHover.totalReturn >= 0 ? "+" : ""}
-                        {activeHover.totalReturn.toFixed(2)}%
+                        {activeInspect.totalReturn >= 0 ? "+" : ""}
+                        {activeInspect.totalReturn.toFixed(2)}%
                       </span>
                     </div>
                   </div>
@@ -593,12 +922,16 @@ export default function HistoricalInvestmentComparisonChart({
                       .filter((f) => !hiddenFundIds.has(f.fundId || f.id))
                       .map((f) => {
                         const fKey = f.fundId || f.id;
-                        const dataObj = activeHover.fundValues[fKey];
+                        const dataObj = activeInspect.fundValues[fKey];
                         const color = fundColors.get(fKey) || "#33c6e4";
+                        const isDimmed = focusedFundId !== null && focusedFundId !== fKey;
+
                         return (
                           <div
                             key={fKey}
-                            className="flex items-center justify-between gap-2"
+                            className={`flex items-center justify-between gap-2 transition ${
+                              isDimmed ? "opacity-30" : "opacity-100"
+                            }`}
                           >
                             <span className="text-slate-300 truncate flex items-center gap-1.5 min-w-0">
                               <span
@@ -638,8 +971,10 @@ export default function HistoricalInvestmentComparisonChart({
             onTouchMove={(e) => {
               if (e.touches[0]) handlePointerMove(e.touches[0].clientX);
             }}
-            onMouseLeave={() => setHoverIndex(null)}
-            onTouchEnd={() => setHoverIndex(null)}
+            onClick={(e) => handleSvgClick(e.clientX)}
+            onMouseLeave={() => {
+              if (pinnedIndex === null) setHoverIndex(null);
+            }}
           >
             <defs>
               {/* Luminous Glow Filter */}
@@ -668,11 +1003,7 @@ export default function HistoricalInvestmentComparisonChart({
                   y2="1"
                 >
                   <stop offset="0%" stopColor={series.color} stopOpacity="0.25" />
-                  <stop
-                    offset="80%"
-                    stopColor={series.color}
-                    stopOpacity="0.04"
-                  />
+                  <stop offset="80%" stopColor={series.color} stopOpacity="0.04" />
                   <stop offset="100%" stopColor={series.color} stopOpacity="0" />
                 </linearGradient>
               ))}
@@ -710,112 +1041,124 @@ export default function HistoricalInvestmentComparisonChart({
               );
             })}
 
-            {/* 1. Luminous Area Fills Under Curves */}
-            {seriesPaths.map(
-              (series) =>
-                series.areaD && (
-                  <path
-                    key={`area-${series.key}`}
-                    d={series.areaD}
-                    fill={`url(#${chartId}-grad-${series.key})`}
-                  />
-                )
-            )}
-
-            {/* 2. Smooth Cubic Bézier Spline Traces */}
-            {seriesPaths.map((series) => (
-              <path
-                key={`stroke-${series.key}`}
-                d={series.curveD}
-                fill="none"
-                stroke={series.color}
-                strokeWidth={series.dashed ? "2" : "3"}
-                strokeDasharray={series.dashed ? "6 6" : undefined}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                filter={series.dashed ? undefined : `url(#${chartId}-glow)`}
-              />
-            ))}
-
-            {/* 3. Interactive Nodes & Crosshair Triggers */}
-            {chartData.map((d, idx) => {
-              const xPos = getX(idx);
-              const isHovered = hoverIndex === idx;
+            {/* Render Series Areas & Curves */}
+            {seriesPaths.map((series) => {
+              const opacity = series.isDimmed ? 0.15 : 1;
+              const strokeWidth = series.isDimmed ? 1.5 : focusedFundId === series.key ? 3.5 : 2.5;
 
               return (
-                <g
-                  key={d.dateKey}
-                  onMouseEnter={() => setHoverIndex(idx)}
-                  onTouchStart={() => setHoverIndex(idx)}
-                >
-                  {/* Touch / Mouse Hit Area */}
-                  <rect
-                    x={xPos - Math.max(16, plotW / chartData.length / 2)}
-                    y={padT}
-                    width={Math.max(32, plotW / chartData.length)}
-                    height={plotH}
-                    fill="transparent"
+                <g key={series.key} opacity={opacity} className="transition-opacity duration-200">
+                  {series.areaD && (
+                    <path
+                      d={series.areaD}
+                      fill={`url(#${chartId}-grad-${series.key})`}
+                      className="pointer-events-none"
+                    />
+                  )}
+                  <path
+                    d={series.curveD}
+                    fill="none"
+                    stroke={series.color}
+                    strokeWidth={strokeWidth}
+                    strokeDasharray={series.dashed ? "5 5" : undefined}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    filter={focusedFundId === series.key ? `url(#${chartId}-glow)` : undefined}
                   />
-
-                  {/* X Axis Date Label (nicely spaced) */}
-                  {(idx === 0 ||
-                    idx === chartData.length - 1 ||
-                    idx % Math.max(1, Math.floor(chartData.length / 7)) ===
-                      0) && (
-                    <text
-                      x={xPos}
-                      y={height - 14}
-                      textAnchor="middle"
-                      className={`text-[10px] font-mono fill-current transition ${
-                        isHovered
-                          ? "font-black text-[#155360] dark:text-[#33c6e4]"
-                          : "font-semibold theme-text-muted"
-                      }`}
-                    >
-                      {d.displayDate}
-                    </text>
-                  )}
-
-                  {/* Glowing Vertical Cursor on hover */}
-                  {isHovered && (
-                    <>
-                      <line
-                        x1={xPos}
-                        y1={padT}
-                        x2={xPos}
-                        y2={baselineY}
-                        stroke="#33c6e4"
-                        strokeWidth="1.5"
-                        strokeDasharray="4 4"
-                      />
-
-                      {/* Circular Glowing Anchor Dots on each curve */}
-                      {seriesPaths.map((s) => {
-                        const pt = s.points[idx];
-                        if (!pt) return null;
-                        return (
-                          <g key={`dot-${s.key}`}>
-                            <circle
-                              cx={pt.x}
-                              cy={pt.y}
-                              r="6"
-                              fill={s.color}
-                              opacity="0.35"
-                            />
-                            <circle
-                              cx={pt.x}
-                              cy={pt.y}
-                              r="3.5"
-                              fill="#ffffff"
-                              stroke={s.color}
-                              strokeWidth="2.5"
-                            />
-                          </g>
-                        );
-                      })}
-                    </>
-                  )}
                 </g>
+              );
+            })}
+
+            {/* Investment Milestone Buy Markers (if enabled) */}
+            {showMilestones &&
+              chartData.map((d, i) => {
+                if (!d.milestones || d.milestones.length === 0) return null;
+                const xPos = getX(i);
+                return (
+                  <g key={`milestone-${i}`} className="cursor-pointer">
+                    <line
+                      x1={xPos}
+                      y1={padT}
+                      x2={xPos}
+                      y2={baselineY}
+                      stroke="#f59e0b"
+                      strokeWidth="1"
+                      strokeDasharray="2 3"
+                      opacity="0.6"
+                    />
+                    <polygon
+                      points={`${xPos},${padT - 6} ${xPos + 5},${padT} ${xPos},${padT + 6} ${xPos - 5},${padT}`}
+                      fill="#f59e0b"
+                      stroke="#ffffff"
+                      strokeWidth="1.5"
+                      className="transition-transform hover:scale-125"
+                    />
+                  </g>
+                );
+              })}
+
+            {/* Active Crosshair Guideline & Node Highlights */}
+            {activeInspectIndex !== null && (
+              <g className="pointer-events-none">
+                <line
+                  x1={activeXPos}
+                  y1={padT}
+                  x2={activeXPos}
+                  y2={baselineY}
+                  stroke={pinnedIndex !== null ? "#f59e0b" : "#33c6e4"}
+                  strokeWidth={pinnedIndex !== null ? 2 : 1.5}
+                  strokeDasharray="3 3"
+                />
+
+                {/* Highlight circles on each series intersection */}
+                {seriesPaths.map((series) => {
+                  if (series.isDimmed) return null;
+                  const pt = series.points[activeInspectIndex];
+                  if (!pt) return null;
+                  return (
+                    <g key={`node-${series.key}`}>
+                      <circle
+                        cx={pt.x}
+                        cy={pt.y}
+                        r="6"
+                        fill={series.color}
+                        opacity="0.3"
+                      />
+                      <circle
+                        cx={pt.x}
+                        cy={pt.y}
+                        r="4"
+                        fill={series.color}
+                        stroke="#ffffff"
+                        strokeWidth="1.5"
+                      />
+                    </g>
+                  );
+                })}
+              </g>
+            )}
+
+            {/* X-Axis Date Ticks */}
+            {chartData.map((d, i) => {
+              // Choose a step so tick labels don't collide
+              const step = Math.max(1, Math.floor(chartData.length / 8));
+              const isFirst = i === 0;
+              const isLast = i === chartData.length - 1;
+              const isEveryN = i % step === 0;
+
+              if (!isFirst && !isLast && !isEveryN) return null;
+
+              const xPos = getX(i);
+              return (
+                <text
+                  key={`date-${i}`}
+                  x={xPos}
+                  y={height - 12}
+                  textAnchor="middle"
+                  className="text-[10px] font-mono fill-current theme-text-muted select-none"
+                >
+                  {d.displayDate}
+                </text>
               );
             })}
           </svg>

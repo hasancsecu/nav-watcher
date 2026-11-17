@@ -316,6 +316,12 @@ pre,
   font-variant-numeric: tabular-nums;
 }
 
+select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
 body {
   font-family: 'Red Hat Text', Roboto, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
   background-color: var(--bg-canvas);
