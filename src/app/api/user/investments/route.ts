@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -306,7 +307,7 @@ export async function GET(req: NextRequest) {
       {
         headers: {
           "Cache-Control":
-            "private, no-cache, no-store, max-age=0, must-revalidate",
+            "private, no-cache, no-transform, stale-while-revalidate=60",
         },
       },
     );
@@ -380,7 +381,9 @@ export async function POST(req: NextRequest) {
         : userFund.fund.latestNav || userFund.fund.defaultNav || 10.0;
 
     const norm = normalizeMonth(calendarMonth, investmentDate);
-    const invType = String(type || "SIP").trim().toUpperCase();
+    const invType = String(type || "SIP")
+      .trim()
+      .toUpperCase();
 
     // Enforce: For the same fund and same month, an investment type (SIP, CIP, LUMPSUM) can only be added once!
     const existingSameType = await prisma.investmentEntry.findFirst({
@@ -430,7 +433,7 @@ export async function POST(req: NextRequest) {
       where: { id: newEntry.id },
     });
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       message: `Successfully recorded ${invType} investment of ৳${safeCash.toLocaleString("en-BD")} for ${norm.calendarMonth}.`,
       investment: recomputedEntry,
       userFund: updatedFund,
@@ -443,6 +446,16 @@ export async function POST(req: NextRequest) {
         newAverageBuyPrice: updatedFund.averageBuyPrice,
       },
     });
+
+    try {
+      revalidatePath("/");
+      revalidatePath("/api/user/investments");
+      revalidatePath("/api/portfolio");
+    } catch (e) {
+      // Ignore cache revalidation errors if outside request context
+    }
+
+    return response;
   } catch (error) {
     console.error("[API /api/user/investments POST] Error:", error);
     return NextResponse.json(
@@ -519,7 +532,9 @@ export async function PUT(req: NextRequest) {
       calendarMonth || entry.calendarMonth,
       investmentDate || entry.investmentDate,
     );
-    const invType = String(type || entry.type).trim().toUpperCase();
+    const invType = String(type || entry.type)
+      .trim()
+      .toUpperCase();
 
     // Prevent updating to a month & type that already has an entry for this fund
     const existingSameType = await prisma.investmentEntry.findFirst({
@@ -563,11 +578,21 @@ export async function PUT(req: NextRequest) {
       where: { id: investmentId },
     });
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       message: `Successfully updated ${invType} investment for ${norm.calendarMonth}.`,
       investment: recomputedEntry,
       userFund: updatedFund,
     });
+
+    try {
+      revalidatePath("/");
+      revalidatePath("/api/user/investments");
+      revalidatePath("/api/portfolio");
+    } catch (e) {
+      // Ignore cache revalidation errors
+    }
+
+    return response;
   } catch (error) {
     console.error("[API /api/user/investments PUT] Error:", error);
     return NextResponse.json(
@@ -626,10 +651,20 @@ export async function DELETE(req: NextRequest) {
     // Rechain remaining investments
     const updatedUserFund = await rechainUserFundInvestments(userFundId);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       message: "Investment entry deleted and holding metrics recalculated.",
       userFund: updatedUserFund,
     });
+
+    try {
+      revalidatePath("/");
+      revalidatePath("/api/user/investments");
+      revalidatePath("/api/portfolio");
+    } catch (e) {
+      // Ignore cache revalidation errors
+    }
+
+    return response;
   } catch (error) {
     console.error("[API /api/user/investments DELETE] Error:", error);
     return NextResponse.json(

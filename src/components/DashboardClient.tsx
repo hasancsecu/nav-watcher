@@ -170,6 +170,132 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
 }
 
+function PortfolioSummarySkeleton() {
+  return (
+    <div className="theme-surface rounded-2xl border theme-border p-4 sm:p-6 shadow-sm space-y-4 animate-pulse">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b theme-border pb-4">
+        <div className="space-y-1.5">
+          <div className="h-3 w-32 bg-slate-200 dark:bg-slate-800 rounded-md" />
+          <div className="h-8 w-44 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+        </div>
+        <div className="h-8 w-36 bg-slate-200 dark:bg-slate-800 rounded-xl" />
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div
+            key={i}
+            className="theme-elevated rounded-xl border theme-border p-3 space-y-2"
+          >
+            <div className="h-2.5 w-20 bg-slate-200/70 dark:bg-slate-800/70 rounded-md" />
+            <div className="h-5 w-28 bg-slate-200 dark:bg-slate-800 rounded-md" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FundCardsGridSkeleton({ count = 3 }: { count?: number }) {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-pulse">
+      {Array.from({ length: count }).map((_, i) => (
+        <div
+          key={i}
+          className="rounded-2xl border theme-border theme-surface p-4 space-y-3.5 shadow-sm"
+        >
+          <div className="flex items-start justify-between gap-2 border-b theme-border pb-3">
+            <div className="space-y-1.5 flex-1">
+              <div className="h-4 w-16 bg-slate-200 dark:bg-slate-800 rounded-md" />
+              <div className="h-4 w-40 bg-slate-200 dark:bg-slate-800 rounded-md" />
+              <div className="h-3 w-24 bg-slate-200/70 dark:bg-slate-800/70 rounded-md" />
+            </div>
+            <div className="h-7 w-7 rounded-lg bg-slate-200 dark:bg-slate-800" />
+          </div>
+          <div className="h-9 w-full rounded-xl bg-slate-200/60 dark:bg-slate-800/60" />
+          <div className="grid grid-cols-2 gap-2 pt-1">
+            <div className="space-y-1">
+              <div className="h-2.5 w-20 bg-slate-200/60 dark:bg-slate-800/60 rounded-md" />
+              <div className="h-4 w-24 bg-slate-200 dark:bg-slate-800 rounded-md" />
+            </div>
+            <div className="space-y-1 text-right flex flex-col items-end">
+              <div className="h-2.5 w-20 bg-slate-200/60 dark:bg-slate-800/60 rounded-md" />
+              <div className="h-4 w-24 bg-slate-200 dark:bg-slate-800 rounded-md" />
+            </div>
+          </div>
+          <div className="h-8 w-full rounded-xl bg-slate-200/50 dark:bg-slate-800/50" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ChartSkeleton() {
+  return (
+    <div className="theme-surface rounded-2xl sm:rounded-3xl border theme-border p-4 sm:p-6 shadow-sm space-y-4 animate-pulse">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b theme-border pb-3.5">
+        <div className="space-y-1.5">
+          <div className="h-5 w-56 bg-slate-200 dark:bg-slate-800 rounded-md" />
+          <div className="h-3 w-72 bg-slate-200/60 dark:bg-slate-800/60 rounded-md" />
+        </div>
+        <div className="h-9 w-64 bg-slate-200 dark:bg-slate-800 rounded-xl" />
+      </div>
+      <div className="flex items-center gap-2">
+        <div className="h-7 w-20 bg-slate-200 dark:bg-slate-800 rounded-full" />
+        <div className="h-7 w-28 bg-slate-200 dark:bg-slate-800 rounded-full" />
+        <div className="h-7 w-24 bg-slate-200 dark:bg-slate-800 rounded-full" />
+      </div>
+      <div className="h-[280px] w-full rounded-2xl bg-gradient-to-b from-slate-100 to-slate-200/40 dark:from-slate-900/60 dark:to-slate-950/60 border theme-border flex items-end p-6 gap-6">
+        <div className="h-1/3 flex-1 bg-slate-200/60 dark:bg-slate-800/60 rounded-t-xl" />
+        <div className="h-2/3 flex-1 bg-slate-200/60 dark:bg-slate-800/60 rounded-t-xl" />
+        <div className="h-1/2 flex-1 bg-slate-200/60 dark:bg-slate-800/60 rounded-t-xl" />
+        <div className="h-3/4 flex-1 bg-slate-200/60 dark:bg-slate-800/60 rounded-t-xl" />
+      </div>
+    </div>
+  );
+}
+
+function CompareSkeleton() {
+  return (
+    <div className="space-y-4 animate-pulse">
+      <div className="flex items-center justify-between border-b theme-border pb-3">
+        <div className="space-y-1">
+          <div className="h-5 w-44 bg-slate-200 dark:bg-slate-800 rounded-md" />
+          <div className="h-3 w-64 bg-slate-200/60 dark:bg-slate-800/60 rounded-md" />
+        </div>
+        <div className="h-8 w-48 bg-slate-200 dark:bg-slate-800 rounded-xl" />
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div
+            key={i}
+            className="theme-surface rounded-xl border theme-border p-3 space-y-2"
+          >
+            <div className="h-3 w-28 bg-slate-200/70 dark:bg-slate-800/70 rounded" />
+            <div className="h-4 w-36 bg-slate-200 dark:bg-slate-800 rounded" />
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div
+            key={i}
+            className="theme-elevated rounded-2xl border theme-border p-4 space-y-3.5"
+          >
+            <div className="h-4 w-36 bg-slate-200 dark:bg-slate-800 rounded" />
+            <div className="h-2 w-full bg-slate-200/60 dark:bg-slate-800/60 rounded-full" />
+            <div className="grid grid-cols-2 gap-2">
+              <div className="h-14 bg-slate-200/50 dark:bg-slate-800/50 rounded-xl" />
+              <div className="h-14 bg-slate-200/50 dark:bg-slate-800/50 rounded-xl" />
+              <div className="h-14 bg-slate-200/50 dark:bg-slate-800/50 rounded-xl" />
+              <div className="h-14 bg-slate-200/50 dark:bg-slate-800/50 rounded-xl" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardClient(props: DashboardClientProps) {
   return (
     <ToastProvider>
@@ -977,6 +1103,19 @@ function DashboardClientContent({
               </div>
             </div>
           </div>
+        ) : isDataLoading || isRefreshing ? (
+          /* SKELETON LOADER UNTIL API RESPONSE */
+          <div className="space-y-6">
+            <div className="rounded-2xl border theme-border p-3.5 bg-slate-100/50 dark:bg-slate-900/50 animate-pulse flex items-center justify-between">
+              <div className="h-4 w-36 bg-slate-200 dark:bg-slate-800 rounded-md" />
+              <div className="h-4 w-24 bg-slate-200 dark:bg-slate-800 rounded-md" />
+            </div>
+            <PortfolioSummarySkeleton />
+            <div className="space-y-4">
+              <div className="h-5 w-40 bg-slate-200 dark:bg-slate-800 rounded-md animate-pulse" />
+              <FundCardsGridSkeleton count={funds.length > 0 ? funds.length : 3} />
+            </div>
+          </div>
         ) : funds.length === 0 ? (
           /* CASE B: LOGGED IN BUT ZERO FUNDS ADDED (FRESH START) */
           <div className="py-12 max-w-xl mx-auto text-center space-y-6">
@@ -1063,7 +1202,9 @@ function DashboardClientContent({
                       <RefreshCw
                         className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin text-[#33c6e4]" : ""}`}
                       />
-                      <span>{isRefreshing ? "Syncing..." : "Sync Live NAV"}</span>
+                      <span>
+                        {isRefreshing ? "Syncing..." : "Sync Live NAV"}
+                      </span>
                     </button>
                   </div>
                 </div>
@@ -1107,99 +1248,103 @@ function DashboardClientContent({
               </div>
 
               {/* 1. Hero Portfolio Summary Card */}
-              <section
-                aria-labelledby="portfolio-summary-heading"
-                className="theme-surface rounded-2xl border p-4 sm:p-6 shadow-sm space-y-4"
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b theme-border pb-4">
-                  <div>
-                    <span className="text-[11px] font-bold uppercase tracking-wider theme-text-muted">
-                      My Mutual Funds Portfolio
-                    </span>
-                    <h2
-                      id="portfolio-summary-heading"
-                      className="text-2xl sm:text-3xl font-black tracking-tight theme-text-primary mt-0.5"
-                    >
-                      ৳{formatBdt(summary.currentMarketValue, 2)}
-                    </h2>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`inline-flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs sm:text-sm font-bold font-mono ${
-                        isNetGain ? "status-gain-badge" : "status-loss-badge"
-                      }`}
-                    >
-                      {isNetGain ? (
-                        <TrendingUp className="h-4 w-4 shrink-0 status-gain-text" />
-                      ) : (
-                        <TrendingDown className="h-4 w-4 shrink-0 status-loss-text" />
-                      )}
-                      <span>
-                        {isNetGain ? "+" : "-"}৳
-                        {formatBdt(Math.abs(summary.absoluteGainLoss), 2)} (
-                        {isNetGain ? "+" : ""}
-                        {summary.returnPct.toFixed(2)}%)
+              {isDataLoading || isRefreshing ? (
+                <PortfolioSummarySkeleton />
+              ) : (
+                <section
+                  aria-labelledby="portfolio-summary-heading"
+                  className="theme-surface rounded-2xl border p-4 sm:p-6 shadow-sm space-y-4"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b theme-border pb-4">
+                    <div>
+                      <span className="text-[11px] font-bold uppercase tracking-wider theme-text-muted">
+                        My Mutual Funds Portfolio
                       </span>
-                    </span>
-                  </div>
-                </div>
+                      <h2
+                        id="portfolio-summary-heading"
+                        className="text-2xl sm:text-3xl font-black tracking-tight theme-text-primary mt-0.5"
+                      >
+                        ৳{formatBdt(summary.currentMarketValue, 2)}
+                      </h2>
+                    </div>
 
-                {/* 3 Key Metrics */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                  <div className="theme-elevated rounded-xl border p-3">
-                    <span className="theme-text-muted block text-[11px]">
-                      Total Invested Capital
-                    </span>
-                    <strong className="font-mono text-sm sm:text-base font-bold theme-text-primary">
-                      ৳{formatBdt(summary.totalInvested, 2)}
-                    </strong>
-                  </div>
-
-                  <div className="theme-elevated rounded-xl border p-3">
-                    <span className="theme-text-muted block text-[11px]">
-                      Total Units Held
-                    </span>
-                    <strong className="font-mono text-sm sm:text-base font-bold text-[#155360] dark:text-[#33c6e4]">
-                      {Math.floor(
-                        summary.totalUnitsHeld ??
-                          funds.reduce(
-                            (acc, f) => acc + (f.totalUnitsHeld || 0),
-                            0,
-                          ),
-                      ).toLocaleString("en-BD")}{" "}
-                      units
-                    </strong>
-                    <span className="block text-[10px] theme-text-muted mt-0.5">
-                      Strictly Plain Integer
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`inline-flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs sm:text-sm font-bold font-mono ${
+                          isNetGain ? "status-gain-badge" : "status-loss-badge"
+                        }`}
+                      >
+                        {isNetGain ? (
+                          <TrendingUp className="h-4 w-4 shrink-0 status-gain-text" />
+                        ) : (
+                          <TrendingDown className="h-4 w-4 shrink-0 status-loss-text" />
+                        )}
+                        <span>
+                          {isNetGain ? "+" : "-"}৳
+                          {formatBdt(Math.abs(summary.absoluteGainLoss), 2)} (
+                          {isNetGain ? "+" : ""}
+                          {summary.returnPct.toFixed(2)}%)
+                        </span>
+                      </span>
+                    </div>
                   </div>
 
-                  <div className="theme-elevated rounded-xl border p-3">
-                    <span className="theme-text-muted block text-[11px]">
-                      Unallotted Cash Buffer
-                    </span>
-                    <strong className="font-mono text-sm sm:text-base font-bold text-amber-600 dark:text-amber-400">
-                      ৳{formatBdt(summary.totalFractionalCash, 2)}
-                    </strong>
-                    <span className="block text-[10px] theme-text-muted mt-0.5">
-                      Rolls to next SIP
-                    </span>
-                  </div>
+                  {/* 3 Key Metrics */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                    <div className="theme-elevated rounded-xl border p-3">
+                      <span className="theme-text-muted block text-[11px]">
+                        Total Invested Capital
+                      </span>
+                      <strong className="font-mono text-sm sm:text-base font-bold theme-text-primary">
+                        ৳{formatBdt(summary.totalInvested, 2)}
+                      </strong>
+                    </div>
 
-                  <div className="theme-elevated rounded-xl border p-3">
-                    <span className="theme-text-muted block text-[11px]">
-                      Funds Tracked
-                    </span>
-                    <strong className="font-mono text-sm sm:text-base font-bold theme-text-primary">
-                      {summary.fundsCount} Funds
-                    </strong>
-                    <span className="block text-[10px] theme-text-muted mt-0.5">
-                      In Portfolio
-                    </span>
+                    <div className="theme-elevated rounded-xl border p-3">
+                      <span className="theme-text-muted block text-[11px]">
+                        Total Units Held
+                      </span>
+                      <strong className="font-mono text-sm sm:text-base font-bold text-[#155360] dark:text-[#33c6e4]">
+                        {Math.floor(
+                          summary.totalUnitsHeld ??
+                            funds.reduce(
+                              (acc, f) => acc + (f.totalUnitsHeld || 0),
+                              0,
+                            ),
+                        ).toLocaleString("en-BD")}{" "}
+                        units
+                      </strong>
+                      <span className="block text-[10px] theme-text-muted mt-0.5">
+                        Strictly Plain Integer
+                      </span>
+                    </div>
+
+                    <div className="theme-elevated rounded-xl border p-3">
+                      <span className="theme-text-muted block text-[11px]">
+                        Unallotted Cash Buffer
+                      </span>
+                      <strong className="font-mono text-sm sm:text-base font-bold text-amber-600 dark:text-amber-400">
+                        ৳{formatBdt(summary.totalFractionalCash, 2)}
+                      </strong>
+                      <span className="block text-[10px] theme-text-muted mt-0.5">
+                        Rolls to next SIP
+                      </span>
+                    </div>
+
+                    <div className="theme-elevated rounded-xl border p-3">
+                      <span className="theme-text-muted block text-[11px]">
+                        Funds Tracked
+                      </span>
+                      <strong className="font-mono text-sm sm:text-base font-bold theme-text-primary">
+                        {summary.fundsCount} Funds
+                      </strong>
+                      <span className="block text-[10px] theme-text-muted mt-0.5">
+                        In Portfolio
+                      </span>
+                    </div>
                   </div>
-                </div>
-              </section>
+                </section>
+              )}
 
               {/* 2. User Fund Asset Cards */}
               <section
@@ -1218,150 +1363,155 @@ function DashboardClientContent({
                   </h3>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {funds.map((fund) => {
-                    const isGain = fund.absoluteGainLoss >= 0;
+                {isDataLoading || isRefreshing ? (
+                  <FundCardsGridSkeleton
+                    count={funds.length > 0 ? funds.length : 3}
+                  />
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {funds.map((fund) => {
+                      const isGain = fund.absoluteGainLoss >= 0;
 
-                    return (
-                      <div
-                        key={fund.id}
-                        className="rounded-2xl border theme-border theme-surface p-4 space-y-3.5 shadow-sm hover:border-[#33c6e4]/40 transition flex flex-col justify-between"
-                      >
-                        <div className="space-y-3">
-                          {/* Fund Header */}
-                          <div className="flex items-start justify-between gap-2 border-b theme-border pb-3">
-                            <div className="min-w-0">
+                      return (
+                        <div
+                          key={fund.id}
+                          className="rounded-2xl border theme-border theme-surface p-4 space-y-3.5 shadow-sm hover:border-[#33c6e4]/40 transition flex flex-col justify-between"
+                        >
+                          <div className="space-y-3">
+                            {/* Fund Header */}
+                            <div className="flex items-start justify-between gap-2 border-b theme-border pb-3">
+                              <div className="min-w-0">
+                                <span
+                                  className={`inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-bold mb-1 ${
+                                    fund.category === "Shariah"
+                                      ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                                      : fund.category === "Income"
+                                        ? "bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 border border-sky-200 dark:border-sky-800"
+                                        : "bg-[#ebf9fc] text-[#155360] dark:bg-slate-800 dark:text-[#33c6e4] border border-[#c0edf7] dark:border-slate-700"
+                                  }`}
+                                >
+                                  {fund.category}
+                                </span>
+                                <h4 className="text-sm font-bold theme-text-primary truncate">
+                                  {fund.name}
+                                </h4>
+                                <p className="text-[11px] theme-text-muted truncate mt-0.5">
+                                  {fund.fundManager}
+                                </p>
+                              </div>
+
+                              <a
+                                href={fund.biniUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                title="View Fund Details"
+                                className="p-1.5 rounded-lg border theme-border text-slate-400 hover:text-[#33c6e4] transition shrink-0"
+                              >
+                                <ExternalLink className="h-3.5 w-3.5" />
+                              </a>
+                            </div>
+
+                            {/* NAV Badge */}
+                            <div className="flex items-center justify-between text-xs rounded-xl bg-slate-50 dark:bg-slate-800/50 p-2 border theme-border">
+                              <span className="theme-text-muted">
+                                Latest Scraped NAV:
+                              </span>
+                              <span className="font-mono font-bold status-gain-text">
+                                ৳{fund.effectiveNav.toFixed(3)}
+                              </span>
+                            </div>
+
+                            {/* Financial Stats */}
+                            <div className="grid grid-cols-2 gap-2 text-xs pt-1">
+                              <div>
+                                <span className="text-[10px] theme-text-muted block">
+                                  Invested Capital
+                                </span>
+                                <strong className="font-mono text-xs font-bold theme-text-primary">
+                                  ৳{formatBdt(fund.totalInvested, 2)}
+                                </strong>
+                              </div>
+                              <div className="text-right">
+                                <span className="text-[10px] theme-text-muted block">
+                                  Market Value
+                                </span>
+                                <strong className="font-mono text-xs font-bold theme-text-primary">
+                                  ৳{formatBdt(fund.currentMarketValue, 2)}
+                                </strong>
+                              </div>
+                              <div>
+                                <span className="text-[10px] theme-text-muted block">
+                                  Integer Units Held
+                                </span>
+                                <strong className="font-mono text-xs font-bold text-[#155360] dark:text-[#33c6e4]">
+                                  {Math.floor(
+                                    fund.totalUnitsHeld,
+                                  ).toLocaleString("en-BD")}{" "}
+                                  units
+                                </strong>
+                              </div>
+                              <div className="text-right">
+                                <span className="text-[10px] theme-text-muted block">
+                                  Cash Buffer
+                                </span>
+                                <strong className="font-mono text-xs font-bold text-amber-600 dark:text-amber-400">
+                                  ৳{formatBdt(fund.fractionalCashBalance, 2)}
+                                </strong>
+                              </div>
+                            </div>
+
+                            {/* Return Badge */}
+                            <div className="flex items-center justify-between text-xs border-t theme-border pt-2.5">
+                              <span className="theme-text-muted text-[11px]">
+                                Net Gain / Loss
+                              </span>
                               <span
-                                className={`inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-bold mb-1 ${
-                                  fund.category === "Shariah"
-                                    ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
-                                    : fund.category === "Income"
-                                      ? "bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 border border-sky-200 dark:border-sky-800"
-                                      : "bg-[#ebf9fc] text-[#155360] dark:bg-slate-800 dark:text-[#33c6e4] border border-[#c0edf7] dark:border-slate-700"
+                                className={`font-mono text-xs font-bold px-2 py-0.5 rounded-md ${
+                                  isGain
+                                    ? "status-gain-badge"
+                                    : "status-loss-badge"
                                 }`}
                               >
-                                {fund.category}
+                                {isGain ? "+" : "-"}৳
+                                {formatBdt(Math.abs(fund.absoluteGainLoss), 2)}{" "}
+                                ({isGain ? "+" : ""}
+                                {fund.returnPct.toFixed(2)}%)
                               </span>
-                              <h4 className="text-sm font-bold theme-text-primary truncate">
-                                {fund.name}
-                              </h4>
-                              <p className="text-[11px] theme-text-muted truncate mt-0.5">
-                                {fund.fundManager}
-                              </p>
-                            </div>
-
-                            <a
-                              href={fund.biniUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              title="View Fund Details"
-                              className="p-1.5 rounded-lg border theme-border text-slate-400 hover:text-[#33c6e4] transition shrink-0"
-                            >
-                              <ExternalLink className="h-3.5 w-3.5" />
-                            </a>
-                          </div>
-
-                          {/* NAV Badge */}
-                          <div className="flex items-center justify-between text-xs rounded-xl bg-slate-50 dark:bg-slate-800/50 p-2 border theme-border">
-                            <span className="theme-text-muted">
-                              Latest Scraped NAV:
-                            </span>
-                            <span className="font-mono font-bold status-gain-text">
-                              ৳{fund.effectiveNav.toFixed(3)}
-                            </span>
-                          </div>
-
-                          {/* Financial Stats */}
-                          <div className="grid grid-cols-2 gap-2 text-xs pt-1">
-                            <div>
-                              <span className="text-[10px] theme-text-muted block">
-                                Invested Capital
-                              </span>
-                              <strong className="font-mono text-xs font-bold theme-text-primary">
-                                ৳{formatBdt(fund.totalInvested, 2)}
-                              </strong>
-                            </div>
-                            <div className="text-right">
-                              <span className="text-[10px] theme-text-muted block">
-                                Market Value
-                              </span>
-                              <strong className="font-mono text-xs font-bold theme-text-primary">
-                                ৳{formatBdt(fund.currentMarketValue, 2)}
-                              </strong>
-                            </div>
-                            <div>
-                              <span className="text-[10px] theme-text-muted block">
-                                Integer Units Held
-                              </span>
-                              <strong className="font-mono text-xs font-bold text-[#155360] dark:text-[#33c6e4]">
-                                {Math.floor(fund.totalUnitsHeld).toLocaleString(
-                                  "en-BD",
-                                )}{" "}
-                                units
-                              </strong>
-                            </div>
-                            <div className="text-right">
-                              <span className="text-[10px] theme-text-muted block">
-                                Cash Buffer
-                              </span>
-                              <strong className="font-mono text-xs font-bold text-amber-600 dark:text-amber-400">
-                                ৳{formatBdt(fund.fractionalCashBalance, 2)}
-                              </strong>
                             </div>
                           </div>
 
-                          {/* Return Badge */}
-                          <div className="flex items-center justify-between text-xs border-t theme-border pt-2.5">
-                            <span className="theme-text-muted text-[11px]">
-                              Net Gain / Loss
-                            </span>
-                            <span
-                              className={`font-mono text-xs font-bold px-2 py-0.5 rounded-md ${
-                                isGain
-                                  ? "status-gain-badge"
-                                  : "status-loss-badge"
-                              }`}
-                            >
-                              {isGain ? "+" : "-"}৳
-                              {formatBdt(Math.abs(fund.absoluteGainLoss), 2)} (
-                              {isGain ? "+" : ""}
-                              {fund.returnPct.toFixed(2)}%)
-                            </span>
+                          {/* Card Action Buttons */}
+                          <div className="pt-3 border-t theme-border space-y-2">
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setPreselectedFundIdForInv(fund.id);
+                                  setIsAddInvestmentModalOpen(true);
+                                }}
+                                className="flex-1 rounded-xl bg-[#33c6e4] hover:bg-[#2eb4cf] text-slate-950 py-2.5 px-3 text-xs font-bold transition shadow-sm inline-flex items-center justify-center gap-1.5"
+                              >
+                                <Calendar className="h-3.5 w-3.5" />
+                                <span>Add Investment</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleDeleteFund(fund.id, fund.name)
+                                }
+                                title="Remove fund from portfolio"
+                                className="rounded-xl border border-rose-200 dark:border-rose-900/60 p-2.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition shrink-0"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
                           </div>
                         </div>
-
-                        {/* Card Action Buttons */}
-                        <div className="pt-3 border-t theme-border space-y-2">
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setPreselectedFundIdForInv(fund.id);
-                                setIsAddInvestmentModalOpen(true);
-                              }}
-                              className="flex-1 rounded-xl bg-[#33c6e4] hover:bg-[#2eb4cf] text-slate-950 py-2.5 px-3 text-xs font-bold transition shadow-sm inline-flex items-center justify-center gap-1.5"
-                            >
-                              <Calendar className="h-3.5 w-3.5" />
-                              <span>Add Investment</span>
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleDeleteFund(fund.id, fund.name)
-                              }
-                              title="Remove fund from portfolio"
-                              className="rounded-xl border border-rose-200 dark:border-rose-900/60 p-2.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition shrink-0"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </div>
-
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
+                )}
               </section>
             </div>
 
@@ -1388,25 +1538,29 @@ function DashboardClientContent({
             <div
               className={mobileTab === "charts" ? "block" : "hidden sm:block"}
             >
-              {funds.length > 0 && (
+              {isRefreshing ? (
+                <ChartSkeleton />
+              ) : funds.length > 0 ? (
                 <HistoricalInvestmentComparisonChart
                   funds={funds}
                   snapshots={snapshots}
                 />
-              )}
+              ) : null}
             </div>
 
             {/* TAB 3: COMPARE (Invested Funds Comparison Section) */}
             <div
               className={mobileTab === "compare" ? "block" : "hidden sm:block"}
             >
-              {funds.length > 0 && (
+              {isRefreshing ? (
+                <CompareSkeleton />
+              ) : funds.length > 0 ? (
                 <FundComparisonSection
                   funds={funds}
                   totalPortfolioInvested={summary.totalInvested}
                   totalPortfolioValue={summary.currentMarketValue}
                 />
-              )}
+              ) : null}
             </div>
 
             {/* TAB 4: BREAKDOWN (Detailed SIP Valuation & Formula Breakdown) */}
@@ -1912,6 +2066,8 @@ function DashboardClientContent({
         onClose={() => setIsAuthModalOpen(false)}
         onSuccess={(newUser) => {
           setUser(newUser);
+          setMobileTab("portfolio"); // Always open portfolio menu page on mobile after login
+          setIsDataLoading(true); // Immediately activate skeleton loader until portfolio API responds
           refreshUserData("Loading your portfolio...");
           setSyncBanner({
             type: "success",

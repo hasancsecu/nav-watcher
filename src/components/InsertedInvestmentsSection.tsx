@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import React, {
+  useState,
+  useMemo,
+  useEffect,
+  useCallback,
+  useRef,
+} from "react";
 import {
   Calendar,
   Filter,
@@ -10,18 +16,13 @@ import {
   ChevronRight,
   ChevronDown,
   Plus,
-  Coins,
-  Layers,
   Sparkles,
   X,
   FileSpreadsheet,
-  CheckCircle2,
   Info,
   Search,
   Loader2,
   RefreshCw,
-  Server,
-  Laptop,
 } from "lucide-react";
 import MonthYearDatePicker, { MonthYearValue } from "./MonthYearDatePicker";
 
@@ -92,24 +93,153 @@ const MONTH_NAMES = [
   "December",
 ];
 
+// =============================================================================
+// Modern Skeleton Loaders matching exact Desktop Table & Mobile Cards Layout
+// =============================================================================
+
+function DesktopTableSkeleton({ rows = 6 }: { rows?: number }) {
+  return (
+    <div className="hidden md:block overflow-x-auto rounded-xl border theme-border animate-pulse">
+      <table className="w-full text-left border-collapse text-xs">
+        <thead>
+          <tr className="border-b theme-border bg-slate-100/70 dark:bg-slate-800/60 font-bold theme-text-secondary">
+            <th className="py-3 px-3.5">Month &amp; Date</th>
+            <th className="py-3 px-3.5">Fund &amp; AMC</th>
+            <th className="py-3 px-3 text-center">Type</th>
+            <th className="py-3 px-3 text-right">Cash Invested</th>
+            <th className="py-3 px-3 text-right">Exec. NAV</th>
+            <th className="py-3 px-3 text-right">Units Allotted</th>
+            <th className="py-3 px-3 text-right">Units Cost</th>
+            <th className="py-3 px-3 text-right">Buffer Remainder</th>
+            <th className="py-3 px-3.5">Notes</th>
+            <th className="py-3 px-3.5 text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y theme-border">
+          {Array.from({ length: rows }).map((_, idx) => (
+            <tr key={idx} className="bg-slate-50/30 dark:bg-slate-900/20">
+              <td className="py-3 px-3.5 space-y-1">
+                <div className="h-3.5 w-24 bg-slate-200 dark:bg-slate-800 rounded-md" />
+                <div className="h-2.5 w-16 bg-slate-200/60 dark:bg-slate-800/60 rounded-md" />
+              </td>
+              <td className="py-3 px-3.5 space-y-1">
+                <div className="h-3.5 w-32 bg-slate-200 dark:bg-slate-800 rounded-md" />
+                <div className="h-2.5 w-20 bg-slate-200/60 dark:bg-slate-800/60 rounded-md" />
+              </td>
+              <td className="py-3 px-3 text-center">
+                <div className="h-5 w-12 bg-slate-200 dark:bg-slate-800 rounded-full mx-auto" />
+              </td>
+              <td className="py-3 px-3 text-right">
+                <div className="h-3.5 w-16 bg-slate-200 dark:bg-slate-800 rounded-md ml-auto" />
+              </td>
+              <td className="py-3 px-3 text-right">
+                <div className="h-3.5 w-14 bg-slate-200 dark:bg-slate-800 rounded-md ml-auto" />
+              </td>
+              <td className="py-3 px-3 text-right">
+                <div className="h-3.5 w-16 bg-slate-200 dark:bg-slate-800 rounded-md ml-auto" />
+              </td>
+              <td className="py-3 px-3 text-right">
+                <div className="h-3.5 w-16 bg-slate-200 dark:bg-slate-800 rounded-md ml-auto" />
+              </td>
+              <td className="py-3 px-3 text-right">
+                <div className="h-3.5 w-14 bg-slate-200 dark:bg-slate-800 rounded-md ml-auto" />
+              </td>
+              <td className="py-3 px-3.5">
+                <div className="h-3 w-20 bg-slate-200/60 dark:bg-slate-800/60 rounded-md" />
+              </td>
+              <td className="py-3 px-3.5 text-center">
+                <div className="flex items-center justify-center gap-1.5">
+                  <div className="h-7 w-7 rounded-lg bg-slate-200 dark:bg-slate-800" />
+                  <div className="h-7 w-7 rounded-lg bg-slate-200 dark:bg-slate-800" />
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function MobileCardsSkeleton({ count = 4 }: { count?: number }) {
+  return (
+    <div className="grid grid-cols-1 gap-3 md:hidden animate-pulse">
+      {Array.from({ length: count }).map((_, idx) => (
+        <div
+          key={idx}
+          className="rounded-2xl border theme-border theme-surface p-3.5 space-y-3 shadow-xs"
+        >
+          {/* Header */}
+          <div className="flex items-start justify-between gap-2 border-b theme-border pb-2.5">
+            <div className="space-y-1.5 flex-1">
+              <div className="flex items-center gap-2">
+                <div className="h-4 w-28 bg-slate-200 dark:bg-slate-800 rounded-md" />
+                <div className="h-4 w-12 bg-slate-200 dark:bg-slate-800 rounded-full" />
+              </div>
+              <div className="h-3 w-36 bg-slate-200/70 dark:bg-slate-800/70 rounded-md" />
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="h-7 w-7 rounded-lg bg-slate-200 dark:bg-slate-800" />
+              <div className="h-7 w-7 rounded-lg bg-slate-200 dark:bg-slate-800" />
+            </div>
+          </div>
+
+          {/* 2-column metrics */}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <div className="h-2.5 w-16 bg-slate-200/60 dark:bg-slate-800/60 rounded-md" />
+              <div className="h-4 w-20 bg-slate-200 dark:bg-slate-800 rounded-md" />
+            </div>
+            <div className="space-y-1 text-right flex flex-col items-end">
+              <div className="h-2.5 w-24 bg-slate-200/60 dark:bg-slate-800/60 rounded-md" />
+              <div className="h-4 w-16 bg-slate-200 dark:bg-slate-800 rounded-md" />
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="flex items-center justify-between pt-2 border-t theme-border">
+            <div className="h-3 w-20 bg-slate-200/60 dark:bg-slate-800/60 rounded-md" />
+            <div className="h-3 w-20 bg-slate-200/60 dark:bg-slate-800/60 rounded-md" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// =============================================================================
+// Main Component: Strictly Server-Side with Stale-While-Revalidate Caching
+// =============================================================================
+
 export default function InsertedInvestmentsSection({
   funds,
   onEditInvestment,
   onDeleteInvestment,
   onAddInvestment,
 }: InsertedInvestmentsSectionProps) {
-  // ---------------------------------------------------------------------------
-  // 1. Pagination & Execution Mode (Server-side vs Client-side)
-  // ---------------------------------------------------------------------------
-  const [mode, setMode] = useState<"server" | "client">("server");
+  // Ref for smooth scroll & focus to the top of the grid on pagination change
+  const gridTopRef = useRef<HTMLDivElement | null>(null);
 
-  // Filter State (Shared between Server & Client)
+  // In-memory SWR Query Cache (URL query string -> { data, timestamp })
+  const queryCacheRef = useRef<
+    Map<
+      string,
+      {
+        investments: InvestmentItem[];
+        pagination: ServerPaginationData;
+        summary: ServerSummaryData;
+        timestamp: number;
+      }
+    >
+  >(new Map());
+
+  // Filter State
   const [selectedFundId, setSelectedFundId] = useState<string>("ALL");
   const [selectedType, setSelectedType] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [debouncedSearch, setDebouncedSearch] = useState<string>("");
 
-  // Month-Year Filter: null means "All Months", or specific { monthIndex, year, label }
+  // Month-Year Filter
   const [selectedMonthYear, setSelectedMonthYear] = useState<{
     monthIndex: number;
     year: number;
@@ -117,15 +247,13 @@ export default function InsertedInvestmentsSection({
   } | null>(null);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
-  // Pagination State (Shared)
+  // Pagination State
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(10);
 
-  // ---------------------------------------------------------------------------
-  // 2. Server-side State
-  // ---------------------------------------------------------------------------
-  const [serverInvestments, setServerInvestments] = useState<InvestmentItem[]>([]);
-  const [serverPagination, setServerPagination] = useState<ServerPaginationData>({
+  // Server Data State
+  const [investments, setInvestments] = useState<InvestmentItem[]>([]);
+  const [pagination, setPagination] = useState<ServerPaginationData>({
     currentPage: 1,
     pageSize: 10,
     totalCount: 0,
@@ -133,15 +261,16 @@ export default function InsertedInvestmentsSection({
     hasNextPage: false,
     hasPrevPage: false,
   });
-  const [serverSummary, setServerSummary] = useState<ServerSummaryData>({
+  const [summary, setSummary] = useState<ServerSummaryData>({
     filteredCount: 0,
     totalCashInvested: 0,
     totalUnitsAllotted: 0,
     totalUnitsCost: 0,
   });
-  const [isLoadingServer, setIsLoadingServer] = useState<boolean>(false);
+
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isRevalidating, setIsRevalidating] = useState<boolean>(false);
   const [serverError, setServerError] = useState<string | null>(null);
-  const [lastServerFetchTime, setLastServerFetchTime] = useState<Date | null>(null);
 
   // Debounce search query (350ms)
   useEffect(() => {
@@ -151,168 +280,78 @@ export default function InsertedInvestmentsSection({
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // Reset page to 1 on any filter or page size change
-  const handleFilterChange = useCallback(() => {
-    setCurrentPage(1);
-  }, []);
-
+  // Reset page to 1 on filter changes and trigger skeleton loading
   useEffect(() => {
-    handleFilterChange();
-  }, [selectedFundId, selectedType, selectedMonthYear, debouncedSearch, pageSize, handleFilterChange]);
+    setIsLoading(true);
+    setCurrentPage(1);
+  }, [
+    selectedFundId,
+    selectedType,
+    selectedMonthYear,
+    debouncedSearch,
+    pageSize,
+  ]);
 
   // ---------------------------------------------------------------------------
-  // 3. Client-side Local Data Computation (Instant Fallback / Client Mode)
+  // Server Fetch with Next.js Stale-While-Revalidate Caching
   // ---------------------------------------------------------------------------
-  const allClientInvestments = useMemo<InvestmentItem[]>(() => {
-    const list: InvestmentItem[] = [];
-    for (const fund of funds) {
-      if (Array.isArray(fund.investments)) {
-        for (const inv of fund.investments) {
-          list.push({
-            id: inv.id,
-            userFundId: fund.id,
-            fundId: fund.fundId,
-            fundName: fund.name,
-            fundShortName: fund.shortName,
-            fundManager: fund.fundManager,
-            calendarMonth: inv.calendarMonth,
-            monthKey: inv.monthKey,
-            investmentDate: inv.investmentDate,
-            cashInvested: inv.cashInvested,
-            cashBufferUsed: inv.cashBufferUsed || 0,
-            executionNav: inv.executionNav,
-            unitsAllotted: inv.unitsAllotted,
-            unitsCost: inv.unitsCost,
-            cashRemainder: inv.cashRemainder || 0,
-            type: inv.type || "SIP",
-            notes: inv.notes,
-            createdAt: inv.createdAt,
-            fund,
-          });
-        }
-      }
-    }
+  const fetchInvestments = useCallback(
+    async (
+      targetPage = currentPage,
+      targetPageSize = pageSize,
+      forceRefresh = false,
+    ) => {
+      // Build query string
+      const params = new URLSearchParams();
+      params.set("page", String(targetPage));
+      params.set("pageSize", String(targetPageSize));
 
-    return list.sort((a, b) => {
-      const dateA = new Date(a.investmentDate || a.createdAt || 0).getTime();
-      const dateB = new Date(b.investmentDate || b.createdAt || 0).getTime();
-      return dateB - dateA;
-    });
-  }, [funds]);
-
-  // Filtered Client-side data
-  const filteredClientInvestments = useMemo(() => {
-    const query = debouncedSearch.trim().toLowerCase();
-
-    return allClientInvestments.filter((inv) => {
-      // 1. Fund Filter
-      if (selectedFundId !== "ALL" && inv.userFundId !== selectedFundId && inv.fundId !== selectedFundId) {
-        return false;
+      if (selectedFundId !== "ALL") {
+        params.set("fundId", selectedFundId);
       }
 
-      // 2. Type Filter
-      if (selectedType !== "ALL" && inv.type.toUpperCase() !== selectedType.toUpperCase()) {
-        return false;
+      if (selectedType !== "ALL") {
+        params.set("type", selectedType);
       }
 
-      // 3. Month-Year Filter
       if (selectedMonthYear) {
-        const expectedMonthName = MONTH_NAMES[selectedMonthYear.monthIndex].toLowerCase();
+        const expectedMonthName =
+          MONTH_NAMES[selectedMonthYear.monthIndex].toLowerCase();
         const expectedYear = String(selectedMonthYear.year);
-        const expectedMonthKey = `${expectedMonthName}-${expectedYear}`;
+        params.set("monthKey", `${expectedMonthName}-${expectedYear}`);
+      }
 
-        const invMonth = inv.calendarMonth?.trim().toLowerCase() || "";
-        const invMonthKey = inv.monthKey?.toLowerCase() || "";
+      if (debouncedSearch.trim()) {
+        params.set("search", debouncedSearch.trim());
+      }
 
-        const matchesLabel =
-          invMonth === `${expectedMonthName} ${expectedYear}` ||
-          (invMonth.includes(expectedMonthName) && invMonth.includes(expectedYear));
-        const matchesKey = invMonthKey === expectedMonthKey;
+      const cacheKey = params.toString();
 
-        if (!matchesLabel && !matchesKey) {
-          return false;
+      // Check SWR cache first (unless forceRefresh)
+      const cached = queryCacheRef.current.get(cacheKey);
+      if (cached && !forceRefresh) {
+        // Immediately render from cache with zero delay!
+        setInvestments(cached.investments);
+        setPagination(cached.pagination);
+        setSummary(cached.summary);
+        setIsLoading(false);
+        setIsRevalidating(true);
+      } else {
+        if (!cached) {
+          setIsLoading(true);
+        } else {
+          setIsRevalidating(true);
         }
       }
 
-      // 4. Free-Text Search Filter
-      if (query) {
-        const matchNotes = inv.notes?.toLowerCase().includes(query);
-        const matchFund =
-          inv.fundName?.toLowerCase().includes(query) ||
-          inv.fundShortName?.toLowerCase().includes(query);
-        const matchMonth = inv.calendarMonth?.toLowerCase().includes(query);
-        const matchType = inv.type?.toLowerCase().includes(query);
-
-        if (!matchNotes && !matchFund && !matchMonth && !matchType) {
-          return false;
-        }
-      }
-
-      return true;
-    });
-  }, [allClientInvestments, selectedFundId, selectedType, selectedMonthYear, debouncedSearch]);
-
-  // Client-side Summary Metrics
-  const clientSummary = useMemo(() => {
-    let totalCash = 0;
-    let totalUnits = 0;
-    let totalCost = 0;
-
-    for (const inv of filteredClientInvestments) {
-      totalCash += inv.cashInvested;
-      totalUnits += inv.unitsAllotted;
-      totalCost += inv.unitsCost;
-    }
-
-    return {
-      filteredCount: filteredClientInvestments.length,
-      totalCashInvested: totalCash,
-      totalUnitsAllotted: totalUnits,
-      totalUnitsCost: totalCost,
-    };
-  }, [filteredClientInvestments]);
-
-  // Client-side Paginated Slice
-  const clientTotalPages = Math.max(1, Math.ceil(filteredClientInvestments.length / pageSize));
-  const validClientPage = Math.min(currentPage, clientTotalPages);
-  const clientStartIndex = (validClientPage - 1) * pageSize;
-  const paginatedClientInvestments = useMemo(() => {
-    return filteredClientInvestments.slice(clientStartIndex, clientStartIndex + pageSize);
-  }, [filteredClientInvestments, clientStartIndex, pageSize]);
-
-  // ---------------------------------------------------------------------------
-  // 4. Server-Side Fetch Function
-  // ---------------------------------------------------------------------------
-  const fetchServerInvestments = useCallback(
-    async (targetPage = currentPage, targetPageSize = pageSize) => {
-      setIsLoadingServer(true);
       setServerError(null);
 
       try {
-        const params = new URLSearchParams();
-        params.set("page", String(targetPage));
-        params.set("pageSize", String(targetPageSize));
-
-        if (selectedFundId !== "ALL") {
-          params.set("fundId", selectedFundId);
-        }
-
-        if (selectedType !== "ALL") {
-          params.set("type", selectedType);
-        }
-
-        if (selectedMonthYear) {
-          const expectedMonthName = MONTH_NAMES[selectedMonthYear.monthIndex].toLowerCase();
-          const expectedYear = String(selectedMonthYear.year);
-          params.set("monthKey", `${expectedMonthName}-${expectedYear}`);
-        }
-
-        if (debouncedSearch.trim()) {
-          params.set("search", debouncedSearch.trim());
-        }
-
-        const res = await fetch(`/api/user/investments?${params.toString()}`, {
-          cache: "no-store",
+        const res = await fetch(`/api/user/investments?${cacheKey}`, {
+          // Instructs browser and Next.js to use stale-while-revalidate caching
+          headers: {
+            "Cache-Control": "no-cache",
+          },
         });
 
         if (!res.ok) {
@@ -322,62 +361,107 @@ export default function InsertedInvestmentsSection({
         const data = await res.json();
 
         if (data && Array.isArray(data.investments)) {
-          setServerInvestments(data.investments);
-          if (data.pagination) {
-            setServerPagination(data.pagination);
-          }
-          if (data.summary) {
-            setServerSummary(data.summary);
-          }
-          setLastServerFetchTime(new Date());
+          const freshInvestments = data.investments;
+          const freshPagination = data.pagination || {
+            currentPage: targetPage,
+            pageSize: targetPageSize,
+            totalCount: data.investments.length,
+            totalPages: Math.max(
+              1,
+              Math.ceil(data.investments.length / targetPageSize),
+            ),
+            hasNextPage: false,
+            hasPrevPage: targetPage > 1,
+          };
+          const freshSummary = data.summary || {
+            filteredCount: data.investments.length,
+            totalCashInvested: 0,
+            totalUnitsAllotted: 0,
+            totalUnitsCost: 0,
+          };
+
+          // Update State
+          setInvestments(freshInvestments);
+          setPagination(freshPagination);
+          setSummary(freshSummary);
+
+          // Store in SWR Cache
+          queryCacheRef.current.set(cacheKey, {
+            investments: freshInvestments,
+            pagination: freshPagination,
+            summary: freshSummary,
+            timestamp: Date.now(),
+          });
         }
       } catch (err: any) {
         console.error("[InsertedInvestments] Server fetch failed:", err);
-        setServerError(err.message || "Failed to load investments from server.");
+        setServerError(
+          err.message || "Failed to load investments from server.",
+        );
       } finally {
-        setIsLoadingServer(false);
+        setIsLoading(false);
+        setIsRevalidating(false);
       }
     },
-    [currentPage, pageSize, selectedFundId, selectedType, selectedMonthYear, debouncedSearch]
+    [
+      currentPage,
+      pageSize,
+      selectedFundId,
+      selectedType,
+      selectedMonthYear,
+      debouncedSearch,
+    ],
   );
 
-  // Fetch from server whenever server mode is active and parameters change
+  // Trigger fetch when parameters change
   useEffect(() => {
-    if (mode === "server") {
-      fetchServerInvestments(currentPage, pageSize);
-    }
-  }, [mode, currentPage, pageSize, selectedFundId, selectedType, selectedMonthYear, debouncedSearch, fetchServerInvestments]);
+    fetchInvestments(currentPage, pageSize);
+  }, [
+    currentPage,
+    pageSize,
+    selectedFundId,
+    selectedType,
+    selectedMonthYear,
+    debouncedSearch,
+    fetchInvestments,
+  ]);
 
-  // Also refetch server data whenever external `funds` array updates (e.g. after adding/editing/deleting)
+  // When external funds prop updates (e.g. after adding, editing, or deleting investment),
+  // invalidate the SWR cache and pull fresh data from the server
   const prevFundsRef = useRef(funds);
   useEffect(() => {
-    if (prevFundsRef.current !== funds && mode === "server") {
+    if (prevFundsRef.current !== funds) {
       prevFundsRef.current = funds;
-      fetchServerInvestments(currentPage, pageSize);
+      queryCacheRef.current.clear();
+      fetchInvestments(currentPage, pageSize, true);
     }
-  }, [funds, mode, currentPage, pageSize, fetchServerInvestments]);
+  }, [funds, currentPage, pageSize, fetchInvestments]);
 
   // ---------------------------------------------------------------------------
-  // 5. Active View Data (Unified between Server and Client modes)
+  // Pagination & Focus Management
   // ---------------------------------------------------------------------------
-  const isServer = mode === "server";
-  const displayedInvestments = isServer ? serverInvestments : paginatedClientInvestments;
-  const displayedTotalCount = isServer ? serverPagination.totalCount : filteredClientInvestments.length;
-  const displayedTotalPages = isServer ? serverPagination.totalPages : clientTotalPages;
-  const displayedCurrentPage = isServer ? serverPagination.currentPage : validClientPage;
-  const displayedSummary = isServer ? serverSummary : clientSummary;
+  const handlePageChange = (newPage: number) => {
+    const target = Math.max(1, Math.min(newPage, pagination.totalPages));
+    if (target === currentPage) return;
 
-  const totalAllRecordsCount = isServer
-    ? Math.max(serverPagination.totalCount, allClientInvestments.length)
-    : allClientInvestments.length;
+    setIsLoading(true);
+    setCurrentPage(target);
+    fetchInvestments(target, pageSize, true);
 
-  const hasActiveFilters =
-    selectedFundId !== "ALL" ||
-    selectedType !== "ALL" ||
-    selectedMonthYear !== null ||
-    debouncedSearch.trim().length > 0;
+    // Smoothly scroll and focus on the top of the grid/table
+    requestAnimationFrame(() => {
+      if (gridTopRef.current) {
+        gridTopRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+        gridTopRef.current.focus({ preventScroll: true });
+      }
+    });
+  };
 
   const handleResetFilters = () => {
+    setIsLoading(true);
     setSelectedFundId("ALL");
     setSelectedType("ALL");
     setSelectedMonthYear(null);
@@ -387,120 +471,83 @@ export default function InsertedInvestmentsSection({
     setCurrentPage(1);
   };
 
-  const handlePageChange = (newPage: number) => {
-    const target = Math.max(1, Math.min(newPage, displayedTotalPages));
-    setCurrentPage(target);
-    if (isServer) {
-      fetchServerInvestments(target, pageSize);
-    }
-  };
+  const hasActiveFilters =
+    selectedFundId !== "ALL" ||
+    selectedType !== "ALL" ||
+    selectedMonthYear !== null ||
+    debouncedSearch.trim().length > 0;
 
-  const startRecordIdx = (displayedCurrentPage - 1) * pageSize + 1;
-  const endRecordIdx = Math.min(displayedCurrentPage * pageSize, displayedTotalCount);
+  const startRecordIdx =
+    pagination.totalCount === 0
+      ? 0
+      : (pagination.currentPage - 1) * pageSize + 1;
+  const endRecordIdx = Math.min(
+    pagination.currentPage * pageSize,
+    pagination.totalCount,
+  );
 
   return (
     <section
+      ref={gridTopRef}
+      tabIndex={-1}
       aria-labelledby="inserted-investments-heading"
-      className="theme-surface rounded-2xl border theme-border p-3.5 sm:p-6 shadow-sm space-y-4 sm:space-y-5"
+      className="theme-surface rounded-2xl border theme-border p-3.5 sm:p-6 shadow-sm space-y-4 sm:space-y-5 focus:outline-none"
     >
       {/* ------------------------------------------------------------- */}
-      {/* 1. Header & Title & Mode Selector                             */}
+      {/* 1. Header & Title                                             */}
       {/* ------------------------------------------------------------- */}
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h3
-                id="inserted-investments-heading"
-                className="text-base sm:text-lg font-extrabold tracking-tight theme-text-primary flex items-center gap-2"
-              >
-                <Calendar className="h-5 w-5 text-[#248da2] dark:text-[#33c6e4] shrink-0" />
-                <span>Investments Log</span>
-              </h3>
-
-              <span className="rounded-full bg-[#33c6e4]/15 px-2.5 py-0.5 text-xs font-bold text-[#155360] dark:text-[#33c6e4]">
-                {totalAllRecordsCount} Total
-              </span>
-
-              {/* Mode indicator badge */}
-              <span
-                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold ${
-                  isServer
-                    ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20"
-                    : "bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20"
-                }`}
-              >
-                {isServer ? (
-                  <>
-                    <Server className="h-3 w-3" /> Server-side Mode
-                  </>
-                ) : (
-                  <>
-                    <Laptop className="h-3 w-3" /> Client-side Mode
-                  </>
-                )}
-              </span>
-            </div>
-
-            <p className="text-xs sm:text-sm theme-text-secondary mt-1 leading-relaxed">
-              Full server-side & client-side filtering and pagination with integer units and cash buffer roll-forward.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2 flex-wrap self-start sm:self-auto">
-            {/* Mode Toggle Switch */}
-            <div className="inline-flex rounded-xl p-0.5 bg-slate-200/80 dark:bg-slate-800 text-[11px] font-bold">
-              <button
-                type="button"
-                onClick={() => setMode("server")}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition ${
-                  isServer
-                    ? "bg-white dark:bg-slate-900 theme-text-primary shadow-xs font-extrabold text-[#155360] dark:text-[#33c6e4]"
-                    : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
-                }`}
-                title="Query directly from database via server API"
-              >
-                <Server className="h-3 w-3" />
-                <span>Server</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setMode("client")}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition ${
-                  !isServer
-                    ? "bg-white dark:bg-slate-900 theme-text-primary shadow-xs font-extrabold text-[#155360] dark:text-[#33c6e4]"
-                    : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
-                }`}
-                title="Filter and paginate locally in browser memory"
-              >
-                <Laptop className="h-3 w-3" />
-                <span>Client</span>
-              </button>
-            </div>
-
-            {/* Refresh button (when in server mode) */}
-            {isServer && (
-              <button
-                type="button"
-                onClick={() => fetchServerInvestments(currentPage, pageSize)}
-                disabled={isLoadingServer}
-                className="p-2 rounded-xl border theme-border theme-surface hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition"
-                title="Refresh from server"
-              >
-                <RefreshCw className={`h-3.5 w-3.5 ${isLoadingServer ? "animate-spin text-[#33c6e4]" : ""}`} />
-              </button>
-            )}
-
-            {/* Add New Investment Button */}
-            <button
-              type="button"
-              onClick={onAddInvestment}
-              className="rounded-xl bg-[#33c6e4] hover:bg-[#2eb4cf] text-slate-950 px-3.5 py-2 text-xs font-bold shadow-sm transition inline-flex items-center gap-1.5 shrink-0"
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3
+              id="inserted-investments-heading"
+              className="text-base sm:text-lg font-extrabold tracking-tight theme-text-primary flex items-center gap-2"
             >
-              <Plus className="h-4 w-4" />
-              <span>Add Investment</span>
-            </button>
+              <Calendar className="h-5 w-5 text-[#248da2] dark:text-[#33c6e4] shrink-0" />
+              <span>Investments Log</span>
+            </h3>
+
+            <span className="rounded-full bg-[#33c6e4]/15 px-2.5 py-0.5 text-xs font-bold text-[#155360] dark:text-[#33c6e4]">
+              {pagination.totalCount} Records
+            </span>
+
+            {isRevalidating && (
+              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-400">
+                <Loader2 className="h-3 w-3 animate-spin text-[#33c6e4]" />{" "}
+                Syncing...
+              </span>
+            )}
           </div>
+
+          <p className="text-xs sm:text-sm theme-text-secondary mt-1 leading-relaxed">
+            Server-side filtered and paginated investment history with integer
+            units and cash buffer roll-forward.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+          <button
+            type="button"
+            onClick={() => fetchInvestments(currentPage, pageSize, true)}
+            disabled={isLoading || isRevalidating}
+            className="p-2 rounded-xl border theme-border theme-surface hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition disabled:opacity-50"
+            title="Refresh from server"
+          >
+            <RefreshCw
+              className={`h-3.5 w-3.5 ${
+                isLoading || isRevalidating ? "animate-spin text-[#33c6e4]" : ""
+              }`}
+            />
+          </button>
+
+          <button
+            type="button"
+            onClick={onAddInvestment}
+            className="rounded-xl bg-[#33c6e4] hover:bg-[#2eb4cf] text-slate-950 px-3.5 py-2 text-xs font-bold shadow-sm transition inline-flex items-center gap-1.5 shrink-0"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Add Investment</span>
+          </button>
         </div>
       </div>
 
@@ -508,16 +555,10 @@ export default function InsertedInvestmentsSection({
       {/* 2. Search & Filter Bar (Mobile-first)                         */}
       {/* ------------------------------------------------------------- */}
       <div className="rounded-2xl border theme-border bg-slate-50/70 dark:bg-slate-900/60 p-3 sm:p-4 space-y-3">
-        {/* Top bar of filter section: title & reset */}
         <div className="flex items-center justify-between gap-2 border-b theme-border pb-2.5">
           <div className="flex items-center gap-1.5 text-xs font-bold theme-text-primary">
             <Filter className="h-3.5 w-3.5 text-[#33c6e4]" />
-            <span>Filter & Search</span>
-            {isLoadingServer && (
-              <span className="inline-flex items-center gap-1 text-[11px] font-normal text-slate-400 ml-1">
-                <Loader2 className="h-3 w-3 animate-spin text-[#33c6e4]" /> Fetching...
-              </span>
-            )}
+            <span>Filter &amp; Search</span>
           </div>
           {hasActiveFilters && (
             <button
@@ -621,7 +662,9 @@ export default function InsertedInvestmentsSection({
                 <span className="flex items-center gap-1.5 truncate pr-2">
                   <Calendar className="h-3.5 w-3.5 text-[#33c6e4] shrink-0" />
                   <span className="truncate">
-                    {selectedMonthYear ? selectedMonthYear.label : "All Months (No Filter)"}
+                    {selectedMonthYear
+                      ? selectedMonthYear.label
+                      : "All Months (No Filter)"}
                   </span>
                 </span>
                 <div className="flex items-center gap-1 shrink-0">
@@ -698,9 +741,9 @@ export default function InsertedInvestmentsSection({
             <span className="text-slate-500 dark:text-slate-400 text-[11px] sm:text-xs">
               Showing{" "}
               <strong className="theme-text-primary">
-                {displayedTotalCount}
+                {investments.length}
               </strong>{" "}
-              of {totalAllRecordsCount} entries
+              of {pagination.totalCount} entries
             </span>
             {hasActiveFilters && (
               <span className="inline-flex items-center gap-1 rounded-full bg-[#33c6e4]/15 px-2 py-0.5 text-[10px] sm:text-[11px] font-bold text-[#155360] dark:text-[#33c6e4]">
@@ -713,14 +756,14 @@ export default function InsertedInvestmentsSection({
             <span>
               Cash:{" "}
               <strong className="theme-text-primary font-bold">
-                ৳{formatBdt(displayedSummary.totalCashInvested, 0)}
+                ৳{formatBdt(summary.totalCashInvested, 0)}
               </strong>
             </span>
             <span>·</span>
             <span>
               Units:{" "}
               <strong className="text-[#155360] dark:text-[#33c6e4] font-bold">
-                +{displayedSummary.totalUnitsAllotted.toLocaleString("en-BD")}
+                +{summary.totalUnitsAllotted.toLocaleString("en-BD")}
               </strong>
             </span>
           </div>
@@ -730,33 +773,31 @@ export default function InsertedInvestmentsSection({
       {/* ------------------------------------------------------------- */}
       {/* 3. Server Error Notice (if any)                               */}
       {/* ------------------------------------------------------------- */}
-      {serverError && isServer && (
+      {serverError && (
         <div className="rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50/70 dark:bg-rose-950/30 p-3 text-xs text-rose-700 dark:text-rose-300 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Info className="h-4 w-4 shrink-0 text-rose-500" />
-            <span>Server query error: {serverError}. You can switch to Client mode to view cached data.</span>
+            <span>Server query error: {serverError}</span>
           </div>
           <button
             type="button"
-            onClick={() => setMode("client")}
+            onClick={() => fetchInvestments(currentPage, pageSize, true)}
             className="px-2.5 py-1 rounded-lg bg-rose-600 text-white font-bold text-[11px] hover:bg-rose-700 shrink-0"
           >
-            Use Client Mode
+            Retry
           </button>
         </div>
       )}
 
       {/* ------------------------------------------------------------- */}
-      {/* 4. Table / Cards View                                         */}
+      {/* 4. Table / Cards View with Matching Modern Skeleton Loader    */}
       {/* ------------------------------------------------------------- */}
-      {isLoadingServer && displayedInvestments.length === 0 ? (
-        <div className="rounded-2xl border border-dashed theme-border p-8 text-center space-y-3 bg-slate-50/50 dark:bg-slate-900/30">
-          <Loader2 className="h-8 w-8 animate-spin text-[#33c6e4] mx-auto" />
-          <p className="text-xs font-semibold theme-text-secondary">
-            Loading investments from server...
-          </p>
-        </div>
-      ) : displayedInvestments.length === 0 ? (
+      {isLoading ? (
+        <>
+          <DesktopTableSkeleton rows={pageSize > 5 ? 6 : pageSize} />
+          <MobileCardsSkeleton count={Math.min(pageSize, 4)} />
+        </>
+      ) : investments.length === 0 ? (
         <div className="rounded-2xl border border-dashed theme-border p-8 text-center space-y-3 bg-slate-50/50 dark:bg-slate-900/30">
           <div className="p-3 rounded-full bg-slate-100 dark:bg-slate-800 w-fit mx-auto theme-text-muted">
             <FileSpreadsheet className="h-6 w-6" />
@@ -812,7 +853,7 @@ export default function InsertedInvestmentsSection({
                 </tr>
               </thead>
               <tbody className="divide-y theme-border">
-                {displayedInvestments.map((inv) => {
+                {investments.map((inv) => {
                   const typeUpper = (inv.type || "SIP").toUpperCase();
                   const typeColor =
                     typeUpper === "SIP"
@@ -832,11 +873,14 @@ export default function InsertedInvestmentsSection({
                         </span>
                         <span className="text-[10px] theme-text-muted block">
                           {inv.investmentDate
-                            ? new Date(inv.investmentDate).toLocaleDateString("en-GB", {
-                                day: "2-digit",
-                                month: "short",
-                                year: "numeric",
-                              })
+                            ? new Date(inv.investmentDate).toLocaleDateString(
+                                "en-GB",
+                                {
+                                  day: "2-digit",
+                                  month: "short",
+                                  year: "numeric",
+                                },
+                              )
                             : ""}
                         </span>
                       </td>
@@ -866,7 +910,10 @@ export default function InsertedInvestmentsSection({
                         {inv.cashBufferUsed > 0 && (
                           <span
                             className="block text-[10px] font-normal text-slate-500"
-                            title={`৳${formatBdt(inv.cashBufferUsed, 2)} buffer rolled in`}
+                            title={`৳${formatBdt(
+                              inv.cashBufferUsed,
+                              2,
+                            )} buffer rolled in`}
                           >
                             +৳{formatBdt(inv.cashBufferUsed, 0)} buf
                           </span>
@@ -934,7 +981,7 @@ export default function InsertedInvestmentsSection({
 
           {/* Mobile Cards View */}
           <div className="grid grid-cols-1 gap-3 md:hidden">
-            {displayedInvestments.map((inv) => {
+            {investments.map((inv) => {
               const typeUpper = (inv.type || "SIP").toUpperCase();
               const typeColor =
                 typeUpper === "SIP"
@@ -1041,7 +1088,7 @@ export default function InsertedInvestmentsSection({
           </div>
 
           {/* ------------------------------------------------------------- */}
-          {/* 5. Pagination Controls (Mobile-First Responsive)             */}
+          {/* 5. Pagination Controls (Focuses Top of Grid on Page Change)   */}
           {/* ------------------------------------------------------------- */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t theme-border text-xs">
             {/* Rows selector and showing indicator */}
@@ -1051,7 +1098,10 @@ export default function InsertedInvestmentsSection({
                 <div className="relative inline-block">
                   <select
                     value={pageSize}
-                    onChange={(e) => setPageSize(Number(e.target.value))}
+                    onChange={(e) => {
+                      setPageSize(Number(e.target.value));
+                      setCurrentPage(1);
+                    }}
                     className="appearance-none rounded-lg border theme-border theme-surface pl-2 pr-6 py-1 text-xs font-semibold theme-text-primary focus:outline-none cursor-pointer"
                   >
                     <option value={5}>5</option>
@@ -1066,9 +1116,9 @@ export default function InsertedInvestmentsSection({
               </div>
 
               <span className="text-[11px] sm:text-xs">
-                {displayedTotalCount === 0
+                {pagination.totalCount === 0
                   ? "0 of 0"
-                  : `Showing ${startRecordIdx}–${endRecordIdx} of ${displayedTotalCount}`}
+                  : `Showing ${startRecordIdx}–${endRecordIdx} of ${pagination.totalCount}`}
               </span>
             </div>
 
@@ -1076,8 +1126,8 @@ export default function InsertedInvestmentsSection({
             <div className="flex items-center justify-center gap-1.5 w-full sm:w-auto">
               <button
                 type="button"
-                onClick={() => handlePageChange(displayedCurrentPage - 1)}
-                disabled={displayedCurrentPage <= 1 || isLoadingServer}
+                onClick={() => handlePageChange(pagination.currentPage - 1)}
+                disabled={pagination.currentPage <= 1 || isLoading}
                 className="p-1.5 rounded-lg border theme-border theme-text-primary hover:bg-slate-100 dark:hover:bg-slate-800 transition disabled:opacity-40 disabled:pointer-events-none"
                 title="Previous page"
               >
@@ -1085,13 +1135,15 @@ export default function InsertedInvestmentsSection({
               </button>
 
               <span className="px-3 py-1 rounded-lg border theme-border font-mono font-bold theme-text-primary text-xs">
-                Page {displayedCurrentPage} of {displayedTotalPages}
+                Page {pagination.currentPage} of {pagination.totalPages}
               </span>
 
               <button
                 type="button"
-                onClick={() => handlePageChange(displayedCurrentPage + 1)}
-                disabled={displayedCurrentPage >= displayedTotalPages || isLoadingServer}
+                onClick={() => handlePageChange(pagination.currentPage + 1)}
+                disabled={
+                  pagination.currentPage >= pagination.totalPages || isLoading
+                }
                 className="p-1.5 rounded-lg border theme-border theme-text-primary hover:bg-slate-100 dark:hover:bg-slate-800 transition disabled:opacity-40 disabled:pointer-events-none"
                 title="Next page"
               >
