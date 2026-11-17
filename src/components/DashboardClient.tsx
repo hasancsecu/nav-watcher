@@ -1113,7 +1113,9 @@ function DashboardClientContent({
             <PortfolioSummarySkeleton />
             <div className="space-y-4">
               <div className="h-5 w-40 bg-slate-200 dark:bg-slate-800 rounded-md animate-pulse" />
-              <FundCardsGridSkeleton count={funds.length > 0 ? funds.length : 3} />
+              <FundCardsGridSkeleton
+                count={funds.length > 0 ? funds.length : 3}
+              />
             </div>
           </div>
         ) : funds.length === 0 ? (
@@ -1928,11 +1930,6 @@ function DashboardClientContent({
                 }`}
               >
                 <Calendar className="h-5 w-5" />
-                {totalInvestmentsCount > 0 && (
-                  <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-[#33c6e4] text-[9px] font-black text-slate-950 shadow-xs">
-                    {totalInvestmentsCount}
-                  </span>
-                )}
               </div>
               <span className="text-[10px] tracking-tight">Investments</span>
               {mobileTab === "investments" && (
