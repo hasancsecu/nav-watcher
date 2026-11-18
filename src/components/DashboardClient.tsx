@@ -1353,7 +1353,7 @@ function DashboardClientContent({
                         units
                       </strong>
                       <span className="block text-[10px] theme-text-muted mt-0.5">
-                        Strictly Plain Integer
+                        Portfolio Holdings
                       </span>
                     </div>
 
