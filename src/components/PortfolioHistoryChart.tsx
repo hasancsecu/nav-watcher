@@ -84,20 +84,20 @@ export default function PortfolioHistoryChart({
   }));
 
   const marketPath = marketPoints
-    .map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`)
+    .map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`)
     .join(" ");
 
   const investedPath = investedPoints
-    .map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`)
+    .map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`)
     .join(" ");
 
   const areaPath =
     marketPoints.length > 1
-      ? `${marketPath} L ${marketPoints[marketPoints.length - 1].x.toFixed(1)} ${(
+      ? `${marketPath} L ${marketPoints[marketPoints.length - 1].x.toFixed(2)} ${(
           padTop + plotH
-        ).toFixed(1)} L ${marketPoints[0].x.toFixed(1)} ${(
+        ).toFixed(2)} L ${marketPoints[0].x.toFixed(2)} ${(
           padTop + plotH
-        ).toFixed(1)} Z`
+        ).toFixed(2)} Z`
       : "";
 
   const yTicks = [0, 0.25, 0.5, 0.75, 1].map((t) => {

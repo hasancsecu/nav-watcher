@@ -154,8 +154,8 @@ export default function FundComparisonChart({
   ) =>
     seriesPoints
       .map((pt, i) => {
-        const x = getX(i).toFixed(1);
-        const y = getY(pt[fundKey][metric]).toFixed(1);
+        const x = getX(i).toFixed(2);
+        const y = getY(pt[fundKey][metric]).toFixed(2);
         return `${i === 0 ? "M" : "L"} ${x} ${y}`;
       })
       .join(" ");
@@ -281,7 +281,7 @@ export default function FundComparisonChart({
                           {fund.shortName || fund.name}
                         </h3>
                         <span className="text-xs theme-text-muted font-medium">
-                          Weight: {fund.portfolioWeightPct.toFixed(1)}% of
+                          Weight: {fund.portfolioWeightPct.toFixed(2)}% of
                           portfolio
                         </span>
                       </div>
@@ -415,7 +415,7 @@ export default function FundComparisonChart({
                       />
                       <span>{style.shortLabel}:</span>
                       <strong className="font-mono font-bold theme-text-primary">
-                        {f.portfolioWeightPct.toFixed(1)}%
+                        {f.portfolioWeightPct.toFixed(2)}%
                       </strong>
                     </span>
                   );
@@ -432,7 +432,7 @@ export default function FundComparisonChart({
                       width: `${Math.max(0, f.portfolioWeightPct)}%`,
                       backgroundColor: style.color,
                     }}
-                    title={`${f.name}: ${f.portfolioWeightPct.toFixed(1)}%`}
+                    title={`${f.name}: ${f.portfolioWeightPct.toFixed(2)}%`}
                     className="h-full transition-all duration-500 first:rounded-l-full last:rounded-r-full"
                   />
                 );
@@ -563,7 +563,7 @@ export default function FundComparisonChart({
                       className="text-[11px] font-mono font-medium"
                     >
                       {metric === "returnPct"
-                        ? `${t.val.toFixed(1)}%`
+                        ? `${t.val.toFixed(2)}%`
                         : metric === "unitNav"
                           ? `৳${t.val.toFixed(2)}`
                           : `৳${formatBdt(t.val, 0)}`}

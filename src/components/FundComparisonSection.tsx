@@ -533,7 +533,7 @@ export default function FundComparisonSection({
                     Largest Allocation
                   </span>
                   <span className="font-mono font-bold text-[#155360] dark:text-[#33c6e4]">
-                    {highestCapitalFund.relativeWeightPct.toFixed(1)}%
+                    {highestCapitalFund.relativeWeightPct.toFixed(2)}%
                   </span>
                 </div>
                 <p className="font-bold theme-text-primary truncate">
@@ -621,7 +621,7 @@ export default function FundComparisonSection({
                       Selected Capital Share
                     </span>
                     <span className="font-mono font-bold text-[#155360] dark:text-[#33c6e4]">
-                      {fund.relativeWeightPct.toFixed(1)}%
+                      {fund.relativeWeightPct.toFixed(2)}%
                     </span>
                   </div>
                   <div className="h-1.5 w-full rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
@@ -694,7 +694,7 @@ export default function FundComparisonSection({
                     </span>
                     <span className="text-[10px] text-emerald-600 dark:text-emerald-400 block font-mono">
                       {fund.navAppreciation >= 0 ? "+" : ""}
-                      {fund.navAppreciation.toFixed(1)}% spread
+                      {fund.navAppreciation.toFixed(2)}% spread
                     </span>
                   </div>
                 </div>
@@ -797,7 +797,7 @@ export default function FundComparisonSection({
                   >
                     ৳{formatBdt(f.totalInvested, 0)}
                     <span className="text-[10px] text-slate-400 block font-normal">
-                      {f.relativeWeightPct.toFixed(1)}% share
+                      {f.relativeWeightPct.toFixed(2)}% share
                     </span>
                   </td>
                 ))}

@@ -88,12 +88,12 @@ function formatBdt(amount: number, decimals = 2): string {
 function getCurvedPath(points: { x: number; y: number }[]): string {
   if (points.length === 0) return "";
   if (points.length === 1)
-    return `M ${points[0].x.toFixed(1)},${points[0].y.toFixed(1)}`;
+    return `M ${points[0].x.toFixed(2)},${points[0].y.toFixed(2)}`;
   if (points.length === 2) {
-    return `M ${points[0].x.toFixed(1)},${points[0].y.toFixed(1)} L ${points[1].x.toFixed(1)},${points[1].y.toFixed(1)}`;
+    return `M ${points[0].x.toFixed(2)},${points[0].y.toFixed(2)} L ${points[1].x.toFixed(2)},${points[1].y.toFixed(2)}`;
   }
 
-  let d = `M ${points[0].x.toFixed(1)},${points[0].y.toFixed(1)}`;
+  let d = `M ${points[0].x.toFixed(2)},${points[0].y.toFixed(2)}`;
   for (let i = 0; i < points.length - 1; i++) {
     const p0 = points[i === 0 ? 0 : i - 1];
     const p1 = points[i];
@@ -106,7 +106,7 @@ function getCurvedPath(points: { x: number; y: number }[]): string {
     const cp2x = p2.x - (p3.x - p1.x) / 6;
     const cp2y = p2.y - (p3.y - p1.y) / 6;
 
-    d += ` C ${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p2.x.toFixed(1)},${p2.y.toFixed(1)}`;
+    d += ` C ${cp1x.toFixed(2)},${cp1y.toFixed(2)} ${cp2x.toFixed(2)},${cp2y.toFixed(2)} ${p2.x.toFixed(2)},${p2.y.toFixed(2)}`;
   }
   return d;
 }
@@ -1067,7 +1067,7 @@ export default function HistoricalInvestmentComparisonChart({
                     className="text-[10px] font-mono font-medium fill-current theme-text-muted"
                   >
                     {metric === "return"
-                      ? `${gridVal.toFixed(1)}%`
+                      ? `${gridVal.toFixed(2)}%`
                       : metric === "growth"
                         ? `৳${formatBdt(gridVal, 0)}`
                         : `৳${gridVal.toFixed(2)}`}
