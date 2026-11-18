@@ -96,7 +96,9 @@ export default function FundComparisonSection({
   const [sortBy, setSortBy] = useState<SortField>("return");
   const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
   const [viewMode, setViewMode] = useState<ViewMode>("cards");
-  const [headToHeadFundIds, setHeadToHeadFundIds] = useState<[string, string] | null>(null);
+  const [headToHeadFundIds, setHeadToHeadFundIds] = useState<
+    [string, string] | null
+  >(null);
 
   // Toggle fund selection
   const toggleFundSelection = (fundId: string) => {
@@ -155,7 +157,7 @@ export default function FundComparisonSection({
         const sorted = [...invs].sort(
           (a, b) =>
             new Date(a.investmentDate).getTime() -
-            new Date(b.investmentDate).getTime()
+            new Date(b.investmentDate).getTime(),
         );
         firstDate = new Date(sorted[0].investmentDate);
         lastDate = new Date(sorted[sorted.length - 1].investmentDate);
@@ -165,7 +167,10 @@ export default function FundComparisonSection({
       if (firstDate && lastDate) {
         const diffMs = Math.max(0, lastDate.getTime() - firstDate.getTime());
         const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-        activeMonths = Math.max(1, Math.round(diffDays / 30.4) || totalInstallments);
+        activeMonths = Math.max(
+          1,
+          Math.round(diffDays / 30.4) || totalInstallments,
+        );
       }
 
       // NAV spread: difference between Current NAV and Average Buy Price
@@ -289,32 +294,35 @@ export default function FundComparisonSection({
 
   // Top performers in active set
   const bestReturnFund = [...fundsWithRelativeWeights].sort(
-    (a, b) => b.returnPct - a.returnPct
+    (a, b) => b.returnPct - a.returnPct,
   )[0];
 
   const highestCapitalFund = [...fundsWithRelativeWeights].sort(
-    (a, b) => b.totalInvested - a.totalInvested
+    (a, b) => b.totalInvested - a.totalInvested,
   )[0];
 
   const highestGainFund = [...fundsWithRelativeWeights].sort(
-    (a, b) => b.absoluteGainLoss - a.absoluteGainLoss
+    (a, b) => b.absoluteGainLoss - a.absoluteGainLoss,
   )[0];
 
   const maxInvestedInSet = Math.max(
     ...fundsWithRelativeWeights.map((f) => f.totalInvested),
-    1
+    1,
   );
   const maxMarketValInSet = Math.max(
     ...fundsWithRelativeWeights.map((f) => f.currentMarketValue),
-    1
+    1,
   );
   const maxReturnInSet = Math.max(
     ...fundsWithRelativeWeights.map((f) => Math.abs(f.returnPct)),
-    1
+    1,
   );
 
   return (
-    <section aria-labelledby="comparison-heading" className="space-y-4 sm:space-y-5">
+    <section
+      aria-labelledby="comparison-heading"
+      className="space-y-4 sm:space-y-5"
+    >
       {/* ------------------------------------------------------------- */}
       {/* 1. Header & Dynamic Selection Controls                        */}
       {/* ------------------------------------------------------------- */}
@@ -334,7 +342,8 @@ export default function FundComparisonSection({
               </span>
             </div>
             <p className="text-xs theme-text-secondary mt-0.5 leading-relaxed">
-              Dynamically compare invested capital, return rates, integer unit efficiency, and cash buffers.
+              Dynamically compare invested capital, return rates, unit
+              efficiency, and cash buffers.
             </p>
           </div>
 
@@ -475,8 +484,8 @@ export default function FundComparisonSection({
                   : "status-loss-text font-bold"
               }
             >
-              {selectedAggregate.netGain >= 0 ? "+" : ""}
-              ৳{formatBdt(selectedAggregate.netGain, 0)} (
+              {selectedAggregate.netGain >= 0 ? "+" : ""}৳
+              {formatBdt(selectedAggregate.netGain, 0)} (
               {selectedAggregate.returnPct.toFixed(2)}%)
             </strong>
           </span>
@@ -587,7 +596,10 @@ export default function FundComparisonSection({
                         {fund.fundManager}
                       </span>
                     </div>
-                    <h4 className="text-sm font-extrabold theme-text-primary truncate" title={fund.name}>
+                    <h4
+                      className="text-sm font-extrabold theme-text-primary truncate"
+                      title={fund.name}
+                    >
                       {fund.name}
                     </h4>
                   </div>
@@ -605,7 +617,9 @@ export default function FundComparisonSection({
                 {/* Relative Allocation Progress Bar */}
                 <div className="space-y-1">
                   <div className="flex justify-between text-[11px]">
-                    <span className="theme-text-muted font-medium">Selected Capital Share</span>
+                    <span className="theme-text-muted font-medium">
+                      Selected Capital Share
+                    </span>
                     <span className="font-mono font-bold text-[#155360] dark:text-[#33c6e4]">
                       {fund.relativeWeightPct.toFixed(1)}%
                     </span>
@@ -648,7 +662,8 @@ export default function FundComparisonSection({
                         isGain ? "status-gain-text" : "status-loss-text"
                       }`}
                     >
-                      {isGain ? "+" : "-"}৳{formatBdt(Math.abs(fund.absoluteGainLoss), 0)}
+                      {isGain ? "+" : "-"}৳
+                      {formatBdt(Math.abs(fund.absoluteGainLoss), 0)}
                     </span>
                   </div>
 
@@ -658,7 +673,8 @@ export default function FundComparisonSection({
                       <Clock className="h-3 w-3" /> Tenure
                     </span>
                     <span className="font-mono text-xs font-bold theme-text-primary block mt-0.5">
-                      {fund.activeMonths} {fund.activeMonths === 1 ? "mo" : "mos"}
+                      {fund.activeMonths}{" "}
+                      {fund.activeMonths === 1 ? "mo" : "mos"}
                     </span>
                     <span className="text-[10px] text-slate-400 block mt-0.5">
                       {fund.totalInstallments} total entries
@@ -672,7 +688,9 @@ export default function FundComparisonSection({
                     </span>
                     <span className="font-mono text-[11px] font-bold theme-text-secondary block mt-0.5">
                       ৳{fund.averageBuyPrice.toFixed(2)} →{" "}
-                      <span className="status-gain-text">৳{fund.effectiveNav.toFixed(2)}</span>
+                      <span className="status-gain-text">
+                        ৳{fund.effectiveNav.toFixed(2)}
+                      </span>
                     </span>
                     <span className="text-[10px] text-emerald-600 dark:text-emerald-400 block font-mono">
                       {fund.navAppreciation >= 0 ? "+" : ""}
@@ -685,8 +703,10 @@ export default function FundComparisonSection({
                 <div className="flex items-center justify-between text-[11px] border-t theme-border pt-2.5">
                   <div className="flex items-center gap-1 theme-text-muted">
                     <Coins className="h-3 w-3 text-[#33c6e4]" />
-                    <span>Integer Units:</span>
-                    <strong className="theme-text-primary font-mono">{fund.totalUnitsHeld.toLocaleString("en-BD")}</strong>
+                    <span>Units:</span>
+                    <strong className="theme-text-primary font-mono">
+                      {fund.totalUnitsHeld.toLocaleString("en-BD")}
+                    </strong>
                   </div>
                   <div className="theme-text-muted">
                     <span>Buffer: </span>
@@ -714,8 +734,13 @@ export default function FundComparisonSection({
                 </th>
                 {sortedFunds.map((f, i) => (
                   <th key={f.id} className="py-3 px-3.5 min-w-[150px]">
-                    <span className="text-[10px] theme-text-muted block">#{i + 1}</span>
-                    <span className="font-extrabold theme-text-primary truncate block" title={f.name}>
+                    <span className="text-[10px] theme-text-muted block">
+                      #{i + 1}
+                    </span>
+                    <span
+                      className="font-extrabold theme-text-primary truncate block"
+                      title={f.name}
+                    >
                       {f.shortName || f.name}
                     </span>
                     <span className="text-[10px] text-[#155360] dark:text-[#33c6e4] block">
@@ -738,7 +763,10 @@ export default function FundComparisonSection({
                   const isTop = f.id === bestReturnFund?.id;
                   const isGain = f.returnPct >= 0;
                   return (
-                    <td key={f.id} className="py-2.5 px-3.5 font-mono font-bold whitespace-nowrap">
+                    <td
+                      key={f.id}
+                      className="py-2.5 px-3.5 font-mono font-bold whitespace-nowrap"
+                    >
                       <span
                         className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md ${
                           isGain ? "status-gain-badge" : "status-loss-badge"
@@ -763,7 +791,10 @@ export default function FundComparisonSection({
                   Capital Invested
                 </td>
                 {sortedFunds.map((f) => (
-                  <td key={f.id} className="py-2.5 px-3.5 font-mono font-bold theme-text-primary whitespace-nowrap">
+                  <td
+                    key={f.id}
+                    className="py-2.5 px-3.5 font-mono font-bold theme-text-primary whitespace-nowrap"
+                  >
                     ৳{formatBdt(f.totalInvested, 0)}
                     <span className="text-[10px] text-slate-400 block font-normal">
                       {f.relativeWeightPct.toFixed(1)}% share
@@ -781,7 +812,10 @@ export default function FundComparisonSection({
                   Current Market Value
                 </td>
                 {sortedFunds.map((f) => (
-                  <td key={f.id} className="py-2.5 px-3.5 font-mono font-bold theme-text-primary whitespace-nowrap">
+                  <td
+                    key={f.id}
+                    className="py-2.5 px-3.5 font-mono font-bold theme-text-primary whitespace-nowrap"
+                  >
                     ৳{formatBdt(f.currentMarketValue, 0)}
                   </td>
                 ))}
@@ -804,13 +838,16 @@ export default function FundComparisonSection({
                         isGain ? "status-gain-text" : "status-loss-text"
                       }`}
                     >
-                      {isGain ? "+" : "-"}৳{formatBdt(Math.abs(f.absoluteGainLoss), 0)}
+                      {isGain ? "+" : "-"}৳
+                      {formatBdt(Math.abs(f.absoluteGainLoss), 0)}
                     </td>
                   );
                 })}
                 <td
                   className={`py-2.5 px-3.5 font-mono font-black bg-slate-200/20 dark:bg-slate-800/20 whitespace-nowrap ${
-                    selectedAggregate.netGain >= 0 ? "status-gain-text" : "status-loss-text"
+                    selectedAggregate.netGain >= 0
+                      ? "status-gain-text"
+                      : "status-loss-text"
                   }`}
                 >
                   {selectedAggregate.netGain >= 0 ? "+" : "-"}৳
@@ -818,13 +855,16 @@ export default function FundComparisonSection({
                 </td>
               </tr>
 
-              {/* Row 5: Integer Units Held */}
+              {/* Row 5: Units Held */}
               <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
                 <td className="py-2.5 px-3.5 font-bold theme-text-primary sticky left-0 z-10 theme-surface whitespace-nowrap">
-                  Integer Units Held
+                  Units Held
                 </td>
                 {sortedFunds.map((f) => (
-                  <td key={f.id} className="py-2.5 px-3.5 font-mono font-bold text-[#155360] dark:text-[#33c6e4] whitespace-nowrap">
+                  <td
+                    key={f.id}
+                    className="py-2.5 px-3.5 font-mono font-bold text-[#155360] dark:text-[#33c6e4] whitespace-nowrap"
+                  >
                     +{f.totalUnitsHeld.toLocaleString("en-BD")}
                   </td>
                 ))}
@@ -839,8 +879,14 @@ export default function FundComparisonSection({
                   Avg Buy vs NAV
                 </td>
                 {sortedFunds.map((f) => (
-                  <td key={f.id} className="py-2.5 px-3.5 font-mono text-slate-600 dark:text-slate-300 whitespace-nowrap">
-                    ৳{f.averageBuyPrice.toFixed(2)} → <strong className="status-gain-text">৳{f.effectiveNav.toFixed(2)}</strong>
+                  <td
+                    key={f.id}
+                    className="py-2.5 px-3.5 font-mono text-slate-600 dark:text-slate-300 whitespace-nowrap"
+                  >
+                    ৳{f.averageBuyPrice.toFixed(2)} →{" "}
+                    <strong className="status-gain-text">
+                      ৳{f.effectiveNav.toFixed(2)}
+                    </strong>
                   </td>
                 ))}
                 <td className="py-2.5 px-3.5 font-mono text-slate-400 bg-slate-200/20 dark:bg-slate-800/20 whitespace-nowrap">
@@ -854,7 +900,10 @@ export default function FundComparisonSection({
                   Tenure &amp; Velocity
                 </td>
                 {sortedFunds.map((f) => (
-                  <td key={f.id} className="py-2.5 px-3.5 font-mono text-xs whitespace-nowrap">
+                  <td
+                    key={f.id}
+                    className="py-2.5 px-3.5 font-mono text-xs whitespace-nowrap"
+                  >
                     {f.activeMonths} mos ({f.totalInstallments} invs)
                     <span className="text-[10px] text-slate-400 block font-normal">
                       ~৳{formatBdt(f.monthlyPace, 0)}/mo
@@ -872,7 +921,10 @@ export default function FundComparisonSection({
                   Fractional Cash Buffer
                 </td>
                 {sortedFunds.map((f) => (
-                  <td key={f.id} className="py-2.5 px-3.5 font-mono font-semibold text-amber-600 dark:text-amber-400 whitespace-nowrap">
+                  <td
+                    key={f.id}
+                    className="py-2.5 px-3.5 font-mono font-semibold text-amber-600 dark:text-amber-400 whitespace-nowrap"
+                  >
                     ৳{formatBdt(f.fractionalCashBalance, 2)}
                   </td>
                 ))}
@@ -894,7 +946,9 @@ export default function FundComparisonSection({
           <div className="space-y-3">
             <h4 className="text-xs sm:text-sm font-extrabold theme-text-primary flex items-center justify-between">
               <span>Capital Invested vs. Current Market Value</span>
-              <span className="text-[11px] font-normal theme-text-muted">BDT (৳)</span>
+              <span className="text-[11px] font-normal theme-text-muted">
+                BDT (৳)
+              </span>
             </h4>
 
             <div className="space-y-3">
@@ -906,12 +960,19 @@ export default function FundComparisonSection({
                 return (
                   <div key={f.id} className="space-y-1">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-bold theme-text-primary truncate max-w-[200px]" title={f.name}>
+                      <span
+                        className="font-bold theme-text-primary truncate max-w-[200px]"
+                        title={f.name}
+                      >
                         {f.shortName || f.name}
                       </span>
                       <span className="font-mono text-[11px]">
                         ৳{formatBdt(f.totalInvested, 0)} →{" "}
-                        <strong className={isGain ? "status-gain-text" : "status-loss-text"}>
+                        <strong
+                          className={
+                            isGain ? "status-gain-text" : "status-loss-text"
+                          }
+                        >
                           ৳{formatBdt(f.currentMarketValue, 0)}
                         </strong>
                       </span>
@@ -940,10 +1001,12 @@ export default function FundComparisonSection({
 
             <div className="flex items-center gap-4 text-[11px] theme-text-muted pt-1">
               <span className="flex items-center gap-1.5">
-                <span className="h-2 w-3 rounded-sm bg-slate-400 dark:bg-slate-600" /> Capital Invested
+                <span className="h-2 w-3 rounded-sm bg-slate-400 dark:bg-slate-600" />{" "}
+                Capital Invested
               </span>
               <span className="flex items-center gap-1.5">
-                <span className="h-2 w-3 rounded-sm bg-emerald-500" /> Value Gain
+                <span className="h-2 w-3 rounded-sm bg-emerald-500" /> Value
+                Gain
               </span>
             </div>
           </div>
@@ -952,7 +1015,9 @@ export default function FundComparisonSection({
           <div className="space-y-3 pt-3 border-t theme-border">
             <h4 className="text-xs sm:text-sm font-extrabold theme-text-primary flex items-center justify-between">
               <span>Return Rate Ranking</span>
-              <span className="text-[11px] font-normal theme-text-muted">Percentage (%)</span>
+              <span className="text-[11px] font-normal theme-text-muted">
+                Percentage (%)
+              </span>
             </h4>
 
             <div className="space-y-2.5">
@@ -966,7 +1031,9 @@ export default function FundComparisonSection({
                       <span className="font-bold theme-text-primary truncate max-w-[200px]">
                         {f.shortName || f.name}
                       </span>
-                      <strong className={`font-mono text-xs ${isGain ? "status-gain-text" : "status-loss-text"}`}>
+                      <strong
+                        className={`font-mono text-xs ${isGain ? "status-gain-text" : "status-loss-text"}`}
+                      >
                         {isGain ? "+" : ""}
                         {f.returnPct.toFixed(2)}%
                       </strong>

@@ -82,7 +82,8 @@ export default function AddInvestmentModal({
   const [selectedUserFundId, setSelectedUserFundId] = useState<string>(
     preselectedUserFundId || funds[0]?.id || "",
   );
-  const [selectedMonthIdx, setSelectedMonthIdx] = useState<number>(currentMonthIdx);
+  const [selectedMonthIdx, setSelectedMonthIdx] =
+    useState<number>(currentMonthIdx);
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
   const [cashAmount, setCashAmount] = useState<string>("8000");
   const [executionNav, setExecutionNav] = useState<string>("");
@@ -182,15 +183,19 @@ export default function AddInvestmentModal({
 
   // Check if an investment of this type has already been logged for this fund in this month
   const existingInvestmentConflict = useMemo(() => {
-    if (!activeFund?.investments || !Array.isArray(activeFund.investments)) return null;
+    if (!activeFund?.investments || !Array.isArray(activeFund.investments))
+      return null;
     return activeFund.investments.find((inv: any) => {
-      const matchType = (inv.type || "SIP").toUpperCase() === investmentType.toUpperCase();
+      const matchType =
+        (inv.type || "SIP").toUpperCase() === investmentType.toUpperCase();
       const invMonthKey =
         inv.monthKey?.toLowerCase() ||
         inv.calendarMonth?.toLowerCase().replace(/[^a-z0-9]/g, "-");
       const matchMonth =
         invMonthKey === selectedMonthKey ||
-        (inv.calendarMonth && inv.calendarMonth.trim().toLowerCase() === selectedMonthStr.toLowerCase());
+        (inv.calendarMonth &&
+          inv.calendarMonth.trim().toLowerCase() ===
+            selectedMonthStr.toLowerCase());
       return matchType && matchMonth;
     });
   }, [activeFund, investmentType, selectedMonthKey, selectedMonthStr]);
@@ -260,7 +265,7 @@ export default function AddInvestmentModal({
                   Add Investment
                 </h2>
                 <p className="text-xs theme-text-secondary">
-                  Previous or current calendar month · Plain integer units
+                  Previous or current calendar month · Units allotted
                 </p>
               </div>
             </div>
@@ -415,7 +420,7 @@ export default function AddInvestmentModal({
             <div className="grid grid-cols-2 gap-2 pt-1 border-t border-[#33c6e4]/20 dark:border-slate-700">
               <div>
                 <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 block">
-                  Integer Units Allotted
+                  Units Allotted
                 </span>
                 <strong className="font-mono text-sm font-extrabold text-[#155360] dark:text-[#33c6e4]">
                   +{previewUnitsAllotted.toLocaleString("en-BD")} units
@@ -458,10 +463,19 @@ export default function AddInvestmentModal({
                   {investmentType} Already Recorded for {selectedMonthStr}
                 </div>
                 <p className="text-[11px] opacity-90 leading-relaxed">
-                  For <strong>{activeFund?.name}</strong>, only one investment of each type (SIP, CIP, or Lumpsum) can be added per month. A {investmentType} entry (৳{existingInvestmentConflict.cashInvested?.toLocaleString("en-BD")} @ ৳{Number(existingInvestmentConflict.executionNav).toFixed(3)}) is already logged for this month.
+                  For <strong>{activeFund?.name}</strong>, only one investment
+                  of each type (SIP, CIP, or Lumpsum) can be added per month. A{" "}
+                  {investmentType} entry (৳
+                  {existingInvestmentConflict.cashInvested?.toLocaleString(
+                    "en-BD",
+                  )}{" "}
+                  @ ৳
+                  {Number(existingInvestmentConflict.executionNav).toFixed(3)})
+                  is already logged for this month.
                 </p>
                 <div className="text-[11px] text-amber-700 dark:text-amber-400 font-semibold pt-0.5">
-                  Tip: To modify this installment, edit the existing entry from the dashboard instead.
+                  Tip: To modify this installment, edit the existing entry from
+                  the dashboard instead.
                 </div>
               </div>
             </div>

@@ -11,7 +11,12 @@ export async function GET() {
     if (!user) {
       return NextResponse.json(
         { error: "Unauthorized. Please log in.", isAuthRequired: true },
-        { status: 401, headers: { "Cache-Control": "private, no-cache, no-store, must-revalidate" } }
+        {
+          status: 401,
+          headers: {
+            "Cache-Control": "private, no-cache, no-store, must-revalidate",
+          },
+        },
       );
     }
 
@@ -43,7 +48,7 @@ export async function GET() {
     console.error("[API /api/cip GET] Error:", error);
     return NextResponse.json(
       { error: "Failed to fetch CIP transactions", details: String(error) },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -70,7 +75,7 @@ export async function POST(req: NextRequest) {
     if (!targetUserFund) {
       return NextResponse.json(
         { error: "Fund holding not found in your portfolio." },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -80,13 +85,19 @@ export async function POST(req: NextRequest) {
         : targetUserFund.fund.latestNav || targetUserFund.averageBuyPrice || 10;
     const safeDiv = Math.max(0, Number(dividendAmount) || 0);
 
-    const availableCash = Number((safeDiv + targetUserFund.fractionalCashBalance).toFixed(2));
+    const availableCash = Number(
+      (safeDiv + targetUserFund.fractionalCashBalance).toFixed(2),
+    );
     const unitsAllotted = Math.floor(availableCash / safeNav);
     const reinvestedCost = Number((unitsAllotted * safeNav).toFixed(2));
-    const newCashRemainder = Number(Math.max(0, availableCash - reinvestedCost).toFixed(2));
+    const newCashRemainder = Number(
+      Math.max(0, availableCash - reinvestedCost).toFixed(2),
+    );
 
     const newTotalUnits = targetUserFund.totalUnits + unitsAllotted;
-    const newTotalInvested = Number((targetUserFund.totalInvested + reinvestedCost).toFixed(2));
+    const newTotalInvested = Number(
+      (targetUserFund.totalInvested + reinvestedCost).toFixed(2),
+    );
     const newAverageBuyPrice =
       newTotalUnits > 0
         ? Number((newTotalInvested / newTotalUnits).toFixed(4))
@@ -112,7 +123,7 @@ export async function POST(req: NextRequest) {
           reinvestedAmount: reinvestedCost,
           cashRemainder: newCashRemainder,
           isSettled: false,
-          notes: `CIP Dividend: +${unitsAllotted} integer units allotted @ ৳${safeNav.toFixed(3)}. ৳${newCashRemainder.toFixed(2)} cash balance held for next SIP.`,
+          notes: `CIP Dividend: +${unitsAllotted} units allotted @ ৳${safeNav.toFixed(3)}. ৳${newCashRemainder.toFixed(2)} cash balance held for next SIP.`,
         },
       }),
     ]);
@@ -129,7 +140,7 @@ export async function POST(req: NextRequest) {
     console.error("[API /api/cip POST] Error:", error);
     return NextResponse.json(
       { error: "Failed to record CIP dividend", details: String(error) },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

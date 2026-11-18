@@ -74,14 +74,20 @@ export default function UpdateHoldingsDialog({
   const [activeFundFilter, setActiveFundFilter] = useState<string>("all");
 
   // Inline expanded forms: fundId -> "sip" | "cip" | null
-  const [expandedAction, setExpandedAction] = useState<Record<string, "sip" | "cip" | null>>({});
+  const [expandedAction, setExpandedAction] = useState<
+    Record<string, "sip" | "cip" | null>
+  >({});
 
   // Inline SIP state per fund
-  const [sipCashInputs, setSipCashInputs] = useState<Record<string, string>>({});
+  const [sipCashInputs, setSipCashInputs] = useState<Record<string, string>>(
+    {},
+  );
   const [sipNavInputs, setSipNavInputs] = useState<Record<string, string>>({});
 
   // Inline CIP state per fund
-  const [cipDividendInputs, setCipDividendInputs] = useState<Record<string, string>>({});
+  const [cipDividendInputs, setCipDividendInputs] = useState<
+    Record<string, string>
+  >({});
   const [cipNavInputs, setCipNavInputs] = useState<Record<string, string>>({});
 
   // Baseline Draft holdings
@@ -89,9 +95,13 @@ export default function UpdateHoldingsDialog({
 
   // Status & loading
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submittingActionFundId, setSubmittingActionFundId] = useState<string | null>(null);
+  const [submittingActionFundId, setSubmittingActionFundId] = useState<
+    string | null
+  >(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [actionSuccessMessage, setActionSuccessMessage] = useState<string | null>(null);
+  const [actionSuccessMessage, setActionSuccessMessage] = useState<
+    string | null
+  >(null);
 
   // Sync draft and form values whenever modal opens
   useEffect(() => {
@@ -115,7 +125,10 @@ export default function UpdateHoldingsDialog({
         initialCipNav[f.id] = String(f.effectiveNav || f.averageBuyPrice || 10);
 
         // If opened with specific action
-        if (initialFocusFundId === f.id && (initialTab === "sip" || initialTab === "cip")) {
+        if (
+          initialFocusFundId === f.id &&
+          (initialTab === "sip" || initialTab === "cip")
+        ) {
           initialExpanded[f.id] = initialTab;
         } else {
           initialExpanded[f.id] = null;
@@ -129,7 +142,10 @@ export default function UpdateHoldingsDialog({
       setCipNavInputs(initialCipNav);
       setExpandedAction(initialExpanded);
 
-      if (initialFocusFundId && funds.some((f) => f.id === initialFocusFundId)) {
+      if (
+        initialFocusFundId &&
+        funds.some((f) => f.id === initialFocusFundId)
+      ) {
         setActiveFundFilter(initialFocusFundId);
       } else {
         setActiveFundFilter("all");
@@ -268,8 +284,13 @@ export default function UpdateHoldingsDialog({
       setSubmitError(null);
       setActionSuccessMessage(null);
 
-      const cash = Number(sipCashInputs[fund.id]) || fund.monthlySipTarget || 8000;
-      const nav = Number(sipNavInputs[fund.id]) || fund.effectiveNav || fund.averageBuyPrice || 10;
+      const cash =
+        Number(sipCashInputs[fund.id]) || fund.monthlySipTarget || 8000;
+      const nav =
+        Number(sipNavInputs[fund.id]) ||
+        fund.effectiveNav ||
+        fund.averageBuyPrice ||
+        10;
 
       const res = await fetch("/api/cip", {
         method: "PUT",
@@ -296,7 +317,7 @@ export default function UpdateHoldingsDialog({
       }
 
       setActionSuccessMessage(
-        `Recorded SIP for ${fund.shortName}: +${data.settlement?.addedUnits ?? 0} integer units allotted. Cash balance updated.`,
+        `Recorded SIP for ${fund.shortName}: +${data.settlement?.addedUnits ?? 0} units allotted. Cash balance updated.`,
       );
       setExpandedAction((prev) => ({ ...prev, [fund.id]: null }));
     } catch (err) {
@@ -314,7 +335,11 @@ export default function UpdateHoldingsDialog({
       setActionSuccessMessage(null);
 
       const dividend = Number(cipDividendInputs[fund.id]);
-      const nav = Number(cipNavInputs[fund.id]) || fund.effectiveNav || fund.averageBuyPrice || 10;
+      const nav =
+        Number(cipNavInputs[fund.id]) ||
+        fund.effectiveNav ||
+        fund.averageBuyPrice ||
+        10;
 
       if (!dividend || dividend <= 0) {
         throw new Error("Please enter a valid dividend amount in BDT.");
@@ -344,7 +369,7 @@ export default function UpdateHoldingsDialog({
       }
 
       setActionSuccessMessage(
-        `Added CIP Dividend for ${fund.shortName}: +${data.unitsAllotted} integer units. Remaining ৳${data.cashRemainder} cash held for next SIP.`,
+        `Added CIP Dividend for ${fund.shortName}: +${data.unitsAllotted} units. Remaining ৳${data.cashRemainder} cash held for next SIP.`,
       );
       setExpandedAction((prev) => ({ ...prev, [fund.id]: null }));
       setCipDividendInputs((prev) => ({ ...prev, [fund.id]: "" }));
@@ -404,7 +429,9 @@ export default function UpdateHoldingsDialog({
       dialogRef.current?.close("saved");
     } catch (err) {
       setSubmitError(
-        err instanceof Error ? err.message : "Failed to save baseline holdings.",
+        err instanceof Error
+          ? err.message
+          : "Failed to save baseline holdings.",
       );
     } finally {
       setIsSubmitting(false);
@@ -422,7 +449,10 @@ export default function UpdateHoldingsDialog({
       aria-labelledby={titleId}
       className="theme-elevated modal-native-backdrop w-full max-w-2xl rounded-2xl border theme-border p-0 shadow-2xl backdrop:bg-slate-950/70"
     >
-      <form onSubmit={handleSubmitBaseline} className="flex flex-col max-h-[90dvh]">
+      <form
+        onSubmit={handleSubmitBaseline}
+        className="flex flex-col max-h-[90dvh]"
+      >
         {/* Modal Header */}
         <div className="flex items-center justify-between border-b theme-border px-4 py-3.5 sm:px-6">
           <div className="flex items-center gap-2.5 min-w-0">
@@ -437,7 +467,7 @@ export default function UpdateHoldingsDialog({
                 Edit Holdings &amp; Investments
               </h2>
               <p className="text-xs theme-text-secondary truncate">
-                Integer units · Cash buffers · SIP &amp; CIP dividend actions
+                Units · Cash buffers · SIP &amp; CIP dividend actions
               </p>
             </div>
           </div>
@@ -507,10 +537,16 @@ export default function UpdateHoldingsDialog({
               };
 
               const numInvested = Math.max(0, Number(d.totalInvested) || 0);
-              const numAvgBuy = Number(d.averageBuyPrice) > 0 ? Number(d.averageBuyPrice) : 10;
+              const numAvgBuy =
+                Number(d.averageBuyPrice) > 0 ? Number(d.averageBuyPrice) : 10;
               const previewUnits = Math.floor(numInvested / numAvgBuy);
-              const previewUnitsCost = Number((previewUnits * numAvgBuy).toFixed(2));
-              const previewCashRemainder = Math.max(0, Number((numInvested - previewUnitsCost).toFixed(2)));
+              const previewUnitsCost = Number(
+                (previewUnits * numAvgBuy).toFixed(2),
+              );
+              const previewCashRemainder = Math.max(
+                0,
+                Number((numInvested - previewUnitsCost).toFixed(2)),
+              );
               const previewMarketVal = previewUnits * fund.effectiveNav;
 
               const isSipExpanded = expandedAction[fund.id] === "sip";
@@ -518,24 +554,33 @@ export default function UpdateHoldingsDialog({
               const isFundActionLoading = submittingActionFundId === fund.id;
 
               // Compute inline SIP preview
-              const sipCashVal = Number(sipCashInputs[fund.id]) || fund.monthlySipTarget || 8000;
-              const sipNavVal = Number(sipNavInputs[fund.id]) || fund.effectiveNav || fund.averageBuyPrice || 10;
+              const sipCashVal =
+                Number(sipCashInputs[fund.id]) || fund.monthlySipTarget || 8000;
+              const sipNavVal =
+                Number(sipNavInputs[fund.id]) ||
+                fund.effectiveNav ||
+                fund.averageBuyPrice ||
+                10;
               const sipSim = simulateSipInstallment(
                 fund.totalInvested,
                 fund.averageBuyPrice,
                 sipCashVal,
                 sipNavVal,
                 fund.totalUnitsHeld,
-                fund.fractionalCashBalance
+                fund.fractionalCashBalance,
               );
 
               // Compute inline CIP preview
               const cipDivVal = Number(cipDividendInputs[fund.id]) || 0;
-              const cipNavVal = Number(cipNavInputs[fund.id]) || fund.effectiveNav || fund.averageBuyPrice || 10;
+              const cipNavVal =
+                Number(cipNavInputs[fund.id]) ||
+                fund.effectiveNav ||
+                fund.averageBuyPrice ||
+                10;
               const cipCalc = calculateCipReinvestment(
                 cipDivVal,
                 cipNavVal,
-                fund.fractionalCashBalance
+                fund.fractionalCashBalance,
               );
 
               return (
@@ -550,7 +595,8 @@ export default function UpdateHoldingsDialog({
                         {fund.name}
                       </legend>
                       <p className="text-[11px] theme-text-muted mt-0.5">
-                        {fund.fundManager} · NAV Date: {fund.navEffectiveDate || "Latest Day"}
+                        {fund.fundManager} · NAV Date:{" "}
+                        {fund.navEffectiveDate || "Latest Day"}
                       </p>
                     </div>
                     <div className="inline-flex items-center gap-1.5 rounded-lg border theme-border px-2.5 py-1 text-xs font-mono font-bold status-gain-badge">
@@ -559,26 +605,39 @@ export default function UpdateHoldingsDialog({
                     </div>
                   </div>
 
-                  {/* Integer Units & Cash Buffer Info Banner */}
+                  {/* Units & Cash Buffer Info Banner */}
                   <div className="theme-surface rounded-xl border theme-border p-3 space-y-2">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs theme-text-secondary">Current Holdings:</span>
+                        <span className="text-xs theme-text-secondary">
+                          Current Holdings:
+                        </span>
                         <strong className="font-mono text-xs sm:text-sm font-bold status-info-text">
-                          {Math.floor(fund.totalUnitsHeld).toLocaleString("en-BD")} units
+                          {Math.floor(fund.totalUnitsHeld).toLocaleString(
+                            "en-BD",
+                          )}{" "}
+                          units
                         </strong>
-                        <span className="text-[10px] theme-text-muted">(Plain Integer)</span>
+                        <span className="text-[10px] theme-text-muted">
+                          (Units)
+                        </span>
                       </div>
                       <div className="flex items-center gap-1.5 text-xs">
                         <Coins className="h-3.5 w-3.5 status-warn-text" />
-                        <span className="theme-text-secondary">Cash Buffer:</span>
+                        <span className="theme-text-secondary">
+                          Cash Buffer:
+                        </span>
                         <strong className="font-mono font-bold status-warn-text">
                           ৳{formatBdt(fund.fractionalCashBalance, 2)}
                         </strong>
                       </div>
                     </div>
                     <p className="text-[11px] theme-text-muted leading-relaxed">
-                      Under Bangladesh AMC rules, mutual fund units are strictly whole integers. The decimal remainder (৳{formatBdt(fund.fractionalCashBalance, 2)}) is held in cash and automatically rolls forward to settle with whole units on your next monthly SIP.
+                      Under Bangladesh AMC rules, mutual fund units are allotted
+                      as whole units. The decimal remainder (৳
+                      {formatBdt(fund.fractionalCashBalance, 2)}) is held in
+                      cash and automatically rolls forward to settle with units
+                      on your next monthly SIP.
                     </p>
                   </div>
 
@@ -595,9 +654,16 @@ export default function UpdateHoldingsDialog({
                     >
                       <span className="inline-flex items-center gap-1.5">
                         <RefreshCw className="h-4 w-4 shrink-0" />
-                        <span>Record Monthly SIP (৳{formatBdt(fund.monthlySipTarget || 8000, 0)})</span>
+                        <span>
+                          Record Monthly SIP (৳
+                          {formatBdt(fund.monthlySipTarget || 8000, 0)})
+                        </span>
                       </span>
-                      {isSipExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      {isSipExpanded ? (
+                        <ChevronUp className="h-4 w-4" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4" />
+                      )}
                     </button>
 
                     <button
@@ -613,7 +679,11 @@ export default function UpdateHoldingsDialog({
                         <Coins className="h-4 w-4 status-gain-text shrink-0" />
                         <span>Add CIP Dividend</span>
                       </span>
-                      {isCipExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      {isCipExpanded ? (
+                        <ChevronUp className="h-4 w-4" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4" />
+                      )}
                     </button>
                   </div>
 
@@ -626,7 +696,8 @@ export default function UpdateHoldingsDialog({
                           <span>Record Monthly SIP Installment</span>
                         </h4>
                         <span className="text-[11px] status-warn-text font-semibold">
-                          Combines ৳{formatBdt(fund.fractionalCashBalance, 2)} cash buffer
+                          Combines ৳{formatBdt(fund.fractionalCashBalance, 2)}{" "}
+                          cash buffer
                         </span>
                       </div>
 
@@ -674,11 +745,17 @@ export default function UpdateHoldingsDialog({
                         <div className="flex items-center justify-between text-xs font-bold theme-text-primary">
                           <span>Total Cash Available:</span>
                           <span className="font-mono">
-                            ৳{formatBdt(sipCashVal + fund.fractionalCashBalance, 2)} (৳{formatBdt(sipCashVal, 0)} + ৳{formatBdt(fund.fractionalCashBalance, 2)} buffer)
+                            ৳
+                            {formatBdt(
+                              sipCashVal + fund.fractionalCashBalance,
+                              2,
+                            )}{" "}
+                            (৳{formatBdt(sipCashVal, 0)} + ৳
+                            {formatBdt(fund.fractionalCashBalance, 2)} buffer)
                           </span>
                         </div>
                         <div className="flex items-center justify-between theme-text-secondary">
-                          <span>New Plain Integer Units:</span>
+                          <span>New Units:</span>
                           <span className="font-mono font-bold status-gain-text">
                             +{sipSim.addedUnits} units @ ৳{sipNavVal.toFixed(3)}
                           </span>
@@ -692,7 +769,8 @@ export default function UpdateHoldingsDialog({
                         <div className="flex items-center justify-between theme-text-muted pt-1 border-t theme-border text-[10px]">
                           <span>New Total Holdings:</span>
                           <span className="font-mono font-bold theme-text-primary">
-                            {sipSim.newTotalUnits} units · Avg ৳{sipSim.newAverageBuyPrice.toFixed(4)}
+                            {sipSim.newTotalUnits} units · Avg ৳
+                            {sipSim.newAverageBuyPrice.toFixed(4)}
                           </span>
                         </div>
                       </div>
@@ -711,7 +789,9 @@ export default function UpdateHoldingsDialog({
                           onClick={() => handleExecuteSip(fund)}
                           className="btn-primary rounded-lg px-4 py-1.5 text-xs font-bold shadow-sm inline-flex items-center gap-1.5"
                         >
-                          {isFundActionLoading ? "Recording SIP..." : "Record SIP & Settle Cash"}
+                          {isFundActionLoading
+                            ? "Recording SIP..."
+                            : "Record SIP & Settle Cash"}
                         </button>
                       </div>
                     </div>
@@ -726,7 +806,8 @@ export default function UpdateHoldingsDialog({
                           <span>Add CIP Dividend Reinvestment</span>
                         </h4>
                         <span className="text-[11px] status-warn-text font-semibold">
-                          Includes ৳{formatBdt(fund.fractionalCashBalance, 2)} buffer
+                          Includes ৳{formatBdt(fund.fractionalCashBalance, 2)}{" "}
+                          buffer
                         </span>
                       </div>
 
@@ -778,9 +859,10 @@ export default function UpdateHoldingsDialog({
                           </span>
                         </div>
                         <div className="flex items-center justify-between theme-text-secondary">
-                          <span>Allotted Plain Integer Units:</span>
+                          <span>Allotted Units:</span>
                           <span className="font-mono font-bold status-gain-text">
-                            +{cipCalc.unitsAllotted} units @ ৳{cipNavVal.toFixed(3)}
+                            +{cipCalc.unitsAllotted} units @ ৳
+                            {cipNavVal.toFixed(3)}
                           </span>
                         </div>
                         <div className="flex items-center justify-between theme-text-secondary">
@@ -792,7 +874,9 @@ export default function UpdateHoldingsDialog({
                         <div className="flex items-center justify-between theme-text-muted pt-1 border-t theme-border text-[10px]">
                           <span>Post-CIP Total Holdings:</span>
                           <span className="font-mono font-bold theme-text-primary">
-                            {Math.floor(fund.totalUnitsHeld) + cipCalc.unitsAllotted} units
+                            {Math.floor(fund.totalUnitsHeld) +
+                              cipCalc.unitsAllotted}{" "}
+                            units
                           </span>
                         </div>
                       </div>
@@ -807,11 +891,15 @@ export default function UpdateHoldingsDialog({
                         </button>
                         <button
                           type="button"
-                          disabled={isFundActionLoading || !cipDivVal || cipDivVal <= 0}
+                          disabled={
+                            isFundActionLoading || !cipDivVal || cipDivVal <= 0
+                          }
                           onClick={() => handleExecuteCip(fund)}
                           className="btn-primary rounded-lg px-4 py-1.5 text-xs font-bold shadow-sm inline-flex items-center gap-1.5 disabled:opacity-50"
                         >
-                          {isFundActionLoading ? "Adding CIP Units..." : "Credit CIP Integer Units"}
+                          {isFundActionLoading
+                            ? "Adding CIP Units..."
+                            : "Credit CIP Units"}
                         </button>
                       </div>
                     </div>
@@ -950,14 +1038,15 @@ export default function UpdateHoldingsDialog({
                         aria-hidden="true"
                       />
                       <span>
-                        Integer Units:{" "}
+                        Units:{" "}
                         <strong className="font-mono font-bold theme-text-primary">
                           {previewUnits.toLocaleString("en-BD")}
                         </strong>{" "}
                         units
                         {previewCashRemainder > 0 && (
                           <span className="status-warn-text ml-1 font-semibold">
-                            (৳{formatBdt(previewCashRemainder, 2)} cash remainder)
+                            (৳{formatBdt(previewCashRemainder, 2)} cash
+                            remainder)
                           </span>
                         )}
                       </span>

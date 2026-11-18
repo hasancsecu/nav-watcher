@@ -520,8 +520,8 @@ export default function InsertedInvestmentsSection({
           </div>
 
           <p className="text-xs sm:text-sm theme-text-secondary mt-1 leading-relaxed">
-            Server-side filtered and paginated investment history with integer
-            units and cash buffer roll-forward.
+            Server-side filtered and paginated investment history with units and
+            cash buffer roll-forward.
           </p>
         </div>
 
@@ -1051,7 +1051,7 @@ export default function InsertedInvestmentsSection({
 
                     <div className="text-right">
                       <span className="text-[10px] font-bold text-slate-500 uppercase block">
-                        Integer Units Allotted
+                        Units Allotted
                       </span>
                       <strong className="font-mono text-sm font-black text-[#155360] dark:text-[#33c6e4]">
                         +{inv.unitsAllotted.toLocaleString("en-BD")}

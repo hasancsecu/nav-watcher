@@ -1,14 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
-import {
-  FundValuationMetrics,
-  PortfolioSummaryMetrics,
-} from "@/lib/calculations";
-import PortfolioHistoryChart, {
-  PortfolioHistoryItem,
-} from "./PortfolioHistoryChart";
-import FundComparisonChart from "./FundComparisonChart";
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import { PortfolioSummaryMetrics } from "@/lib/calculations";
+import { PortfolioHistoryItem } from "./PortfolioHistoryChart";
 import AuthModal from "./AuthModal";
 import ProfileModal from "./ProfileModal";
 import AddFundModal from "./AddFundModal";
@@ -26,9 +20,7 @@ import {
   Wallet,
   TrendingUp,
   TrendingDown,
-  Clock,
   ExternalLink,
-  ShieldCheck,
   CheckCircle2,
   AlertTriangle,
   Sparkles,
@@ -36,8 +28,6 @@ import {
   Moon,
   BarChart3,
   Download,
-  Share2,
-  X,
   Coins,
   Layers,
   Plus,
@@ -45,10 +35,7 @@ import {
   LogOut,
   Trash2,
   Calendar,
-  Building2,
   ChevronDown,
-  ChevronUp,
-  Pencil,
   Loader2,
 } from "lucide-react";
 
@@ -648,7 +635,7 @@ function DashboardClientContent({
     setConfirmDialog({
       isOpen: true,
       title: "Delete Investment Record",
-      message: `Delete the investment record for ${month}? Integer units and cash buffers will be recalculated automatically.`,
+      message: `Delete the investment record for ${month}? Units will be recalculated automatically.`,
       confirmLabel: "Delete Investment",
       variant: "danger",
       isLoading: false,
@@ -738,6 +725,29 @@ function DashboardClientContent({
       setIsRefreshing(false);
     }
   };
+
+  // Opportunistic auto catch-up sync:
+  // If user opens dashboard and the last sync is stale (>14 hours old, e.g. from yesterday),
+  // automatically trigger background sync once per session so NAV values are always up to date.
+  const hasTriggeredCatchUpRef = useRef(false);
+  useEffect(() => {
+    if (
+      !user ||
+      funds.length === 0 ||
+      hasTriggeredCatchUpRef.current ||
+      isRefreshing
+    )
+      return;
+
+    const lastSyncTime = syncInfo.timestamp;
+    if (!lastSyncTime) return;
+
+    const diffHours = (Date.now() - lastSyncTime.getTime()) / (1000 * 60 * 60);
+    if (diffHours >= 14) {
+      hasTriggeredCatchUpRef.current = true;
+      handleManualSync();
+    }
+  }, [user, funds.length, syncInfo.timestamp, isRefreshing]);
 
   const isNetGain = summary.absoluteGainLoss >= 0;
 
@@ -1033,8 +1043,7 @@ function DashboardClientContent({
             <p className="text-sm sm:text-base theme-text-secondary max-w-xl mx-auto leading-relaxed">
               Create your profile, add mutual funds across top AMCs, log
               previous and current month SIP investments, and track live
-              valuations with strict whole integer units and automatic cash
-              buffer roll-forward.
+              valuations with real-time NAVs and automated SIP tracking.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
@@ -1080,12 +1089,11 @@ function DashboardClientContent({
                   <Coins className="h-5 w-5" />
                 </div>
                 <h3 className="font-bold text-sm theme-text-primary">
-                  Strict Integer Units
+                  Units Tracking
                 </h3>
                 <p className="text-xs theme-text-muted leading-relaxed">
-                  Mutual fund units are strictly whole integers. Any fractional
-                  remainder is retained as a cash buffer to settle on your next
-                  SIP.
+                  Mutual fund units are allotted as whole units with automatic
+                  balance roll-forward on each monthly SIP.
                 </p>
               </div>
 
@@ -1175,7 +1183,7 @@ function DashboardClientContent({
                         className="w-full sm:w-auto rounded-xl bg-[#33c6e4] hover:bg-[#2eb4cf] text-slate-950 px-4 py-2.5 sm:py-2 text-xs font-bold transition shadow-sm inline-flex items-center justify-center gap-1.5 min-h-[40px] sm:min-h-[36px] whitespace-nowrap active:scale-[0.98]"
                       >
                         <Calendar className="h-4 w-4 shrink-0" />
-                        <span>Record Investment</span>
+                        <span>Record Monthly SIP</span>
                       </button>
 
                       {/* On Mobile: Row 2 is a balanced 50/50 split of [Add Fund] and [Sync Live NAV] */}
@@ -1203,7 +1211,7 @@ function DashboardClientContent({
                             }`}
                           />
                           <span>
-                            {isRefreshing ? "Syncing..." : "Sync NAV"}
+                            {isRefreshing ? "Syncing..." : "Sync Live NAV"}
                           </span>
                         </button>
                       </div>
@@ -1345,19 +1353,30 @@ function DashboardClientContent({
                         units
                       </strong>
                       <span className="block text-[10px] theme-text-muted mt-0.5">
-                        Strictly Plain Integer
+                        Portfolio Holdings
                       </span>
                     </div>
 
                     <div className="theme-elevated rounded-xl border p-3">
                       <span className="theme-text-muted block text-[11px]">
-                        Unallotted Cash Buffer
+                        Avg Buy Cost
                       </span>
-                      <strong className="font-mono text-sm sm:text-base font-bold text-amber-600 dark:text-amber-400">
-                        ৳{formatBdt(summary.totalFractionalCash, 2)}
+                      <strong className="font-mono text-sm sm:text-base font-bold theme-text-primary">
+                        ৳
+                        {(funds.reduce(
+                          (acc, f) => acc + (f.totalUnitsHeld || 0),
+                          0,
+                        ) > 0
+                          ? summary.totalInvested /
+                            funds.reduce(
+                              (acc, f) => acc + (f.totalUnitsHeld || 0),
+                              0,
+                            )
+                          : 0
+                        ).toFixed(3)}
                       </strong>
                       <span className="block text-[10px] theme-text-muted mt-0.5">
-                        Rolls to next SIP
+                        Portfolio Weighted Avg
                       </span>
                     </div>
 
@@ -1471,7 +1490,7 @@ function DashboardClientContent({
                               </div>
                               <div>
                                 <span className="text-[10px] theme-text-muted block">
-                                  Integer Units Held
+                                  Units Held
                                 </span>
                                 <strong className="font-mono text-xs font-bold text-[#155360] dark:text-[#33c6e4]">
                                   {Math.floor(
@@ -1482,10 +1501,11 @@ function DashboardClientContent({
                               </div>
                               <div className="text-right">
                                 <span className="text-[10px] theme-text-muted block">
-                                  Cash Buffer
+                                  Avg Buy Cost
                                 </span>
-                                <strong className="font-mono text-xs font-bold text-amber-600 dark:text-amber-400">
-                                  ৳{formatBdt(fund.fractionalCashBalance, 2)}
+                                <strong className="font-mono text-xs font-bold theme-text-primary">
+                                  ৳
+                                  {Number(fund.averageBuyPrice || 0).toFixed(3)}
                                 </strong>
                               </div>
                             </div>
@@ -1614,7 +1634,7 @@ function DashboardClientContent({
                     </h3>
                     <p className="text-xs sm:text-sm theme-text-secondary mt-0.5 leading-relaxed">
                       Units = ⌊Invested ÷ Avg Price⌋ · Market Value = Units ×
-                      Latest NAV · Unallotted remainder stays in cash buffer
+                      Latest NAV
                     </p>
                   </div>
 
@@ -1697,7 +1717,7 @@ function DashboardClientContent({
                           </div>
                           <div className="theme-surface rounded-lg border p-2.5">
                             <span className="text-[10px] theme-text-muted uppercase font-bold block">
-                              Integer Units Held
+                              Units Held
                             </span>
                             <span className="font-mono text-sm font-bold text-[#155360] dark:text-[#33c6e4]">
                               {Math.floor(fund.totalUnitsHeld).toLocaleString(
@@ -1803,7 +1823,7 @@ function DashboardClientContent({
                             scope="col"
                             className="py-3 px-3.5 font-bold text-right"
                           >
-                            Units (Integer)
+                            Units
                           </th>
                           <th
                             scope="col"

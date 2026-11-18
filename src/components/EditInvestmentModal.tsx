@@ -73,7 +73,8 @@ export default function EditInvestmentModal({
   const currentYear = now.getFullYear();
   const currentMonthIdx = now.getMonth();
 
-  const [selectedMonthIdx, setSelectedMonthIdx] = useState<number>(currentMonthIdx);
+  const [selectedMonthIdx, setSelectedMonthIdx] =
+    useState<number>(currentMonthIdx);
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
   const [cashInvested, setCashInvested] = useState<string>("");
   const [executionNav, setExecutionNav] = useState<string>("");
@@ -120,11 +121,15 @@ export default function EditInvestmentModal({
   // Live calculation preview
   const numCash = Math.max(0, Number(cashInvested) || 0);
   const numNav = Number(executionNav) > 0 ? Number(executionNav) : 10.0;
-  const bufferUsed = investment ? Math.max(0, investment.cashBufferUsed || 0) : 0;
+  const bufferUsed = investment
+    ? Math.max(0, investment.cashBufferUsed || 0)
+    : 0;
   const totalAvailable = Number((numCash + bufferUsed).toFixed(2));
   const previewUnits = Math.floor(totalAvailable / numNav);
   const previewCost = Number((previewUnits * numNav).toFixed(2));
-  const previewRemainder = Number(Math.max(0, totalAvailable - previewCost).toFixed(2));
+  const previewRemainder = Number(
+    Math.max(0, totalAvailable - previewCost).toFixed(2),
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -172,7 +177,9 @@ export default function EditInvestmentModal({
         onClose();
       }, 700);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error updating investment.");
+      setError(
+        err instanceof Error ? err.message : "Error updating investment.",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -192,11 +199,15 @@ export default function EditInvestmentModal({
               <Pencil className="h-5 w-5" />
             </div>
             <div>
-              <h2 id={titleId} className="text-base sm:text-lg font-bold theme-text-primary">
+              <h2
+                id={titleId}
+                className="text-base sm:text-lg font-bold theme-text-primary"
+              >
                 Edit Investment
               </h2>
               <p className="text-xs theme-text-secondary">
-                {investment?.fundName || "Mutual Fund"} · Integer units recalculated automatically
+                {investment?.fundName || "Mutual Fund"} · Units recalculated
+                automatically
               </p>
             </div>
           </div>
@@ -311,14 +322,15 @@ export default function EditInvestmentModal({
           <div className="rounded-xl border theme-border bg-slate-50/80 dark:bg-slate-900/60 p-3.5 space-y-2.5 text-xs">
             <div className="flex items-center gap-1.5 font-bold text-[#155360] dark:text-[#33c6e4]">
               <Calculator className="h-4 w-4" />
-              <span>Recalculation Preview (Strict Whole Integer Units)</span>
+              <span>Recalculation Preview (Units Allotted)</span>
             </div>
 
             <div className="space-y-1.5 text-[11px] theme-text-secondary">
               <div className="flex justify-between">
                 <span>Invested Cash + Carried Buffer:</span>
                 <span className="font-mono font-semibold theme-text-primary">
-                  ৳{formatBdt(numCash, 2)} + ৳{formatBdt(bufferUsed, 2)} = ৳{formatBdt(totalAvailable, 2)}
+                  ৳{formatBdt(numCash, 2)} + ৳{formatBdt(bufferUsed, 2)} = ৳
+                  {formatBdt(totalAvailable, 2)}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -328,7 +340,9 @@ export default function EditInvestmentModal({
                 </span>
               </div>
               <div className="flex justify-between border-t theme-border pt-1 font-bold">
-                <span className="text-[#155360] dark:text-[#33c6e4]">Integer Units Allotted:</span>
+                <span className="text-[#155360] dark:text-[#33c6e4]">
+                  Units Allotted:
+                </span>
                 <span className="font-mono text-sm text-[#155360] dark:text-[#33c6e4]">
                   {previewUnits.toLocaleString("en-BD")} units
                 </span>
