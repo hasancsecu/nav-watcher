@@ -1353,30 +1353,19 @@ function DashboardClientContent({
                         units
                       </strong>
                       <span className="block text-[10px] theme-text-muted mt-0.5">
-                        Portfolio Holdings
+                        Strictly Plain Integer
                       </span>
                     </div>
 
                     <div className="theme-elevated rounded-xl border p-3">
                       <span className="theme-text-muted block text-[11px]">
-                        Avg Buy Cost
+                        Unallotted Cash Buffer
                       </span>
-                      <strong className="font-mono text-sm sm:text-base font-bold theme-text-primary">
-                        ৳
-                        {(funds.reduce(
-                          (acc, f) => acc + (f.totalUnitsHeld || 0),
-                          0,
-                        ) > 0
-                          ? summary.totalInvested /
-                            funds.reduce(
-                              (acc, f) => acc + (f.totalUnitsHeld || 0),
-                              0,
-                            )
-                          : 0
-                        ).toFixed(2)}
+                      <strong className="font-mono text-sm sm:text-base font-bold text-amber-600 dark:text-amber-400">
+                        ৳{formatBdt(summary.totalFractionalCash, 2)}
                       </strong>
                       <span className="block text-[10px] theme-text-muted mt-0.5">
-                        Portfolio Weighted Avg
+                        Rolls to next SIP
                       </span>
                     </div>
 
