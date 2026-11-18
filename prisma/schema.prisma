@@ -8,16 +8,27 @@ datasource db {
 }
 
 model User {
-  id           String            @id @default(cuid())
-  name         String
-  email        String            @unique
-  passwordHash String
-  phone        String?
-  address      String?
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
-  funds        UserFund[]
-  investments  InvestmentEntry[]
+  id            String            @id @default(cuid())
+  name          String
+  email         String            @unique
+  passwordHash  String
+  phone         String?
+  address       String?
+  emailVerified DateTime?         @default(now())
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  funds         UserFund[]
+  investments   InvestmentEntry[]
+}
+
+model EmailVerification {
+  id        String   @id @default(cuid())
+  email     String
+  otp       String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([email])
 }
 
 model Fund {
