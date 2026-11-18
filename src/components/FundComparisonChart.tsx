@@ -57,12 +57,9 @@ export default function FundComparisonChart({
   // Compute max values for grouped bar scaling
   const maxBarValue = Math.max(
     ...funds.flatMap((f) => [f.totalInvested, f.currentMarketValue]),
-    1000
+    1000,
   );
-  const maxAbsReturn = Math.max(
-    ...funds.map((f) => Math.abs(f.returnPct)),
-    5
-  );
+  const maxAbsReturn = Math.max(...funds.map((f) => Math.abs(f.returnPct)), 5);
 
   // Build multi-fund time-series points from history + each fund's units/invested
   const fundMap = new Map(funds.map((f) => [f.id, f]));
@@ -153,7 +150,7 @@ export default function FundComparisonChart({
   };
 
   const buildPath = (
-    fundKey: "shanta-amanah" | "idlc-shariah" | "edge-alamin"
+    fundKey: "shanta-amanah" | "idlc-shariah" | "edge-alamin",
   ) =>
     seriesPoints
       .map((pt, i) => {
@@ -188,7 +185,7 @@ export default function FundComparisonChart({
 
   const formatMetricVal = (val: number) => {
     if (metric === "marketValue") return `৳${formatBdt(val, 2)}`;
-    if (metric === "unitNav") return `৳${val.toFixed(3)}`;
+    if (metric === "unitNav") return `৳${val.toFixed(2)}`;
     return `${val >= 0 ? "+" : ""}${val.toFixed(2)}%`;
   };
 
@@ -213,7 +210,8 @@ export default function FundComparisonChart({
             </h2>
           </div>
           <p className="text-xs sm:text-sm theme-text-secondary mt-0.5">
-            Compare Invested Capital, Current Market Value, Return %, and Historical NAV Trajectory across Shanta, IDLC, and Edge
+            Compare Invested Capital, Current Market Value, Return %, and
+            Historical NAV Trajectory across Shanta, IDLC, and Edge
           </p>
         </div>
 
@@ -254,15 +252,15 @@ export default function FundComparisonChart({
                 FUND_STYLES[fund.id] || FUND_STYLES["shanta-amanah"];
               const investedWidthPct = Math.min(
                 100,
-                Math.max(8, (fund.totalInvested / maxBarValue) * 100)
+                Math.max(8, (fund.totalInvested / maxBarValue) * 100),
               );
               const marketWidthPct = Math.min(
                 100,
-                Math.max(8, (fund.currentMarketValue / maxBarValue) * 100)
+                Math.max(8, (fund.currentMarketValue / maxBarValue) * 100),
               );
               const returnBarWidthPct = Math.min(
                 100,
-                Math.max(6, (Math.abs(fund.returnPct) / maxAbsReturn) * 100)
+                Math.max(6, (Math.abs(fund.returnPct) / maxAbsReturn) * 100),
               );
               const isGain = fund.absoluteGainLoss >= 0;
               const navSpread = fund.effectiveNav - fund.averageBuyPrice;
@@ -283,7 +281,8 @@ export default function FundComparisonChart({
                           {fund.shortName || fund.name}
                         </h3>
                         <span className="text-xs theme-text-muted font-medium">
-                          Weight: {fund.portfolioWeightPct.toFixed(1)}% of portfolio
+                          Weight: {fund.portfolioWeightPct.toFixed(1)}% of
+                          portfolio
                         </span>
                       </div>
                     </div>
@@ -369,14 +368,14 @@ export default function FundComparisonChart({
                     <span>
                       Cost NAV:{" "}
                       <strong className="font-mono font-bold theme-text-primary">
-                        ৳{fund.averageBuyPrice.toFixed(3)}
+                        ৳{fund.averageBuyPrice.toFixed(2)}
                       </strong>
                     </span>
                     <span className="theme-text-muted">→</span>
                     <span>
                       Live NAV:{" "}
                       <strong className="font-mono font-bold theme-text-primary">
-                        ৳{fund.effectiveNav.toFixed(3)}
+                        ৳{fund.effectiveNav.toFixed(2)}
                       </strong>{" "}
                       <span
                         className={`font-mono font-semibold ${
@@ -386,7 +385,7 @@ export default function FundComparisonChart({
                         }`}
                       >
                         ({navSpread >= 0 ? "+" : ""}
-                        {navSpread.toFixed(3)})
+                        {navSpread.toFixed(2)})
                       </span>
                     </span>
                   </div>
@@ -425,8 +424,7 @@ export default function FundComparisonChart({
             </div>
             <div className="flex h-4 w-full overflow-hidden rounded-full theme-subtle-bg">
               {funds.map((f) => {
-                const style =
-                  FUND_STYLES[f.id] || FUND_STYLES["shanta-amanah"];
+                const style = FUND_STYLES[f.id] || FUND_STYLES["shanta-amanah"];
                 return (
                   <div
                     key={f.id}
@@ -517,146 +515,149 @@ export default function FundComparisonChart({
             )}
           </div>
 
-      <div className="flex items-center justify-between text-[11px] theme-text-muted mb-1.5 sm:hidden px-0.5">
-        <span>← Swipe horizontally to explore timeline →</span>
-        <span className="font-mono">{seriesPoints.length} trading days</span>
-      </div>
-
-      <div className="w-full max-w-full overflow-x-auto touch-pan-x overscroll-contain pb-2 scrollbar-thin">
-        <div className="min-w-[560px] sm:min-w-full">
-          <svg
-            ref={svgRef}
-            viewBox={`0 0 ${width} ${height}`}
-            role="img"
-            aria-labelledby={`${svgTitleId} ${svgDescId}`}
-            className="w-full h-auto select-none"
-            onMouseLeave={() => setHoverIdx(null)}
-            onTouchStart={handleTouchScrub}
-            onTouchMove={handleTouchScrub}
-          >
-              <title id={svgTitleId}>
-                Multi-line historical comparison of Shanta Amanah, IDLC Shariah, and Edge Al-Amin funds
-              </title>
-              <desc id={svgDescId}>
-                Compares {metric} across all 3 funds over {seriesPoints.length}{" "}
-                trading days.
-              </desc>
-
-              {/* Y-axis gridlines */}
-              {yTicks.map((t, idx) => (
-                <g key={idx}>
-                  <line
-                    x1={padLeft}
-                    y1={t.y}
-                    x2={width - padRight}
-                    y2={t.y}
-                    stroke="var(--chart-grid)"
-                    strokeDasharray="4 4"
-                    strokeWidth="1"
-                  />
-                  <text
-                    x={padLeft - 10}
-                    y={t.y + 4}
-                    textAnchor="end"
-                    fill="var(--text-secondary)"
-                    className="text-[11px] font-mono font-medium"
-                  >
-                    {metric === "returnPct"
-                      ? `${t.val.toFixed(1)}%`
-                      : metric === "unitNav"
-                      ? `৳${t.val.toFixed(2)}`
-                      : `৳${formatBdt(t.val, 0)}`}
-                  </text>
-                </g>
-              ))}
-
-              {/* 3 Fund Lines */}
-              {(
-                ["shanta-amanah", "idlc-shariah", "edge-alamin"] as const
-              ).map((fid) => (
-                <path
-                  key={fid}
-                  d={buildPath(fid)}
-                  fill="none"
-                  stroke={FUND_STYLES[fid].color}
-                  strokeWidth="2.75"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              ))}
-
-              {/* X-axis dates */}
-              {seriesPoints.map((pt, i) => {
-                const step = Math.max(1, Math.ceil(seriesPoints.length / 6));
-                if (
-                  i !== 0 &&
-                  i !== seriesPoints.length - 1 &&
-                  i % step !== 0
-                ) {
-                  return null;
-                }
-                return (
-                  <text
-                    key={pt.dateKey}
-                    x={getX(i)}
-                    y={height - 12}
-                    textAnchor="middle"
-                    fill="var(--text-secondary)"
-                    className="text-[11px] font-mono font-medium"
-                  >
-                    {pt.displayDate.replace(/\s+\d{4}$/, "")}
-                  </text>
-                );
-              })}
-
-              {/* Active Vertical Crosshair & 3 Dots */}
-              {activePt && (
-                <g>
-                  <line
-                    x1={getX(activeIdx)}
-                    y1={padTop}
-                    x2={getX(activeIdx)}
-                    y2={padTop + plotH}
-                    stroke="var(--border-strong)"
-                    strokeWidth="1.5"
-                    strokeDasharray="3 3"
-                  />
-                  {(
-                    ["shanta-amanah", "idlc-shariah", "edge-alamin"] as const
-                  ).map((fid) => (
-                    <circle
-                      key={fid}
-                      cx={getX(activeIdx)}
-                      cy={getY(activePt[fid][metric])}
-                      r="5.5"
-                      fill={FUND_STYLES[fid].color}
-                      stroke="var(--bg-surface)"
-                      strokeWidth="2.5"
-                    />
-                  ))}
-                </g>
-              )}
-
-              {/* Hover Hit Columns */}
-              {seriesPoints.map((pt, i) => {
-                const colW = plotW / Math.max(1, seriesPoints.length);
-                return (
-                  <rect
-                    key={pt.dateKey}
-                    x={Math.max(padLeft, getX(i) - colW / 2)}
-                    y={padTop}
-                    width={colW}
-                    height={plotH}
-                    fill="transparent"
-                    className="cursor-crosshair"
-                    onMouseEnter={() => setHoverIdx(i)}
-                    onClick={() => setHoverIdx(i)}
-                  />
-                );
-              })}
-            </svg>
+          <div className="flex items-center justify-between text-[11px] theme-text-muted mb-1.5 sm:hidden px-0.5">
+            <span>← Swipe horizontally to explore timeline →</span>
+            <span className="font-mono">
+              {seriesPoints.length} trading days
+            </span>
           </div>
-        </div>
+
+          <div className="w-full max-w-full overflow-x-auto touch-pan-x overscroll-contain pb-2 scrollbar-thin">
+            <div className="min-w-[560px] sm:min-w-full">
+              <svg
+                ref={svgRef}
+                viewBox={`0 0 ${width} ${height}`}
+                role="img"
+                aria-labelledby={`${svgTitleId} ${svgDescId}`}
+                className="w-full h-auto select-none"
+                onMouseLeave={() => setHoverIdx(null)}
+                onTouchStart={handleTouchScrub}
+                onTouchMove={handleTouchScrub}
+              >
+                <title id={svgTitleId}>
+                  Multi-line historical comparison of Shanta Amanah, IDLC
+                  Shariah, and Edge Al-Amin funds
+                </title>
+                <desc id={svgDescId}>
+                  Compares {metric} across all 3 funds over{" "}
+                  {seriesPoints.length} trading days.
+                </desc>
+
+                {/* Y-axis gridlines */}
+                {yTicks.map((t, idx) => (
+                  <g key={idx}>
+                    <line
+                      x1={padLeft}
+                      y1={t.y}
+                      x2={width - padRight}
+                      y2={t.y}
+                      stroke="var(--chart-grid)"
+                      strokeDasharray="4 4"
+                      strokeWidth="1"
+                    />
+                    <text
+                      x={padLeft - 10}
+                      y={t.y + 4}
+                      textAnchor="end"
+                      fill="var(--text-secondary)"
+                      className="text-[11px] font-mono font-medium"
+                    >
+                      {metric === "returnPct"
+                        ? `${t.val.toFixed(1)}%`
+                        : metric === "unitNav"
+                          ? `৳${t.val.toFixed(2)}`
+                          : `৳${formatBdt(t.val, 0)}`}
+                    </text>
+                  </g>
+                ))}
+
+                {/* 3 Fund Lines */}
+                {(
+                  ["shanta-amanah", "idlc-shariah", "edge-alamin"] as const
+                ).map((fid) => (
+                  <path
+                    key={fid}
+                    d={buildPath(fid)}
+                    fill="none"
+                    stroke={FUND_STYLES[fid].color}
+                    strokeWidth="2.75"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                ))}
+
+                {/* X-axis dates */}
+                {seriesPoints.map((pt, i) => {
+                  const step = Math.max(1, Math.ceil(seriesPoints.length / 6));
+                  if (
+                    i !== 0 &&
+                    i !== seriesPoints.length - 1 &&
+                    i % step !== 0
+                  ) {
+                    return null;
+                  }
+                  return (
+                    <text
+                      key={pt.dateKey}
+                      x={getX(i)}
+                      y={height - 12}
+                      textAnchor="middle"
+                      fill="var(--text-secondary)"
+                      className="text-[11px] font-mono font-medium"
+                    >
+                      {pt.displayDate.replace(/\s+\d{4}$/, "")}
+                    </text>
+                  );
+                })}
+
+                {/* Active Vertical Crosshair & 3 Dots */}
+                {activePt && (
+                  <g>
+                    <line
+                      x1={getX(activeIdx)}
+                      y1={padTop}
+                      x2={getX(activeIdx)}
+                      y2={padTop + plotH}
+                      stroke="var(--border-strong)"
+                      strokeWidth="1.5"
+                      strokeDasharray="3 3"
+                    />
+                    {(
+                      ["shanta-amanah", "idlc-shariah", "edge-alamin"] as const
+                    ).map((fid) => (
+                      <circle
+                        key={fid}
+                        cx={getX(activeIdx)}
+                        cy={getY(activePt[fid][metric])}
+                        r="5.5"
+                        fill={FUND_STYLES[fid].color}
+                        stroke="var(--bg-surface)"
+                        strokeWidth="2.5"
+                      />
+                    ))}
+                  </g>
+                )}
+
+                {/* Hover Hit Columns */}
+                {seriesPoints.map((pt, i) => {
+                  const colW = plotW / Math.max(1, seriesPoints.length);
+                  return (
+                    <rect
+                      key={pt.dateKey}
+                      x={Math.max(padLeft, getX(i) - colW / 2)}
+                      y={padTop}
+                      width={colW}
+                      height={plotH}
+                      fill="transparent"
+                      className="cursor-crosshair"
+                      onMouseEnter={() => setHoverIdx(i)}
+                      onClick={() => setHoverIdx(i)}
+                    />
+                  );
+                })}
+              </svg>
+            </div>
+          </div>
         </div>
       )}
     </section>

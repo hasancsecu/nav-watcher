@@ -38,7 +38,8 @@ export default function PortfolioHistoryChart({
   if (!history || history.length === 0) {
     return (
       <div className="theme-surface rounded-2xl border p-6 text-center theme-text-secondary">
-        No historical NAV snapshots recorded yet. Tap &ldquo;Sync NAV Now&rdquo; to populate daily snapshots.
+        No historical NAV snapshots recorded yet. Tap &ldquo;Sync NAV Now&rdquo;
+        to populate daily snapshots.
       </div>
     );
   }
@@ -143,7 +144,8 @@ export default function PortfolioHistoryChart({
             </h2>
           </div>
           <p className="text-xs sm:text-sm theme-text-secondary mt-0.5">
-            Historical daily trajectory from scraped NAV snapshots ({history.length} trading days · drag or tap chart to inspect)
+            Historical daily trajectory from scraped NAV snapshots (
+            {history.length} trading days · drag or tap chart to inspect)
           </p>
         </div>
 
@@ -204,7 +206,7 @@ export default function PortfolioHistoryChart({
         <div className="font-mono text-[11px] sm:text-xs theme-text-secondary">
           NAVs ({activePoint.displayDate}):{" "}
           <strong className="theme-text-primary">
-            Shanta {activePoint.shantaNav?.toFixed(3) ?? "—"}
+            Shanta {activePoint.shantaNav?.toFixed(2) ?? "—"}
           </strong>{" "}
           ·{" "}
           <strong className="theme-text-primary">
@@ -236,142 +238,144 @@ export default function PortfolioHistoryChart({
             onTouchStart={handleTouchScrub}
             onTouchMove={handleTouchScrub}
           >
-          <title id={titleId}>
-            Line chart of Daily Portfolio Market Value versus Total Invested Amount in BDT
-          </title>
-          <desc id={descId}>
-            Tracks {history.length} daily NAV snapshots from{" "}
-            {history[0]?.displayDate} to{" "}
-            {history[history.length - 1]?.displayDate}. Latest market value is{" "}
-            {formatBdt(history[history.length - 1]?.currentMarketValue, 2)} BDT
-            against {formatBdt(history[history.length - 1]?.totalInvested, 2)}{" "}
-            BDT invested.
-          </desc>
+            <title id={titleId}>
+              Line chart of Daily Portfolio Market Value versus Total Invested
+              Amount in BDT
+            </title>
+            <desc id={descId}>
+              Tracks {history.length} daily NAV snapshots from{" "}
+              {history[0]?.displayDate} to{" "}
+              {history[history.length - 1]?.displayDate}. Latest market value is{" "}
+              {formatBdt(history[history.length - 1]?.currentMarketValue, 2)}{" "}
+              BDT against{" "}
+              {formatBdt(history[history.length - 1]?.totalInvested, 2)} BDT
+              invested.
+            </desc>
 
-          <defs>
-            <linearGradient id="marketAreaGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#059669" stopOpacity="0.26" />
-              <stop offset="100%" stopColor="#059669" stopOpacity="0.02" />
-            </linearGradient>
-          </defs>
+            <defs>
+              <linearGradient id="marketAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#059669" stopOpacity="0.26" />
+                <stop offset="100%" stopColor="#059669" stopOpacity="0.02" />
+              </linearGradient>
+            </defs>
 
-          {/* Horizontal Y gridlines & labels */}
-          {yTicks.map((t, idx) => (
-            <g key={idx}>
-              <line
-                x1={padLeft}
-                y1={t.y}
-                x2={width - padRight}
-                y2={t.y}
-                stroke="var(--chart-grid)"
-                strokeDasharray="4 4"
-                strokeWidth="1"
-              />
-              <text
-                x={padLeft - 10}
-                y={t.y + 4}
-                textAnchor="end"
-                fill="var(--text-secondary)"
-                className="text-[11px] font-mono font-medium"
-              >
-                ৳{formatBdt(t.val, 0)}
-              </text>
-            </g>
-          ))}
+            {/* Horizontal Y gridlines & labels */}
+            {yTicks.map((t, idx) => (
+              <g key={idx}>
+                <line
+                  x1={padLeft}
+                  y1={t.y}
+                  x2={width - padRight}
+                  y2={t.y}
+                  stroke="var(--chart-grid)"
+                  strokeDasharray="4 4"
+                  strokeWidth="1"
+                />
+                <text
+                  x={padLeft - 10}
+                  y={t.y + 4}
+                  textAnchor="end"
+                  fill="var(--text-secondary)"
+                  className="text-[11px] font-mono font-medium"
+                >
+                  ৳{formatBdt(t.val, 0)}
+                </text>
+              </g>
+            ))}
 
-          {/* Area under Market Value */}
-          {areaPath && <path d={areaPath} fill="url(#marketAreaGrad)" />}
+            {/* Area under Market Value */}
+            {areaPath && <path d={areaPath} fill="url(#marketAreaGrad)" />}
 
-          {/* Total Invested Baseline Line */}
-          <path
-            d={investedPath}
-            fill="none"
-            stroke="var(--info-text)"
-            strokeWidth="2.25"
-            strokeDasharray="6 4"
-          />
+            {/* Total Invested Baseline Line */}
+            <path
+              d={investedPath}
+              fill="none"
+              stroke="var(--info-text)"
+              strokeWidth="2.25"
+              strokeDasharray="6 4"
+            />
 
-          {/* Portfolio Market Value Line */}
-          <path
-            d={marketPath}
-            fill="none"
-            stroke="var(--gain-text)"
-            strokeWidth="3"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
+            {/* Portfolio Market Value Line */}
+            <path
+              d={marketPath}
+              fill="none"
+              stroke="var(--gain-text)"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
 
-          {/* X-axis Date Ticks */}
-          {history.map((d, i) => {
-            const step = Math.max(1, Math.ceil(history.length / 6));
-            const showLabel =
-              i === 0 || i === history.length - 1 || i % step === 0;
-            if (!showLabel) return null;
-            const x = getX(i);
-            return (
-              <text
-                key={d.dateKey}
-                x={x}
-                y={height - 12}
-                textAnchor="middle"
-                fill="var(--text-secondary)"
-                className="text-[11px] font-mono font-medium"
-              >
-                {d.displayDate.replace(/\s+\d{4}$/, "")}
-              </text>
-            );
-          })}
+            {/* X-axis Date Ticks */}
+            {history.map((d, i) => {
+              const step = Math.max(1, Math.ceil(history.length / 6));
+              const showLabel =
+                i === 0 || i === history.length - 1 || i % step === 0;
+              if (!showLabel) return null;
+              const x = getX(i);
+              return (
+                <text
+                  key={d.dateKey}
+                  x={x}
+                  y={height - 12}
+                  textAnchor="middle"
+                  fill="var(--text-secondary)"
+                  className="text-[11px] font-mono font-medium"
+                >
+                  {d.displayDate.replace(/\s+\d{4}$/, "")}
+                </text>
+              );
+            })}
 
-          {/* Active Hover Vertical Guide & Points */}
-          {marketPoints[activeIndex] && (
-            <g>
-              <line
-                x1={marketPoints[activeIndex].x}
-                y1={padTop}
-                x2={marketPoints[activeIndex].x}
-                y2={padTop + plotH}
-                stroke="var(--border-strong)"
-                strokeWidth="1.5"
-                strokeDasharray="3 3"
-              />
-              <circle
-                cx={investedPoints[activeIndex].x}
-                cy={investedPoints[activeIndex].y}
-                r="5"
-                fill="var(--bg-surface)"
-                stroke="var(--info-text)"
-                strokeWidth="2.5"
-              />
-              <circle
-                cx={marketPoints[activeIndex].x}
-                cy={marketPoints[activeIndex].y}
-                r="6"
-                fill="var(--gain-text)"
-                stroke="var(--bg-surface)"
-                strokeWidth="2.5"
-              />
-            </g>
-          )}
+            {/* Active Hover Vertical Guide & Points */}
+            {marketPoints[activeIndex] && (
+              <g>
+                <line
+                  x1={marketPoints[activeIndex].x}
+                  y1={padTop}
+                  x2={marketPoints[activeIndex].x}
+                  y2={padTop + plotH}
+                  stroke="var(--border-strong)"
+                  strokeWidth="1.5"
+                  strokeDasharray="3 3"
+                />
+                <circle
+                  cx={investedPoints[activeIndex].x}
+                  cy={investedPoints[activeIndex].y}
+                  r="5"
+                  fill="var(--bg-surface)"
+                  stroke="var(--info-text)"
+                  strokeWidth="2.5"
+                />
+                <circle
+                  cx={marketPoints[activeIndex].x}
+                  cy={marketPoints[activeIndex].y}
+                  r="6"
+                  fill="var(--gain-text)"
+                  stroke="var(--bg-surface)"
+                  strokeWidth="2.5"
+                />
+              </g>
+            )}
 
-          {/* Invisible interactive hit columns for smooth mouse hover */}
-          {history.map((d, i) => {
-            const colWidth = plotW / Math.max(1, history.length);
-            const x = getX(i) - colWidth / 2;
-            return (
-              <rect
-                key={d.dateKey}
-                x={Math.max(padLeft, x)}
-                y={padTop}
-                width={colWidth}
-                height={plotH}
-                fill="transparent"
-                className="cursor-crosshair"
-                onMouseEnter={() => setHoverIdx(i)}
-                onClick={() => setHoverIdx(i)}
-              />
-            );
-          })}
-        </svg>
+            {/* Invisible interactive hit columns for smooth mouse hover */}
+            {history.map((d, i) => {
+              const colWidth = plotW / Math.max(1, history.length);
+              const x = getX(i) - colWidth / 2;
+              return (
+                <rect
+                  key={d.dateKey}
+                  x={Math.max(padLeft, x)}
+                  y={padTop}
+                  width={colWidth}
+                  height={plotH}
+                  fill="transparent"
+                  className="cursor-crosshair"
+                  onMouseEnter={() => setHoverIdx(i)}
+                  onClick={() => setHoverIdx(i)}
+                />
+              );
+            })}
+          </svg>
         </div>
       </div>
     </section>

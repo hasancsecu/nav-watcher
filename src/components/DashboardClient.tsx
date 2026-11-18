@@ -1373,7 +1373,7 @@ function DashboardClientContent({
                               0,
                             )
                           : 0
-                        ).toFixed(3)}
+                        ).toFixed(2)}
                       </strong>
                       <span className="block text-[10px] theme-text-muted mt-0.5">
                         Portfolio Weighted Avg
@@ -1466,7 +1466,7 @@ function DashboardClientContent({
                                 Latest Scraped NAV:
                               </span>
                               <span className="font-mono font-bold status-gain-text">
-                                ৳{fund.effectiveNav.toFixed(3)}
+                                ৳{fund.effectiveNav.toFixed(2)}
                               </span>
                             </div>
 
@@ -1505,7 +1505,7 @@ function DashboardClientContent({
                                 </span>
                                 <strong className="font-mono text-xs font-bold theme-text-primary">
                                   ৳
-                                  {Number(fund.averageBuyPrice || 0).toFixed(3)}
+                                  {Number(fund.averageBuyPrice || 0).toFixed(2)}
                                 </strong>
                               </div>
                             </div>
@@ -1712,7 +1712,7 @@ function DashboardClientContent({
                               Avg Buy Cost
                             </span>
                             <span className="font-mono text-sm font-bold theme-text-primary">
-                              ৳{fund.averageBuyPrice.toFixed(4)}
+                              ৳{fund.averageBuyPrice.toFixed(2)}
                             </span>
                           </div>
                           <div className="theme-surface rounded-lg border p-2.5">
@@ -1731,7 +1731,7 @@ function DashboardClientContent({
                               Current Scraped NAV
                             </span>
                             <span className="font-mono text-sm font-bold status-gain-text">
-                              ৳{fund.effectiveNav.toFixed(3)}
+                              ৳{fund.effectiveNav.toFixed(2)}
                             </span>
                           </div>
                         </div>
@@ -1869,10 +1869,10 @@ function DashboardClientContent({
                                 </div>
                               </th>
                               <td className="py-3 px-3.5 font-mono text-right status-gain-text font-bold whitespace-nowrap">
-                                ৳{fund.effectiveNav.toFixed(3)}
+                                ৳{fund.effectiveNav.toFixed(2)}
                               </td>
                               <td className="py-3 px-3.5 font-mono text-right font-semibold theme-text-primary whitespace-nowrap">
-                                ৳{fund.averageBuyPrice.toFixed(4)}
+                                ৳{fund.averageBuyPrice.toFixed(2)}
                               </td>
                               <td className="py-3 px-3.5 font-mono text-right font-bold text-[#155360] dark:text-[#33c6e4] whitespace-nowrap">
                                 <div>

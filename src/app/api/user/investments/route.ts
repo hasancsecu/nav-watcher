@@ -117,7 +117,7 @@ async function rechainUserFundInvestments(userFundId: string) {
   }
 
   const averageBuyPrice =
-    totalUnits > 0 ? Number((totalInvested / totalUnits).toFixed(4)) : 10.0;
+    totalUnits > 0 ? Number((totalInvested / totalUnits).toFixed(2)) : 10.0;
 
   const updatedUserFund = await prisma.userFund.update({
     where: { id: userFundId },
@@ -422,7 +422,7 @@ export async function POST(req: NextRequest) {
         type: invType,
         notes:
           notes ||
-          `${invType} Investment for ${norm.calendarMonth}: Cash ৳${safeCash} @ ৳${safeNav.toFixed(3)}.`,
+          `${invType} Investment for ${norm.calendarMonth}: Cash ৳${safeCash} @ ৳${safeNav.toFixed(2)}.`,
       },
     });
 

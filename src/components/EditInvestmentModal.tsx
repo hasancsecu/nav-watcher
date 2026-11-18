@@ -336,7 +336,7 @@ export default function EditInvestmentModal({
               <div className="flex justify-between">
                 <span>Execution NAV:</span>
                 <span className="font-mono font-semibold theme-text-primary">
-                  ৳{numNav.toFixed(3)}
+                  ৳{numNav.toFixed(2)}
                 </span>
               </div>
               <div className="flex justify-between border-t theme-border pt-1 font-bold">

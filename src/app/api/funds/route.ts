@@ -18,7 +18,7 @@ export async function PUT(req: NextRequest) {
     if (!user) {
       return NextResponse.json(
         { error: "Unauthorized. Please log in." },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -27,13 +27,13 @@ export async function PUT(req: NextRequest) {
     const updates: HoldingUpdateItem[] = Array.isArray(body.holdings)
       ? body.holdings
       : body.fundId
-      ? [body]
-      : [];
+        ? [body]
+        : [];
 
     if (updates.length === 0) {
       return NextResponse.json(
         { error: "No fund holding updates provided." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -47,30 +47,39 @@ export async function PUT(req: NextRequest) {
 
       if (Number.isNaN(invested) || invested < 0) {
         return NextResponse.json(
-          { error: `Invalid Total Invested Amount for ${item.fundId}. Must be >= 0.` },
-          { status: 400 }
+          {
+            error: `Invalid Total Invested Amount for ${item.fundId}. Must be >= 0.`,
+          },
+          { status: 400 },
         );
       }
       if (Number.isNaN(avgBuy) || avgBuy <= 0) {
         return NextResponse.json(
-          { error: `Invalid Average Buy Price for ${item.fundId}. Must be > 0.` },
-          { status: 400 }
+          {
+            error: `Invalid Average Buy Price for ${item.fundId}. Must be > 0.`,
+          },
+          { status: 400 },
         );
       }
 
       // Strict Bangladesh AMC rule: plain integer units only
       const integerUnits = Math.floor(invested / avgBuy);
       const costOfUnits = Number((integerUnits * avgBuy).toFixed(2));
-      const cashRemainder = Math.max(0, Number((invested - costOfUnits).toFixed(2)));
+      const cashRemainder = Math.max(
+        0,
+        Number((invested - costOfUnits).toFixed(2)),
+      );
 
       await prisma.userFund.updateMany({
         where: { userId: user.id, fundId: item.fundId },
         data: {
           totalInvested: Number(invested.toFixed(2)),
-          averageBuyPrice: Number(avgBuy.toFixed(4)),
+          averageBuyPrice: Number(avgBuy.toFixed(2)),
           totalUnits: integerUnits,
           fractionalCashBalance: cashRemainder,
-          ...(sipTarget !== undefined && !Number.isNaN(sipTarget) && sipTarget >= 0
+          ...(sipTarget !== undefined &&
+          !Number.isNaN(sipTarget) &&
+          sipTarget >= 0
             ? { monthlySipTarget: Number(sipTarget.toFixed(2)) }
             : {}),
         },
@@ -87,7 +96,7 @@ export async function PUT(req: NextRequest) {
         error: "Failed to update fund holdings",
         details: error instanceof Error ? error.message : String(error),
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
     );
     const newAverageBuyPrice =
       newTotalUnits > 0
-        ? Number((newTotalInvested / newTotalUnits).toFixed(4))
+        ? Number((newTotalInvested / newTotalUnits).toFixed(2))
         : safeNav;
 
     const [updatedUserFund, transaction] = await prisma.$transaction([
@@ -123,7 +123,7 @@ export async function POST(req: NextRequest) {
           reinvestedAmount: reinvestedCost,
           cashRemainder: newCashRemainder,
           isSettled: false,
-          notes: `CIP Dividend: +${unitsAllotted} units allotted @ ৳${safeNav.toFixed(3)}. ৳${newCashRemainder.toFixed(2)} cash balance held for next SIP.`,
+          notes: `CIP Dividend: +${unitsAllotted} units allotted @ ৳${safeNav.toFixed(2)}. ৳${newCashRemainder.toFixed(2)} cash balance held for next SIP.`,
         },
       }),
     ]);

@@ -87,7 +87,8 @@ function formatBdt(amount: number, decimals = 2): string {
  */
 function getCurvedPath(points: { x: number; y: number }[]): string {
   if (points.length === 0) return "";
-  if (points.length === 1) return `M ${points[0].x.toFixed(1)},${points[0].y.toFixed(1)}`;
+  if (points.length === 1)
+    return `M ${points[0].x.toFixed(1)},${points[0].y.toFixed(1)}`;
   if (points.length === 2) {
     return `M ${points[0].x.toFixed(1)},${points[0].y.toFixed(1)} L ${points[1].x.toFixed(1)},${points[1].y.toFixed(1)}`;
   }
@@ -170,7 +171,10 @@ export default function HistoricalInvestmentComparisonChart({
   const fullTimeline = useMemo(() => {
     if (!funds || funds.length === 0) return [];
 
-    const dateMap = new Map<string, { displayDate: string; navs: Record<string, number> }>();
+    const dateMap = new Map<
+      string,
+      { displayDate: string; navs: Record<string, number> }
+    >();
 
     // 1. Gather all unique dateKeys from snapshots
     snapshots.forEach((snap) => {
@@ -332,9 +336,13 @@ export default function HistoricalInvestmentComparisonChart({
     else if (timeRange === "6M") daysToSubtract = 180;
     else if (timeRange === "1Y") daysToSubtract = 365;
 
-    const cutoffDate = new Date(latestDate.getTime() - daysToSubtract * 24 * 60 * 60 * 1000);
+    const cutoffDate = new Date(
+      latestDate.getTime() - daysToSubtract * 24 * 60 * 60 * 1000,
+    );
 
-    const filtered = fullTimeline.filter((d) => new Date(d.dateKey) >= cutoffDate);
+    const filtered = fullTimeline.filter(
+      (d) => new Date(d.dateKey) >= cutoffDate,
+    );
     return filtered.length >= 2 ? filtered : fullTimeline.slice(-5);
   }, [fullTimeline, timeRange]);
 
@@ -456,8 +464,8 @@ export default function HistoricalInvestmentComparisonChart({
         const points = chartData.map((d, i) => {
           const metricVal =
             metric === "nav"
-              ? d.fundValues[fKey]?.nav ?? f.effectiveNav ?? 10
-              : d.fundValues[fKey]?.returnPct ?? f.returnPct ?? 0;
+              ? (d.fundValues[fKey]?.nav ?? f.effectiveNav ?? 10)
+              : (d.fundValues[fKey]?.returnPct ?? f.returnPct ?? 0);
           return {
             x: getX(i),
             y: getY(metricVal),
@@ -502,7 +510,8 @@ export default function HistoricalInvestmentComparisonChart({
 
   // Handle pointer / touch movement to track nearest date node
   const handlePointerMove = (clientX: number) => {
-    if (!svgRef.current || chartData.length === 0 || pinnedIndex !== null) return;
+    if (!svgRef.current || chartData.length === 0 || pinnedIndex !== null)
+      return;
     const rect = svgRef.current.getBoundingClientRect();
     const relativeX = clientX - rect.left;
     const scale = width / rect.width;
@@ -618,7 +627,8 @@ export default function HistoricalInvestmentComparisonChart({
               </h3>
             </div>
             <p className="text-[11px] sm:text-xs theme-text-secondary mt-0.5">
-              Scrub, zoom time horizons, and inspect official AMC NAVs alongside logged investment buys.
+              Scrub, zoom time horizons, and inspect official AMC NAVs alongside
+              logged investment buys.
             </p>
           </div>
 
@@ -688,7 +698,10 @@ export default function HistoricalInvestmentComparisonChart({
             title="Toggle historical investment buy points on the chart"
           >
             <Coins className="h-3.5 w-3.5 text-amber-500" />
-            <span>Show Buys ({funds.reduce((acc, f) => acc + (f.investments?.length || 0), 0)})</span>
+            <span>
+              Show Buys (
+              {funds.reduce((acc, f) => acc + (f.investments?.length || 0), 0)})
+            </span>
           </button>
         </div>
 
@@ -702,11 +715,15 @@ export default function HistoricalInvestmentComparisonChart({
               <span>
                 Range:{" "}
                 <strong className="theme-text-primary font-bold">
-                  {metric === "growth" ? `৳${formatBdt(periodStats.lowVal, 0)}` : `৳${periodStats.lowVal.toFixed(2)}`}
+                  {metric === "growth"
+                    ? `৳${formatBdt(periodStats.lowVal, 0)}`
+                    : `৳${periodStats.lowVal.toFixed(2)}`}
                 </strong>{" "}
                 –{" "}
                 <strong className="theme-text-primary font-bold">
-                  {metric === "growth" ? `৳${formatBdt(periodStats.highVal, 0)}` : `৳${periodStats.highVal.toFixed(2)}`}
+                  {metric === "growth"
+                    ? `৳${formatBdt(periodStats.highVal, 0)}`
+                    : `৳${periodStats.highVal.toFixed(2)}`}
                 </strong>
               </span>
               <span>·</span>
@@ -763,8 +780,8 @@ export default function HistoricalInvestmentComparisonChart({
                   isHidden
                     ? "opacity-40 border-dashed theme-border theme-text-muted"
                     : isSolo
-                    ? "ring-2 ring-[#33c6e4] border-[#33c6e4] bg-[#33c6e4]/10 theme-text-primary"
-                    : "theme-border theme-elevated theme-text-primary shadow-xs"
+                      ? "ring-2 ring-[#33c6e4] border-[#33c6e4] bg-[#33c6e4]/10 theme-text-primary"
+                      : "theme-border theme-elevated theme-text-primary shadow-xs"
                 }`}
               >
                 {/* Clicking name solos/focuses this fund */}
@@ -854,8 +871,8 @@ export default function HistoricalInvestmentComparisonChart({
                   pctX > 75
                     ? "translateX(-90%)"
                     : pctX < 25
-                    ? "translateX(-10%)"
-                    : "translateX(-50%)",
+                      ? "translateX(-10%)"
+                      : "translateX(-50%)",
               }}
             >
               <div className="bg-slate-950/95 dark:bg-[#070b14]/95 text-white backdrop-blur-md rounded-xl p-2.5 shadow-2xl border border-[#33c6e4]/40 min-w-[200px] max-w-[270px] text-xs space-y-1.5 animate-in fade-in zoom-in-95 pointer-events-auto">
@@ -874,19 +891,22 @@ export default function HistoricalInvestmentComparisonChart({
                 </div>
 
                 {/* Milestone events at this date (if any) */}
-                {activeInspect.milestones && activeInspect.milestones.length > 0 && (
-                  <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-1.5 space-y-1 text-[10px]">
-                    <div className="flex items-center gap-1 text-amber-400 font-bold">
-                      <Coins className="h-3 w-3" />
-                      <span>Investment Recorded on this Date:</span>
-                    </div>
-                    {activeInspect.milestones.map((m, mi) => (
-                      <div key={mi} className="text-slate-200 font-mono">
-                        <strong className="text-white">{m.type}</strong>: ৳{formatBdt(m.amount, 0)} → +{m.units} units @ ৳{m.nav.toFixed(3)}
+                {activeInspect.milestones &&
+                  activeInspect.milestones.length > 0 && (
+                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-1.5 space-y-1 text-[10px]">
+                      <div className="flex items-center gap-1 text-amber-400 font-bold">
+                        <Coins className="h-3 w-3" />
+                        <span>Investment Recorded on this Date:</span>
                       </div>
-                    ))}
-                  </div>
-                )}
+                      {activeInspect.milestones.map((m, mi) => (
+                        <div key={mi} className="text-slate-200 font-mono">
+                          <strong className="text-white">{m.type}</strong>: ৳
+                          {formatBdt(m.amount, 0)} → +{m.units} units @ ৳
+                          {m.nav.toFixed(2)}
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
                 {metric === "growth" ? (
                   <div className="space-y-1 text-[11px]">
@@ -924,7 +944,8 @@ export default function HistoricalInvestmentComparisonChart({
                         const fKey = f.fundId || f.id;
                         const dataObj = activeInspect.fundValues[fKey];
                         const color = fundColors.get(fKey) || "#33c6e4";
-                        const isDimmed = focusedFundId !== null && focusedFundId !== fKey;
+                        const isDimmed =
+                          focusedFundId !== null && focusedFundId !== fKey;
 
                         return (
                           <div
@@ -938,7 +959,9 @@ export default function HistoricalInvestmentComparisonChart({
                                 className="h-2 w-2 rounded-full shrink-0"
                                 style={{ backgroundColor: color }}
                               />
-                              <span className="truncate">{f.shortName || f.name}</span>
+                              <span className="truncate">
+                                {f.shortName || f.name}
+                              </span>
                             </span>
                             <strong className="font-mono text-white shrink-0 text-right">
                               {metric === "nav" &&
@@ -946,7 +969,7 @@ export default function HistoricalInvestmentComparisonChart({
                                   dataObj?.nav ??
                                   f.effectiveNav ??
                                   10
-                                ).toFixed(3)}`}
+                                ).toFixed(2)}`}
                               {metric === "return" &&
                                 `${(
                                   dataObj?.returnPct ??
@@ -1002,9 +1025,21 @@ export default function HistoricalInvestmentComparisonChart({
                   x2="0"
                   y2="1"
                 >
-                  <stop offset="0%" stopColor={series.color} stopOpacity="0.25" />
-                  <stop offset="80%" stopColor={series.color} stopOpacity="0.04" />
-                  <stop offset="100%" stopColor={series.color} stopOpacity="0" />
+                  <stop
+                    offset="0%"
+                    stopColor={series.color}
+                    stopOpacity="0.25"
+                  />
+                  <stop
+                    offset="80%"
+                    stopColor={series.color}
+                    stopOpacity="0.04"
+                  />
+                  <stop
+                    offset="100%"
+                    stopColor={series.color}
+                    stopOpacity="0"
+                  />
                 </linearGradient>
               ))}
             </defs>
@@ -1034,8 +1069,8 @@ export default function HistoricalInvestmentComparisonChart({
                     {metric === "return"
                       ? `${gridVal.toFixed(1)}%`
                       : metric === "growth"
-                      ? `৳${formatBdt(gridVal, 0)}`
-                      : `৳${gridVal.toFixed(2)}`}
+                        ? `৳${formatBdt(gridVal, 0)}`
+                        : `৳${gridVal.toFixed(2)}`}
                   </text>
                 </g>
               );
@@ -1044,10 +1079,18 @@ export default function HistoricalInvestmentComparisonChart({
             {/* Render Series Areas & Curves */}
             {seriesPaths.map((series) => {
               const opacity = series.isDimmed ? 0.15 : 1;
-              const strokeWidth = series.isDimmed ? 1.5 : focusedFundId === series.key ? 3.5 : 2.5;
+              const strokeWidth = series.isDimmed
+                ? 1.5
+                : focusedFundId === series.key
+                  ? 3.5
+                  : 2.5;
 
               return (
-                <g key={series.key} opacity={opacity} className="transition-opacity duration-200">
+                <g
+                  key={series.key}
+                  opacity={opacity}
+                  className="transition-opacity duration-200"
+                >
                   {series.areaD && (
                     <path
                       d={series.areaD}
@@ -1063,7 +1106,11 @@ export default function HistoricalInvestmentComparisonChart({
                     strokeDasharray={series.dashed ? "5 5" : undefined}
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    filter={focusedFundId === series.key ? `url(#${chartId}-glow)` : undefined}
+                    filter={
+                      focusedFundId === series.key
+                        ? `url(#${chartId}-glow)`
+                        : undefined
+                    }
                   />
                 </g>
               );

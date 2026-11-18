@@ -175,7 +175,7 @@ export default function AddInvestmentModal({
   );
   const previewNewAvgBuy =
     previewNewTotalUnits > 0
-      ? Number((previewNewTotalInvested / previewNewTotalUnits).toFixed(4))
+      ? Number((previewNewTotalInvested / previewNewTotalUnits).toFixed(2))
       : numNav;
 
   const selectedMonthStr = `${MONTH_NAMES[selectedMonthIdx]} ${selectedYear}`;
@@ -426,7 +426,7 @@ export default function AddInvestmentModal({
                   +{previewUnitsAllotted.toLocaleString("en-BD")} units
                 </strong>
                 <span className="block text-[10px] text-slate-500">
-                  @ ৳{numNav.toFixed(3)}
+                  @ ৳{numNav.toFixed(2)}
                 </span>
               </div>
               <div className="text-right">
@@ -449,7 +449,7 @@ export default function AddInvestmentModal({
               </strong>{" "}
               · Weighted Avg Price:{" "}
               <strong className="font-mono font-bold text-slate-900 dark:text-white">
-                ৳{previewNewAvgBuy.toFixed(4)}
+                ৳{previewNewAvgBuy.toFixed(2)}
               </strong>
             </div>
           </div>
@@ -470,7 +470,7 @@ export default function AddInvestmentModal({
                     "en-BD",
                   )}{" "}
                   @ ৳
-                  {Number(existingInvestmentConflict.executionNav).toFixed(3)})
+                  {Number(existingInvestmentConflict.executionNav).toFixed(2)})
                   is already logged for this month.
                 </p>
                 <div className="text-[11px] text-amber-700 dark:text-amber-400 font-semibold pt-0.5">

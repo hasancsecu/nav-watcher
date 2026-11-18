@@ -601,7 +601,7 @@ export default function UpdateHoldingsDialog({
                     </div>
                     <div className="inline-flex items-center gap-1.5 rounded-lg border theme-border px-2.5 py-1 text-xs font-mono font-bold status-gain-badge">
                       <span>Latest NAV:</span>
-                      <strong>৳{fund.effectiveNav.toFixed(3)}</strong>
+                      <strong>৳{fund.effectiveNav.toFixed(2)}</strong>
                     </div>
                   </div>
 
@@ -757,7 +757,7 @@ export default function UpdateHoldingsDialog({
                         <div className="flex items-center justify-between theme-text-secondary">
                           <span>New Units:</span>
                           <span className="font-mono font-bold status-gain-text">
-                            +{sipSim.addedUnits} units @ ৳{sipNavVal.toFixed(3)}
+                            +{sipSim.addedUnits} units @ ৳{sipNavVal.toFixed(2)}
                           </span>
                         </div>
                         <div className="flex items-center justify-between theme-text-secondary">
@@ -770,7 +770,7 @@ export default function UpdateHoldingsDialog({
                           <span>New Total Holdings:</span>
                           <span className="font-mono font-bold theme-text-primary">
                             {sipSim.newTotalUnits} units · Avg ৳
-                            {sipSim.newAverageBuyPrice.toFixed(4)}
+                            {sipSim.newAverageBuyPrice.toFixed(2)}
                           </span>
                         </div>
                       </div>
@@ -862,7 +862,7 @@ export default function UpdateHoldingsDialog({
                           <span>Allotted Units:</span>
                           <span className="font-mono font-bold status-gain-text">
                             +{cipCalc.unitsAllotted} units @ ৳
-                            {cipNavVal.toFixed(3)}
+                            {cipNavVal.toFixed(2)}
                           </span>
                         </div>
                         <div className="flex items-center justify-between theme-text-secondary">

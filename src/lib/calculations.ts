@@ -56,17 +56,24 @@ export interface PortfolioSummaryMetrics {
  */
 export function computeFundMetrics(
   fund: FundValuationInput,
-  totalPortfolioValue?: number
+  totalPortfolioValue?: number,
 ): FundValuationMetrics {
-  const avgBuy = Number(fund.averageBuyPrice) > 0 ? Number(fund.averageBuyPrice) : 10;
+  const avgBuy =
+    Number(fund.averageBuyPrice) > 0 ? Number(fund.averageBuyPrice) : 10;
   const effectiveNav =
-    fund.latestNav !== null && fund.latestNav !== undefined && Number(fund.latestNav) > 0
+    fund.latestNav !== null &&
+    fund.latestNav !== undefined &&
+    Number(fund.latestNav) > 0
       ? Number(fund.latestNav)
       : avgBuy;
 
   // Strict Bangladesh Mutual Fund rule: units must be whole plain integers
   let totalUnitsHeld = 0;
-  if (fund.totalUnits !== undefined && fund.totalUnits !== null && Number(fund.totalUnits) > 0) {
+  if (
+    fund.totalUnits !== undefined &&
+    fund.totalUnits !== null &&
+    Number(fund.totalUnits) > 0
+  ) {
     totalUnitsHeld = Math.floor(Number(fund.totalUnits));
   } else if (Number(fund.totalInvested) > 0 && avgBuy > 0) {
     totalUnitsHeld = Math.floor(Number(fund.totalInvested) / avgBuy);
@@ -78,21 +85,33 @@ export function computeFundMetrics(
 
   // Fractional cash balance remaining from non-allotted decimal units
   let fractionalCashBalance = 0;
-  if (fund.fractionalCashBalance !== undefined && fund.fractionalCashBalance !== null) {
+  if (
+    fund.fractionalCashBalance !== undefined &&
+    fund.fractionalCashBalance !== null
+  ) {
     fractionalCashBalance = Math.max(0, Number(fund.fractionalCashBalance));
   } else if (invested > costOfUnits) {
-    fractionalCashBalance = Math.max(0, Number((invested - costOfUnits).toFixed(2)));
+    fractionalCashBalance = Math.max(
+      0,
+      Number((invested - costOfUnits).toFixed(2)),
+    );
   }
 
   const currentMarketValue = Number((totalUnitsHeld * effectiveNav).toFixed(2));
-  const absoluteGainLoss = Number((currentMarketValue - costOfUnits).toFixed(2));
-  const returnPct = costOfUnits > 0 ? (absoluteGainLoss / costOfUnits) * 100 : 0;
+  const absoluteGainLoss = Number(
+    (currentMarketValue - costOfUnits).toFixed(2),
+  );
+  const returnPct =
+    costOfUnits > 0 ? (absoluteGainLoss / costOfUnits) * 100 : 0;
   const portfolioWeightPct =
     totalPortfolioValue && totalPortfolioValue > 0
       ? (currentMarketValue / totalPortfolioValue) * 100
       : 0;
 
-  const totalCipUnits = Math.max(0, Math.floor(Number(fund.totalCipUnits) || 0));
+  const totalCipUnits = Math.max(
+    0,
+    Math.floor(Number(fund.totalCipUnits) || 0),
+  );
 
   return {
     ...fund,
@@ -108,32 +127,51 @@ export function computeFundMetrics(
   };
 }
 
-export function computePortfolioSummary(
-  funds: FundValuationInput[]
-): {
+export function computePortfolioSummary(funds: FundValuationInput[]): {
   summary: PortfolioSummaryMetrics;
   fundsWithMetrics: FundValuationMetrics[];
 } {
   const preliminary = funds.map((f) => computeFundMetrics(f));
-  const totalInvested = preliminary.reduce((acc, f) => acc + f.totalInvested, 0);
-  const currentMarketValue = preliminary.reduce((acc, f) => acc + f.currentMarketValue, 0);
+  const totalInvested = preliminary.reduce(
+    (acc, f) => acc + f.totalInvested,
+    0,
+  );
+  const currentMarketValue = preliminary.reduce(
+    (acc, f) => acc + f.currentMarketValue,
+    0,
+  );
   const absoluteGainLoss = currentMarketValue - totalInvested;
-  const returnPct = totalInvested > 0 ? (absoluteGainLoss / totalInvested) * 100 : 0;
-  const totalMonthlySip = preliminary.reduce((acc, f) => acc + (f.monthlySipTarget || 8000), 0);
-  const totalFractionalCash = preliminary.reduce((acc, f) => acc + (f.fractionalCashBalance || 0), 0);
-  const totalCipUnits = preliminary.reduce((acc, f) => acc + (f.totalCipUnits || 0), 0);
+  const returnPct =
+    totalInvested > 0 ? (absoluteGainLoss / totalInvested) * 100 : 0;
+  const totalMonthlySip = preliminary.reduce(
+    (acc, f) => acc + (f.monthlySipTarget || 8000),
+    0,
+  );
+  const totalFractionalCash = preliminary.reduce(
+    (acc, f) => acc + (f.fractionalCashBalance || 0),
+    0,
+  );
+  const totalCipUnits = preliminary.reduce(
+    (acc, f) => acc + (f.totalCipUnits || 0),
+    0,
+  );
 
   let latestTimestamp: number | null = null;
   for (const f of funds) {
     if (f.lastScrapedAt) {
       const ts = new Date(f.lastScrapedAt).getTime();
-      if (!Number.isNaN(ts) && (latestTimestamp === null || ts > latestTimestamp)) {
+      if (
+        !Number.isNaN(ts) &&
+        (latestTimestamp === null || ts > latestTimestamp)
+      ) {
         latestTimestamp = ts;
       }
     }
   }
 
-  const fundsWithMetrics = funds.map((f) => computeFundMetrics(f, currentMarketValue));
+  const fundsWithMetrics = funds.map((f) =>
+    computeFundMetrics(f, currentMarketValue),
+  );
 
   return {
     summary: {
@@ -144,7 +182,9 @@ export function computePortfolioSummary(
       totalMonthlySip,
       totalFractionalCash,
       totalCipUnits,
-      lastUpdatedAt: latestTimestamp ? new Date(latestTimestamp).toISOString() : null,
+      lastUpdatedAt: latestTimestamp
+        ? new Date(latestTimestamp).toISOString()
+        : null,
       fundsCount: funds.length,
     },
     fundsWithMetrics,
@@ -158,7 +198,7 @@ export function computePortfolioSummary(
 export function calculateCipReinvestment(
   dividendAmount: number,
   cipNav: number,
-  existingCashBuffer = 0
+  existingCashBuffer = 0,
 ): {
   totalAvailable: number;
   unitsAllotted: number; // Strictly INTEGER!
@@ -173,7 +213,9 @@ export function calculateCipReinvestment(
   // Mandatory Bangladesh AMC CIP Rule: Units allotted MUST be integer, not decimal!
   const unitsAllotted = Math.floor(totalAvailable / safeNav);
   const reinvestedAmount = Number((unitsAllotted * safeNav).toFixed(2));
-  const cashRemainder = Number(Math.max(0, totalAvailable - reinvestedAmount).toFixed(2));
+  const cashRemainder = Number(
+    Math.max(0, totalAvailable - reinvestedAmount).toFixed(2),
+  );
 
   return {
     totalAvailable,
@@ -192,16 +234,18 @@ export function applyCipUnitsToHolding(
   currentAvgBuyPrice: number,
   allottedUnits: number,
   reinvestmentNav: number,
-  currentUnits?: number
+  currentUnits?: number,
 ): {
   newTotalInvested: number;
   newAverageBuyPrice: number;
   newTotalUnits: number;
 } {
   const safeInvested = Math.max(0, Number(currentInvested) || 0);
-  const safeAvg = Number(currentAvgBuyPrice) > 0 ? Number(currentAvgBuyPrice) : 10;
+  const safeAvg =
+    Number(currentAvgBuyPrice) > 0 ? Number(currentAvgBuyPrice) : 10;
   const safeUnits = Math.max(0, Math.floor(Number(allottedUnits) || 0));
-  const safeNav = Number(reinvestmentNav) > 0 ? Number(reinvestmentNav) : safeAvg;
+  const safeNav =
+    Number(reinvestmentNav) > 0 ? Number(reinvestmentNav) : safeAvg;
 
   const existingUnits =
     currentUnits !== undefined && currentUnits > 0
@@ -212,7 +256,9 @@ export function applyCipUnitsToHolding(
   const reinvestedCost = safeUnits * safeNav;
   const newTotalInvested = Number((safeInvested + reinvestedCost).toFixed(2));
   const newAverageBuyPrice =
-    newTotalUnits > 0 ? Number((newTotalInvested / newTotalUnits).toFixed(4)) : safeAvg;
+    newTotalUnits > 0
+      ? Number((newTotalInvested / newTotalUnits).toFixed(2))
+      : safeAvg;
 
   return {
     newTotalInvested,
@@ -232,8 +278,10 @@ export function simulateSipWithCipSettlement(
   freshSipCash: number,
   executionNav: number,
   unsettledCashBalance = 0,
-  settlementMethod: "ADD_TO_INVESTMENT" | "DEDUCT_FROM_PAYMENT" = "ADD_TO_INVESTMENT",
-  currentUnits?: number
+  settlementMethod:
+    | "ADD_TO_INVESTMENT"
+    | "DEDUCT_FROM_PAYMENT" = "ADD_TO_INVESTMENT",
+  currentUnits?: number,
 ): {
   effectiveInvestedInUnits: number;
   userOutOfPocketCash: number;
@@ -245,7 +293,8 @@ export function simulateSipWithCipSettlement(
   newTotalUnits: number; // Strictly INTEGER!
 } {
   const safeInvested = Math.max(0, Number(currentInvested) || 0);
-  const safeAvg = Number(currentAvgBuyPrice) > 0 ? Number(currentAvgBuyPrice) : 10;
+  const safeAvg =
+    Number(currentAvgBuyPrice) > 0 ? Number(currentAvgBuyPrice) : 10;
   const safeSip = Math.max(0, Number(freshSipCash) || 0);
   const safeNav = Number(executionNav) > 0 ? Number(executionNav) : safeAvg;
   const safeCash = Math.max(0, Number(unsettledCashBalance) || 0);
@@ -272,14 +321,14 @@ export function simulateSipWithCipSettlement(
   const costOfAddedUnits = Number((addedUnits * safeNav).toFixed(2));
   // The decimal portion remains as the new fractional cash balance to roll forward to the next SIP!
   const remainingCashBalance = Number(
-    Math.max(0, cashAvailableForUnits - costOfAddedUnits).toFixed(2)
+    Math.max(0, cashAvailableForUnits - costOfAddedUnits).toFixed(2),
   );
 
   const newTotalUnits = existingUnits + addedUnits;
   const newTotalInvested = Number((safeInvested + costOfAddedUnits).toFixed(2));
   const newAverageBuyPrice =
     newTotalUnits > 0
-      ? Number((newTotalInvested / newTotalUnits).toFixed(4))
+      ? Number((newTotalInvested / newTotalUnits).toFixed(2))
       : safeNav;
 
   return {
@@ -305,7 +354,7 @@ export function simulateSipInstallment(
   sipAmount: number,
   executionNav: number,
   currentUnits?: number,
-  existingCashBuffer = 0
+  existingCashBuffer = 0,
 ): {
   newTotalInvested: number;
   newAverageBuyPrice: number;
@@ -315,9 +364,11 @@ export function simulateSipInstallment(
   remainingCashBalance: number;
 } {
   const safeCurrentInvested = Math.max(0, Number(currentInvested) || 0);
-  const safeCurrentAvg = Number(currentAvgBuyPrice) > 0 ? Number(currentAvgBuyPrice) : 10;
+  const safeCurrentAvg =
+    Number(currentAvgBuyPrice) > 0 ? Number(currentAvgBuyPrice) : 10;
   const safeSip = Math.max(0, Number(sipAmount) || 0);
-  const safeExecNav = Number(executionNav) > 0 ? Number(executionNav) : safeCurrentAvg;
+  const safeExecNav =
+    Number(executionNav) > 0 ? Number(executionNav) : safeCurrentAvg;
   const safeCash = Math.max(0, Number(existingCashBuffer) || 0);
 
   const existingUnits =
@@ -328,13 +379,17 @@ export function simulateSipInstallment(
   const totalCash = safeSip + safeCash;
   const addedUnits = Math.floor(totalCash / safeExecNav);
   const costOfAddedUnits = Number((addedUnits * safeExecNav).toFixed(2));
-  const remainingCashBalance = Number(Math.max(0, totalCash - costOfAddedUnits).toFixed(2));
+  const remainingCashBalance = Number(
+    Math.max(0, totalCash - costOfAddedUnits).toFixed(2),
+  );
 
   const newTotalUnits = existingUnits + addedUnits;
-  const newTotalInvested = Number((safeCurrentInvested + costOfAddedUnits).toFixed(2));
+  const newTotalInvested = Number(
+    (safeCurrentInvested + costOfAddedUnits).toFixed(2),
+  );
   const newAverageBuyPrice =
     newTotalUnits > 0
-      ? Number((newTotalInvested / newTotalUnits).toFixed(4))
+      ? Number((newTotalInvested / newTotalUnits).toFixed(2))
       : safeExecNav;
 
   return {
@@ -346,4 +401,3 @@ export function simulateSipInstallment(
     remainingCashBalance,
   };
 }
-

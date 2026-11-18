@@ -114,7 +114,7 @@ export default function AddFundModal({
 
       // Mark as added locally
       setFunds((prev) =>
-        prev.map((f) => (f.id === fund.id ? { ...f, isAdded: true } : f))
+        prev.map((f) => (f.id === fund.id ? { ...f, isAdded: true } : f)),
       );
 
       onFundAdded();
@@ -222,7 +222,9 @@ export default function AddFundModal({
           {isLoading ? (
             <div className="py-16 text-center text-xs theme-text-muted flex flex-col items-center justify-center gap-3">
               <Loader2 className="h-7 w-7 animate-spin text-[#33c6e4]" />
-              <span className="font-semibold">Loading mutual funds directory...</span>
+              <span className="font-semibold">
+                Loading mutual funds directory...
+              </span>
             </div>
           ) : filteredFunds.length === 0 ? (
             <div className="py-12 text-center text-xs theme-text-muted">
@@ -245,10 +247,10 @@ export default function AddFundModal({
                           fund.category === "Shariah"
                             ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
                             : fund.category === "Income"
-                            ? "bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 border border-sky-200 dark:border-sky-800"
-                            : fund.category === "Balanced"
-                            ? "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
-                            : "bg-[#ebf9fc] text-[#155360] dark:bg-slate-800 dark:text-[#33c6e4] border border-[#c0edf7] dark:border-slate-700"
+                              ? "bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 border border-sky-200 dark:border-sky-800"
+                              : fund.category === "Balanced"
+                                ? "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
+                                : "bg-[#ebf9fc] text-[#155360] dark:bg-slate-800 dark:text-[#33c6e4] border border-[#c0edf7] dark:border-slate-700"
                         }`}
                       >
                         {fund.category}
@@ -265,7 +267,10 @@ export default function AddFundModal({
                       </span>
                       <span>·</span>
                       <span>
-                        Base NAV: <strong className="theme-text-primary font-mono">৳{(fund.latestNav || fund.defaultNav).toFixed(3)}</strong>
+                        Base NAV:{" "}
+                        <strong className="theme-text-primary font-mono">
+                          ৳{(fund.latestNav || fund.defaultNav).toFixed(2)}
+                        </strong>
                       </span>
                       <span>·</span>
                       <a
@@ -299,7 +304,9 @@ export default function AddFundModal({
                         ) : (
                           <Plus className="h-3.5 w-3.5" />
                         )}
-                        <span>{isAdding ? "Adding..." : "Add to Portfolio"}</span>
+                        <span>
+                          {isAdding ? "Adding..." : "Add to Portfolio"}
+                        </span>
                       </button>
                     )}
                   </div>

@@ -1,12 +1,6 @@
 "use client";
 
-import React, {
-  useState,
-  useMemo,
-  useEffect,
-  useCallback,
-  useRef,
-} from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Calendar,
   Filter,
@@ -921,7 +915,7 @@ export default function InsertedInvestmentsSection({
                       </td>
 
                       <td className="py-3 px-3 text-right font-mono text-slate-600 dark:text-slate-300 whitespace-nowrap">
-                        ৳{Number(inv.executionNav).toFixed(3)}
+                        ৳{Number(inv.executionNav).toFixed(2)}
                       </td>
 
                       <td className="py-3 px-3 text-right whitespace-nowrap">
@@ -1057,7 +1051,7 @@ export default function InsertedInvestmentsSection({
                         +{inv.unitsAllotted.toLocaleString("en-BD")}
                       </strong>
                       <span className="text-[10px] text-slate-400 block font-mono">
-                        @ ৳{Number(inv.executionNav).toFixed(3)}
+                        @ ৳{Number(inv.executionNav).toFixed(2)}
                       </span>
                     </div>
                   </div>
