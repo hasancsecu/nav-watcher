@@ -14,6 +14,7 @@ const PUBLIC_API_ROUTES = [
   "/api/auth/login",
   "/api/auth/signup",
   "/api/auth/logout",
+  "/api/auth/send-otp",
 ];
 
 export async function middleware(req: NextRequest) {
