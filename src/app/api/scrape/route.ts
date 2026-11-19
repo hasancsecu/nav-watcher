@@ -17,6 +17,7 @@ export async function GET(req: NextRequest) {
 
     // Vercel Cron automated headers
     const isVercelCronHeader =
+      Boolean(req.headers.get("x-vercel-cron-schedule")) ||
       req.headers.get("x-vercel-cron") === "1" ||
       Boolean(
         req.headers.get("user-agent")?.toLowerCase().includes("vercel-cron"),

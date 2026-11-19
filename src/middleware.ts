@@ -32,23 +32,13 @@ export async function middleware(req: NextRequest) {
       return res;
     }
 
-    // 2. Scheduled scraper cron route — allow Vercel Cron header OR CRON_SECRET Bearer token
+    // 2. Scraper cron route: pass straight through to the route handler.
+    //    The route handler performs its own full auth check (Vercel cron header,
+    //    CRON_SECRET Bearer token, logged-in session, or dev mode).
     if (pathname === "/api/scrape" && req.method === "GET") {
-      const isVercelCron =
-        req.headers.get("x-vercel-cron") === "1" ||
-        req.headers.get("user-agent")?.toLowerCase().includes("vercel-cron");
-      const authHeader = req.headers.get("authorization");
-      const cronSecret = process.env.CRON_SECRET;
-      const isBearerMatch = Boolean(cronSecret && authHeader === `Bearer ${cronSecret}`);
-
-      if (isVercelCron || isBearerMatch) {
-        const res = NextResponse.next();
-        res.headers.set(
-          "Cache-Control",
-          "private, no-cache, no-store, max-age=0, must-revalidate"
-        );
-        return res;
-      }
+      const res = NextResponse.next();
+      res.headers.set("Cache-Control", "private, no-cache, no-store, max-age=0, must-revalidate");
+      return res;
     }
 
     // 3. For all other private APIs, strictly require and verify the session JWT
