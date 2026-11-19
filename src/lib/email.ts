@@ -1,3 +1,4 @@
+import nodemailer from "nodemailer";
 import { OTP_VALIDITY_MINUTES } from "./otp";
 
 export interface SendOtpEmailParams {
@@ -10,13 +11,13 @@ export interface SendOtpEmailParams {
 export interface SendEmailResult {
   success: boolean;
   messageId?: string;
-  provider: "resend" | "console";
+  provider: "gmail" | "console";
   previewOtp?: string;
   error?: string;
 }
 
 /**
- * Builds HTML email body for OTP verification
+ * Builds the HTML email body for OTP verification
  */
 function buildOtpEmailHtml(name: string | undefined, otp: string, expiresAt: Date): string {
   const greeting = name ? `Hi ${name},` : "Hello,";
@@ -75,7 +76,7 @@ function buildOtpEmailHtml(name: string | undefined, otp: string, expiresAt: Dat
           <tr>
             <td style="padding: 24px 32px; text-align: center; border-top: 1px solid #1e293b; background-color: #0e1626;">
               <p style="color: #475569; font-size: 11px; margin: 0;">
-                NAV Watcher · Bangladesh Mutual Funds, SIP Tracker & CIP Management
+                NAV Watcher &middot; Bangladesh Mutual Funds, SIP Tracker &amp; CIP Management
               </p>
             </td>
           </tr>
@@ -89,16 +90,33 @@ function buildOtpEmailHtml(name: string | undefined, otp: string, expiresAt: Dat
 }
 
 /**
- * Sends the OTP verification code via email.
- * If RESEND_API_KEY is configured, sends through Resend.
- * In development or when no API key is provided, logs cleanly to console.
+ * Creates a Gmail SMTP transporter using an App Password.
+ * Requires GMAIL_USER and GMAIL_APP_PASSWORD environment variables.
+ */
+function createGmailTransporter() {
+  const user = process.env.GMAIL_USER;
+  const pass = process.env.GMAIL_APP_PASSWORD;
+
+  if (!user || !pass) {
+    return null;
+  }
+
+  return nodemailer.createTransport({
+    service: "gmail",
+    auth: { user, pass },
+  });
+}
+
+/**
+ * Sends the OTP verification code via Gmail (Nodemailer).
+ * Falls back to console logging in development when env vars are absent.
  */
 export async function sendOtpEmail(params: SendOtpEmailParams): Promise<SendEmailResult> {
   const { email, name, otp, expiresAt } = params;
 
   const isDev = process.env.NODE_ENV !== "production";
 
-  // Always log clearly to server stdout for easy debugging
+  // Always log to server stdout for debugging
   console.log(`
 ┌────────────────────────────────────────────────────────┐
 │ [NAV Watcher] EMAIL VERIFICATION OTP                   │
@@ -108,54 +126,43 @@ export async function sendOtpEmail(params: SendOtpEmailParams): Promise<SendEmai
 └────────────────────────────────────────────────────────┘
   `.trim());
 
-  const resendApiKey = process.env.RESEND_API_KEY;
+  const transporter = createGmailTransporter();
 
-  // In production, require a real email provider
-  if (!resendApiKey && !isDev) {
+  // In production, require Gmail credentials
+  if (!transporter && !isDev) {
     throw new Error(
-      "Email provider not configured. Set the RESEND_API_KEY environment variable in your Vercel project settings.",
+      "Email provider not configured. Set GMAIL_USER and GMAIL_APP_PASSWORD in your Vercel environment variables.",
     );
   }
 
-  if (resendApiKey) {
-    const fromEmail = process.env.EMAIL_FROM || "NAV Watcher <onboarding@resend.dev>";
+  if (transporter) {
+    const fromName = process.env.EMAIL_FROM_NAME || "NAV Watcher";
+    const fromAddress = process.env.GMAIL_USER!;
     const html = buildOtpEmailHtml(name, otp, expiresAt);
     const text = `Your NAV Watcher verification code is: ${otp}. Valid for ${OTP_VALIDITY_MINUTES} minutes.`;
 
-    const response = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${resendApiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: fromEmail,
-        to: [email],
-        subject: `Your NAV Watcher Verification Code: ${otp}`,
-        html,
-        text,
-      }),
+    const info = await transporter.sendMail({
+      from: `"${fromName}" <${fromAddress}>`,
+      to: email,
+      subject: `Your NAV Watcher Verification Code: ${otp}`,
+      html,
+      text,
     });
 
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error("[Email Service] Resend API error:", response.status, errorData);
-      throw new Error(`Resend API error ${response.status}: ${errorData}`);
-    }
+    console.log(`[Email Service] OTP sent via Gmail. MessageId: ${info.messageId}`);
 
-    const resData = (await response.json()) as { id: string };
     return {
       success: true,
-      messageId: resData.id,
-      provider: "resend",
+      messageId: info.messageId,
+      provider: "gmail",
       previewOtp: isDev ? otp : undefined,
     };
   }
 
-  // Fallback: Console-only (development / offline mode)
+  // Dev / offline fallback — console only
   return {
     success: true,
     provider: "console",
-    previewOtp: otp, // Safe to expose only in dev/offline mode
+    previewOtp: otp,
   };
 }
