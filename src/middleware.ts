@@ -32,11 +32,16 @@ export async function middleware(req: NextRequest) {
       return res;
     }
 
-    // 2. Scheduled scraper cron route can be authorized via CRON_SECRET header
+    // 2. Scheduled scraper cron route — allow Vercel Cron header OR CRON_SECRET Bearer token
     if (pathname === "/api/scrape" && req.method === "GET") {
+      const isVercelCron =
+        req.headers.get("x-vercel-cron") === "1" ||
+        req.headers.get("user-agent")?.toLowerCase().includes("vercel-cron");
       const authHeader = req.headers.get("authorization");
       const cronSecret = process.env.CRON_SECRET;
-      if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
+      const isBearerMatch = Boolean(cronSecret && authHeader === `Bearer ${cronSecret}`);
+
+      if (isVercelCron || isBearerMatch) {
         const res = NextResponse.next();
         res.headers.set(
           "Cache-Control",
