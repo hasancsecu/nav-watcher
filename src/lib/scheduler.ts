@@ -7,7 +7,7 @@ const globalForScheduler = globalThis as unknown as {
   __navWatcherLastCronRunAt?: string;
 };
 
-export const CRON_SCHEDULE = "0 0 * * *";
+export const CRON_SCHEDULE = "35 10 * * *";
 export const CRON_TIMEZONE = "Asia/Dhaka";
 
 export function initDailyNavScheduler() {
