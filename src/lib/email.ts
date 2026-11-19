@@ -96,7 +96,9 @@ function buildOtpEmailHtml(name: string | undefined, otp: string, expiresAt: Dat
 export async function sendOtpEmail(params: SendOtpEmailParams): Promise<SendEmailResult> {
   const { email, name, otp, expiresAt } = params;
 
-  // Always log clearly to server stdout for easy debugging and development
+  const isDev = process.env.NODE_ENV !== "production";
+
+  // Always log clearly to server stdout for easy debugging
   console.log(`
 ┌────────────────────────────────────────────────────────┐
 │ [NAV Watcher] EMAIL VERIFICATION OTP                   │
@@ -107,62 +109,53 @@ export async function sendOtpEmail(params: SendOtpEmailParams): Promise<SendEmai
   `.trim());
 
   const resendApiKey = process.env.RESEND_API_KEY;
-  const isDev = process.env.NODE_ENV !== "production";
 
-  if (resendApiKey) {
-    try {
-      const fromEmail = process.env.EMAIL_FROM || "NAV Watcher <onboarding@resend.dev>";
-      const html = buildOtpEmailHtml(name, otp, expiresAt);
-      const text = `Your NAV Watcher verification code is: ${otp}. Valid for ${OTP_VALIDITY_MINUTES} minutes.`;
-
-      const response = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${resendApiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          from: fromEmail,
-          to: [email],
-          subject: `Your NAV Watcher Verification Code: ${otp}`,
-          html,
-          text,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.text();
-        console.error("[Email Service] Resend API error:", errorData);
-        return {
-          success: true, // Don't block local/demo signup if external email fails
-          provider: "console",
-          previewOtp: isDev ? otp : undefined,
-          error: "Failed to deliver via Resend, falling back to console.",
-        };
-      }
-
-      const resData = (await response.json()) as { id: string };
-      return {
-        success: true,
-        messageId: resData.id,
-        provider: "resend",
-        previewOtp: isDev ? otp : undefined,
-      };
-    } catch (err) {
-      console.error("[Email Service] Exception sending email:", err);
-      return {
-        success: true,
-        provider: "console",
-        previewOtp: isDev ? otp : undefined,
-        error: String(err),
-      };
-    }
+  // In production, require a real email provider
+  if (!resendApiKey && !isDev) {
+    throw new Error(
+      "Email provider not configured. Set the RESEND_API_KEY environment variable in your Vercel project settings.",
+    );
   }
 
-  // Fallback: Console logging (development / offline mode)
+  if (resendApiKey) {
+    const fromEmail = process.env.EMAIL_FROM || "NAV Watcher <onboarding@resend.dev>";
+    const html = buildOtpEmailHtml(name, otp, expiresAt);
+    const text = `Your NAV Watcher verification code is: ${otp}. Valid for ${OTP_VALIDITY_MINUTES} minutes.`;
+
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${resendApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: fromEmail,
+        to: [email],
+        subject: `Your NAV Watcher Verification Code: ${otp}`,
+        html,
+        text,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error("[Email Service] Resend API error:", response.status, errorData);
+      throw new Error(`Resend API error ${response.status}: ${errorData}`);
+    }
+
+    const resData = (await response.json()) as { id: string };
+    return {
+      success: true,
+      messageId: resData.id,
+      provider: "resend",
+      previewOtp: isDev ? otp : undefined,
+    };
+  }
+
+  // Fallback: Console-only (development / offline mode)
   return {
     success: true,
     provider: "console",
-    previewOtp: otp, // In dev/offline mode, return OTP so user/dev can verify immediately
+    previewOtp: otp, // Safe to expose only in dev/offline mode
   };
 }

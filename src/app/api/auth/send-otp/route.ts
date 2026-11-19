@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Check 30s resend rate limiting
-    const rateLimit = isOtpRateLimited(normalizedEmail);
+    const rateLimit = await isOtpRateLimited(normalizedEmail);
     if (rateLimit.limited) {
       return NextResponse.json(
         {
